@@ -1,118 +1,93 @@
-# SerialTap - Agent Operation Manual
+# SerialTap — Agent Operation Guide / Agent 操作指南
 
 This document provides instructions for Claude Code agents to operate the SerialTap serial port assistant.
 
-## Quick Start
+本文档为 Claude Code agent 提供 SerialTap 串口助手的操作指南。
 
-### List Available Ports
+---
+
+## Quick Commands / 快速命令
+
+### List Ports / 列出端口
 
 ```bash
-# List all serial ports
-serialtap list
-
-# List in JSON format (for agent processing)
-serialtap list --format json
+serialtap list                    # Text format / 文本格式
+serialtap list --format json      # JSON format / JSON 格式
 ```
 
-### Connect to a Port
+### Connect / 连接
 
 ```bash
-# Connect with default settings (115200 baud, 8N1)
-serialtap connect /dev/ttyUSB0
-
-# Connect with custom settings
+serialtap connect /dev/ttyUSB0 -b 115200
 serialtap connect COM1 -b 9600 -d 7 -s 2 -p odd -f hardware
 ```
 
-### Send Data
+### Send Data / 发送数据
 
 ```bash
-# Send text data
-serialtap send /dev/ttyUSB0 "Hello World\r\n"
-
-# Send hex data
-serialtap send /dev/ttyUSB0 "48 65 6C 6C 6F" --hex
-
-# Send with specific baud rate
-serialtap send COM1 "AT+RST\r\n" -b 115200
+serialtap send COM1 "Hello\r\n"               # Text / 文本
+serialtap send COM1 "48 65 6C 6C 6F" --hex    # HEX / 十六进制
 ```
 
-### Monitor Port
+### Monitor / 监听
 
 ```bash
-# Monitor with timestamps
-serialtap monitor /dev/ttyUSB0 -t
-
-# Monitor in hex mode
-serialtap monitor COM1 -x
-
-# Monitor with logging
-serialtap monitor /dev/ttyUSB0 -t -l output.log
+serialtap monitor COM1 -t                  # With timestamps / 带时间戳
+serialtap monitor COM1 -x                  # HEX mode / 十六进制模式
+serialtap monitor COM1 -t -l output.log    # With logging / 带日志
 ```
 
-### Script Operations
+### Scripts / 脚本
 
 ```bash
-# Record a script
-serialtap record /dev/ttyUSB0 -o script.txt
-
-# Replay a script
-serialtap replay /dev/ttyUSB0 script.txt
+serialtap record COM1 -o script.txt    # Record / 录制
+serialtap replay COM1 script.txt       # Replay / 回放
 ```
 
-## Agent Mode (JSON Output)
+---
 
-For automated operations, use the `agent` subcommand which outputs JSON:
+## Agent Mode (JSON Output) / Agent 模式 (JSON 输出)
 
-### List Ports
+### List Ports / 列出端口
 
 ```bash
 serialtap agent list-ports
 ```
 
-Output:
+Output / 输出:
 ```json
 {
   "success": true,
   "ports": [
     {
       "name": "/dev/ttyUSB0",
-      "description": "USB Serial",
+      "description": "USB Device 0403:6001",
       "manufacturer": "FTDI",
-      "vid": "0403",
-      "pid": "6001"
+      "vid": 1027,
+      "pid": 24577
     }
   ]
 }
 ```
 
-### Get Port Info
+### Send Data / 发送数据
 
 ```bash
-serialtap agent port-info /dev/ttyUSB0
+serialtap agent COM1 send "Hello" -b 115200
 ```
 
-### Send Data
-
-```bash
-serialtap agent /dev/ttyUSB0 send "Hello" -b 115200
-```
-
-Output:
+Output / 输出:
 ```json
-{
-  "success": true,
-  "bytes_written": 5
-}
+{ "success": true, "bytes_written": 5 }
 ```
 
-### Read Data
+### Read Data / 读取数据
 
 ```bash
-serialtap agent /dev/ttyUSB0 read --timeout 1000 --max-bytes 1024
+serialtap agent COM1 read --timeout 1000 --max-bytes 1024
 ```
 
-Output:
+Output / 输出:
 ```json
 {
   "success": true,
@@ -122,146 +97,51 @@ Output:
 }
 ```
 
-### Run Script
+### Run Script / 运行脚本
 
 ```bash
-serialtap agent /dev/ttyUSB0 run-script script.txt
+serialtap agent COM1 run-script script.txt
 ```
 
-## Common Tasks
+---
 
-### AT Command Testing
+## Common Workflows / 常用工作流
+
+### ESP8266/ESP32 AT Command Testing / AT 指令测试
 
 ```bash
-# List ports
-serialtap list
-
-# Connect and send AT commands
-serialtap connect /dev/ttyUSB0 -b 115200
-
-# In interactive mode:
+serialtap connect COM3 -b 115200
+# Then in interactive mode / 交互模式中:
 > AT
 > AT+RST
 > AT+CWMODE=1
-> AT+CWJAP="ssid","password"
+> AT+CWJAP="WiFi","password"
 ```
 
-### Modbus Communication
+### Modbus Traffic Capture / Modbus 抓包
 
 ```bash
-# Monitor Modbus traffic
-serialtap monitor /dev/ttyUSB0 -x -t
-
-# Send Modbus query (hex)
+serialtap monitor /dev/ttyUSB0 -x -t -l modbus.log
 serialtap send /dev/ttyUSB0 "01 03 00 00 00 0A C5 CD" --hex
 ```
 
-### Debugging
+### Automated Testing / 自动化测试
 
 ```bash
-# Monitor with detailed logging
-serialtap monitor COM1 -t -l debug.log
+# Record manual test / 录制手动测试
+serialtap record COM1 -o test.txt
 
-# Check port status
-serialtap agent port-info COM1
+# Replay in CI / 在 CI 中回放
+serialtap replay COM1 test.txt
 ```
 
-## Troubleshooting
+---
 
-### Port Not Found
+## Troubleshooting / 故障排除
 
-```bash
-# Check available ports
-serialtap list
-
-# On Linux, check permissions
-ls -la /dev/tty*
-sudo usermod -a -G dialout $USER
-```
-
-### Connection Failed
-
-```bash
-# Verify port is not in use
-serialtap agent port-info /dev/ttyUSB0
-
-# Try different baud rate
-serialtap connect /dev/ttyUSB0 -b 9600
-```
-
-### Permission Denied
-
-```bash
-# Linux/macOS: Add user to dialout group
-sudo usermod -a -G dialout $USER
-
-# Or run with sudo (not recommended for production)
-sudo serialtap connect /dev/ttyUSB0
-```
-
-## API Reference
-
-### SerialTap Core Library
-
-The `serialtap-core` crate provides the core functionality:
-
-```rust
-use serialtap_core::{SerialConfig, SerialPort};
-
-// Create config
-let config = SerialConfig::new("/dev/ttyUSB0")
-    .with_baud_rate(115200)
-    .with_parity(Parity::None);
-
-// Create and connect port
-let mut port = SerialPort::new(config);
-port.connect()?;
-
-// Send data
-port.write(b"Hello")?;
-
-// Read data
-let mut buf = [0u8; 1024];
-let n = port.read(&mut buf)?;
-
-// Disconnect
-port.disconnect()?;
-```
-
-### Protocol Parsing
-
-```rust
-use serialtap_core::protocol::{ModbusParser, ModbusFrame};
-
-// Parse Modbus frame
-let frame = ModbusParser::parse_request(&data)?;
-
-// Build Modbus request
-let request = ModbusParser::build_read_request(
-    0x01,
-    ModbusFunction::ReadHoldingRegisters,
-    0x0000,
-    0x000A,
-);
-```
-
-### Script Recording
-
-```rust
-use serialtap_core::{ScriptRecorder, ScriptReplayer};
-
-// Record script
-let mut recorder = ScriptRecorder::new("test", "Test script");
-recorder.start();
-recorder.record_send("AT+RST\r\n");
-recorder.record_wait(1000);
-recorder.stop();
-recorder.save(Path::new("script.json"))?;
-
-// Replay script
-let mut replayer = ScriptReplayer::load(Path::new("script.json"))?;
-replayer.start();
-while let Some(cmd) = replayer.next_command() {
-    // Execute command
-}
-```
+| Problem / 问题 | Solution / 解决方案 |
+|----------------|---------------------|
+| Port not found / 端口未找到 | `serialtap list` to check / 检查端口列表 |
+| Permission denied / 权限不足 | `sudo usermod -a -G dialout $USER` (Linux) |
+| Connection failed / 连接失败 | Verify baud rate matches device / 确认波特率匹配 |
+| No data received / 无数据接收 | Check cable and flow control / 检查线缆和流控 |

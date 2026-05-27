@@ -1,206 +1,239 @@
-# SerialTap Skill Documentation
+# SerialTap Skill Reference / SerialTap 技能参考
 
-## Overview
+English | [中文](#中文技能参考)
 
-SerialTap is a cross-platform serial port assistant designed for embedded developers. It provides both CLI and GUI interfaces for serial port communication, protocol analysis, and automation.
+---
 
-## Core Capabilities
+## Overview / 概述
 
-### 1. Serial Port Management
+SerialTap provides serial port communication capabilities for embedded development workflows. It supports both CLI automation and interactive GUI usage.
 
-- **Port Enumeration**: Automatically detect all available serial ports
-- **Connection Management**: Connect, disconnect, and reconnect to ports
-- **Configuration**: Support for various baud rates, data bits, stop bits, parity, and flow control
-- **Platform Support**: Windows (COM ports), Linux (ttyUSB/ttyS), macOS (cu.usbserial)
+SerialTap 为嵌入式开发工作流提供串口通信能力，支持 CLI 自动化和交互式 GUI 使用。
 
-### 2. Data Communication
+## Core Capabilities / 核心能力
 
-- **Text Mode**: UTF-8 encoded text send/receive
-- **HEX Mode**: Hexadecimal data display and transmission
-- **Mixed Mode**: Simultaneous text and HEX display
-- **Binary Transfer**: Raw binary data handling
+### 1. Port Management / 端口管理
 
-### 3. Protocol Analysis
+- Enumerate all available serial ports
+- Configure baud rate, data bits, stop bits, parity, flow control
+- Connect / disconnect / auto-reconnect
 
-- **Modbus RTU/TCP**: Parse and display Modbus frames
-- **Custom Protocols**: Define custom protocol patterns with regex
-- **Protocol Logging**: Record and analyze protocol traffic
+- 枚举所有可用串口
+- 配置波特率、数据位、停止位、校验位、流控
+- 连接/断开/自动重连
 
-### 4. Script Operations
+### 2. Data Communication / 数据通信
 
-- **Recording**: Record serial communication sessions
-- **Replay**: Replay recorded scripts
-- **Script Editing**: Create and modify scripts manually
-- **Automation**: Automated testing and command sequences
+- **Text mode**: UTF-8 encoded send/receive
+- **HEX mode**: Hexadecimal data display and transmission
+- **Mixed mode**: Simultaneous text and HEX display
 
-### 5. File Transfer
+- **文本模式**: UTF-8 编码收发
+- **十六进制模式**: 十六进制数据展示和传输
+- **混合模式**: 同时显示文本和十六进制
 
-- **XMODEM**: Classic file transfer protocol
-- **YMODEM**: Enhanced XMODEM with batch transfer
-- **ZMODEM**: Advanced file transfer with resume capability
+### 3. Protocol Analysis / 协议分析
 
-### 6. Data Visualization
+- Built-in Modbus RTU parser (CRC-16, frame decode)
+- Custom protocol patterns with regex matching
+- Protocol logging and traffic analysis
 
-- **Real-time Charts**: Live data rate visualization
-- **Statistics**: Transfer statistics and metrics
-- **Logging**: Comprehensive logging with export
+- 内置 Modbus RTU 解析器（CRC-16、帧解码）
+- 自定义协议模式（正则匹配）
+- 协议日志和流量分析
 
-### 7. Plugin System
+### 4. Script Operations / 脚本操作
 
-- **Dynamic Loading**: Load plugins at runtime
-- **Custom Commands**: Add new commands via plugins
-- **Extensible Architecture**: Easy to extend functionality
+- Record serial sessions to JSON or text scripts
+- Replay scripts with timing preserved
+- Script editing and parameterization
 
-## Usage Patterns
+- 录制串口会话为 JSON 或文本脚本
+- 按时序回放脚本
+- 脚本编辑和参数化
 
-### Embedded Development Workflow
+### 5. File Transfer / 文件传输
 
-1. **Discovery**: List ports to find connected devices
-2. **Connection**: Connect with appropriate settings (usually 115200 8N1)
-3. **Testing**: Send AT commands or test sequences
-4. **Debugging**: Monitor responses and analyze protocols
-5. **Automation**: Record and replay test scripts
+- XMODEM (128-byte blocks)
+- YMODEM (1024-byte blocks with batch)
+- ZMODEM (with resume support)
 
-### Automated Testing
+- XMODEM（128字节块）
+- YMODEM（1024字节块，支持批量）
+- ZMODEM（支持断点续传）
 
-1. **Script Creation**: Record manual tests as scripts
-2. **Parameterization**: Modify scripts for different test cases
-3. **CI Integration**: Use CLI for automated test execution
-4. **Result Analysis**: Parse JSON output for test results
+### 6. Plugin System / 插件系统
 
-### Protocol Analysis
+- Dynamic loading (.so / .dll / .dylib)
+- C FFI interface
+- Custom command execution
 
-1. **Traffic Capture**: Monitor serial traffic with timestamps
-2. **Protocol Parsing**: Use built-in Modbus parser or define custom protocols
-3. **Pattern Matching**: Identify communication patterns
-4. **Export**: Save analysis results for documentation
+- 动态加载（.so / .dll / .dylib）
+- C FFI 接口
+- 自定义命令执行
 
-## Integration Points
+## Integration Points / 集成方式
 
-### CLI Integration
+### CLI Pipeline / CLI 管道
 
 ```bash
-# Scriptable CLI for automation
+# Scriptable automation / 可脚本化自动化
 serialtap list --format json | jq '.ports[0].name'
-
-# Pipe operations
 serialtap send COM1 "test" && serialtap monitor COM1 -t -l output.log
 ```
 
-### Agent Integration
-
-JSON output mode for programmatic access:
+### Agent JSON API / Agent JSON 接口
 
 ```bash
-# Get structured data
-serialtap agent list-ports
-
-# Execute commands
-serialtap agent COM1 send "command"
-serialtap agent COM1 read --timeout 1000
+serialtap agent list-ports           # List ports / 列出端口
+serialtap agent COM1 send "data"     # Send / 发送
+serialtap agent COM1 read            # Read / 读取
+serialtap agent COM1 run-script.txt  # Execute script / 执行脚本
 ```
 
-### Plugin Development
-
-Extend SerialTap with custom plugins:
+### Plugin API / 插件 API
 
 ```rust
-// Plugin API
+// Get plugin info / 获取插件信息
 #[no_mangle]
 pub extern "C" fn plugin_get_info() -> *mut c_char;
 
+// Execute command / 执行命令
 #[no_mangle]
-pub extern "C" fn plugin_execute(command: *const c_char, params: *const c_char) -> *mut c_char;
+pub extern "C" fn plugin_execute(
+    command: *const c_char,
+    params: *const c_char
+) -> *mut c_char;
 ```
 
-## Best Practices
+## Best Practices / 最佳实践
 
-### Port Configuration
+### Port Configuration / 端口配置
 
-- Use matching baud rates between devices
-- Verify data format (data bits, stop bits, parity)
+- Always match baud rate between device and assistant
+- Use 8N1 (8 data bits, No parity, 1 stop bit) as default
 - Enable flow control for high-throughput applications
-- Set appropriate timeouts for your use case
 
-### Data Handling
+- 始终确保设备和助手的波特率一致
+- 默认使用 8N1（8数据位、无校验、1停止位）
+- 高吞吐量应用启用流控
 
-- Use HEX mode for binary protocols
-- Enable timestamps for debugging
+### Data Handling / 数据处理
+
+- Use HEX mode for binary protocols (Modbus, custom)
+- Enable timestamps for debugging sessions
 - Log important sessions for later analysis
-- Use auto-reply for simple test automation
 
-### Script Development
+- 二进制协议（Modbus、自定义）使用十六进制模式
+- 调试会话启用时间戳
+- 记录重要会话供后续分析
+
+### Script Development / 脚本开发
 
 - Start with manual recording
-- Add delays between commands for device response
-- Include error handling in scripts
+- Add appropriate delays between commands
 - Test scripts thoroughly before automation
 
-### Performance
+- 从手动录制开始
+- 在命令之间添加适当延迟
+- 自动化前充分测试脚本
 
-- Use appropriate buffer sizes
-- Monitor data rates to detect bottlenecks
-- Optimize polling intervals for real-time applications
-- Use async I/O for high-throughput scenarios
+---
 
-## Troubleshooting Guide
+## 中文技能参考
 
-### Common Issues
+### 概述
 
-1. **Port Not Found**
-   - Check device connection
-   - Verify driver installation
-   - Check port permissions (Linux/macOS)
+SerialTap 为嵌入式开发工作流提供串口通信能力，支持 CLI 自动化和交互式 GUI 使用。
 
-2. **Connection Failed**
-   - Verify baud rate matches device
-   - Check for port conflicts
-   - Ensure proper cable connection
+### 核心能力
 
-3. **Data Corruption**
-   - Verify parity settings
-   - Check for buffer overflow
-   - Monitor data rates
+#### 1. 端口管理
 
-4. **Performance Issues**
-   - Optimize buffer sizes
-   - Use appropriate timeouts
-   - Consider async I/O
+- 枚举所有可用串口
+- 配置波特率、数据位、停止位、校验位、流控
+- 连接/断开/自动重连
 
-### Debug Steps
+#### 2. 数据通信
 
-1. List available ports
-2. Verify port information
-3. Test with minimal configuration
-4. Check system logs
-5. Monitor data traffic
+- **文本模式**: UTF-8 编码收发
+- **十六进制模式**: 十六进制数据展示和传输
+- **混合模式**: 同时显示文本和十六进制
 
-## Platform-Specific Notes
+#### 3. 协议分析
 
-### Windows
+- 内置 Modbus RTU 解析器（CRC-16、帧解码）
+- 自定义协议模式（正则匹配）
+- 协议日志和流量分析
 
-- COM port naming: COM1, COM2, etc.
-- Driver installation may be required
-- Admin privileges sometimes needed
+#### 4. 脚本操作
 
-### Linux
+- 录制串口会话为 JSON 或文本脚本
+- 按时序回放脚本
+- 脚本编辑和参数化
 
-- Device naming: /dev/ttyUSB0, /dev/ttyS0
-- User must be in `dialout` group
-- May need udev rules for custom devices
+#### 5. 文件传输
 
-### macOS
+- XMODEM（128字节块）
+- YMODEM（1024字节块，支持批量）
+- ZMODEM（支持断点续传）
 
-- Device naming: /dev/cu.usbserial-*
-- Typically works out of the box
-- May need to close other applications using the port
+#### 6. 插件系统
 
-### Mobile (iOS/Android)
+- 动态加载（.so / .dll / .dylib）
+- C FFI 接口
+- 自定义命令执行
 
-- USB OTG support required
-- Platform-specific permissions needed
-- Limited port access compared to desktop
+### 集成方式
 
-## API Reference
+#### CLI 管道
 
-See `CLAUDE.md` for detailed API documentation and code examples.
+```bash
+# 可脚本化自动化
+serialtap list --format json | jq '.ports[0].name'
+serialtap send COM1 "test" && serialtap monitor COM1 -t -l output.log
+```
+
+#### Agent JSON 接口
+
+```bash
+serialtap agent list-ports           # 列出端口
+serialtap agent COM1 send "data"     # 发送
+serialtap agent COM1 read            # 读取
+serialtap agent COM1 run-script.txt  # 执行脚本
+```
+
+#### 插件 API
+
+```rust
+// 获取插件信息
+#[no_mangle]
+pub extern "C" fn plugin_get_info() -> *mut c_char;
+
+// 执行命令
+#[no_mangle]
+pub extern "C" fn plugin_execute(
+    command: *const c_char,
+    params: *const c_char
+) -> *mut c_char;
+```
+
+### 最佳实践
+
+#### 端口配置
+
+- 始终确保设备和助手的波特率一致
+- 默认使用 8N1（8数据位、无校验、1停止位）
+- 高吞吐量应用启用流控
+
+#### 数据处理
+
+- 二进制协议（Modbus、自定义）使用十六进制模式
+- 调试会话启用时间戳
+- 记录重要会话供后续分析
+
+#### 脚本开发
+
+- 从手动录制开始
+- 在命令之间添加适当延迟
+- 自动化前充分测试脚本

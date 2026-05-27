@@ -114,6 +114,13 @@ impl T {
         }
     }
 
+    pub fn serial_port(lang: Language) -> &'static str {
+        match lang {
+            Language::English => "Port",
+            Language::Chinese => "端口",
+        }
+    }
+
     pub fn data_bits(lang: Language) -> &'static str {
         match lang {
             Language::English => "Data Bits",

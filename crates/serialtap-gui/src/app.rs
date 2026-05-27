@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 
 pub struct SerialTapApp {
     state: Arc<Mutex<AppState>>,
+    current_theme: Theme,
 }
 
 impl SerialTapApp {
@@ -12,30 +13,42 @@ impl SerialTapApp {
         let mut state = AppState::new();
         state.language = Language::Chinese;
         state.theme = Theme::Dark;
-        apply_theme(&cc.egui_ctx, state.theme);
+
+        // Apply dark theme immediately
+        let mut visuals = egui::Visuals::dark();
+        visuals.window_rounding = egui::Rounding::same(8.0);
+        visuals.widgets.noninteractive.rounding = egui::Rounding::same(6.0);
+        visuals.widgets.inactive.rounding = egui::Rounding::same(6.0);
+        visuals.widgets.hovered.rounding = egui::Rounding::same(6.0);
+        visuals.widgets.active.rounding = egui::Rounding::same(6.0);
+        cc.egui_ctx.set_visuals(visuals);
+
         Self {
             state: Arc::new(Mutex::new(state)),
+            current_theme: Theme::Dark,
         }
     }
-}
-
-pub fn apply_theme(ctx: &egui::Context, theme: Theme) {
-    let mut visuals = match theme {
-        Theme::Dark => egui::Visuals::dark(),
-        Theme::Light => egui::Visuals::light(),
-    };
-    visuals.window_rounding = egui::Rounding::same(8.0);
-    visuals.widgets.noninteractive.rounding = egui::Rounding::same(6.0);
-    visuals.widgets.inactive.rounding = egui::Rounding::same(6.0);
-    visuals.widgets.hovered.rounding = egui::Rounding::same(6.0);
-    visuals.widgets.active.rounding = egui::Rounding::same(6.0);
-    ctx.set_visuals(visuals);
 }
 
 impl eframe::App for SerialTapApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let mut state = self.state.lock().unwrap();
         let lang = state.language;
+
+        // Apply theme every frame to ensure it sticks
+        if state.theme != self.current_theme {
+            let mut visuals = match state.theme {
+                Theme::Dark => egui::Visuals::dark(),
+                Theme::Light => egui::Visuals::light(),
+            };
+            visuals.window_rounding = egui::Rounding::same(8.0);
+            visuals.widgets.noninteractive.rounding = egui::Rounding::same(6.0);
+            visuals.widgets.inactive.rounding = egui::Rounding::same(6.0);
+            visuals.widgets.hovered.rounding = egui::Rounding::same(6.0);
+            visuals.widgets.active.rounding = egui::Rounding::same(6.0);
+            ctx.set_visuals(visuals);
+            self.current_theme = state.theme;
+        }
 
         // Top bar: title + connection + lang/theme buttons
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {

@@ -90,7 +90,7 @@ pub fn render_settings_panel(ui: &mut egui::Ui, state: &mut AppState, _ctx: &egu
 
     // Recording
     if state.recording {
-        ui.colored_text(egui::Color32::from_rgb(220, 60, 60), format!("● {}", T::recording(lang)));
+        ui.label(egui::RichText::new(format!("● {}", T::recording(lang))).color(egui::Color32::from_rgb(220, 60, 60)));
         if ui.button(T::stop_recording(lang)).clicked() {
             state.recording = false;
             state.add_log_entry(crate::state::LogLevel::Info, "Recording stopped");

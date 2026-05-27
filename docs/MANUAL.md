@@ -1,183 +1,88 @@
-# SerialTap User Manual
+# SerialTap User Manual / SerialTap 用户手册
+
+English | [中文](#中文用户手册)
+
+---
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Installation](#installation)
-3. [Getting Started](#getting-started)
-4. [CLI Reference](#cli-reference)
-5. [GUI Guide](#gui-guide)
-6. [Advanced Features](#advanced-features)
-7. [Troubleshooting](#troubleshooting)
-8. [FAQ](#faq)
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [CLI Reference](#cli-reference)
+- [GUI Guide](#gui-guide)
+- [Troubleshooting](#troubleshooting)
 
 ## Introduction
 
-SerialTap is a powerful, cross-platform serial port assistant designed for embedded developers. It provides both command-line and graphical interfaces for serial communication, protocol analysis, and automation.
-
-### Key Features
-
-- **Cross-platform**: Works on Windows, macOS, Linux, iOS, and Android
-- **Dual Interface**: CLI for automation, GUI for interactive use
-- **Protocol Support**: Built-in Modbus parser, extensible custom protocols
-- **Scripting**: Record and replay serial communication sessions
-- **File Transfer**: XMODEM, YMODEM, ZMODEM support
-- **Plugin System**: Extend functionality with custom plugins
+SerialTap is a cross-platform serial port assistant designed for embedded developers. It provides both CLI and GUI interfaces for serial communication, protocol analysis, and automation.
 
 ## Installation
 
 ### From Source
 
 ```bash
-# Clone the repository
 git clone https://github.com/yourusername/SerialTap.git
 cd SerialTap
-
-# Build CLI
-cargo build --release -p serialtap-cli
-
-# Build GUI
-cargo build --release -p serialtap-gui
-
-# The binaries will be in target/release/
+cargo build --release
 ```
 
-### Pre-built Binaries
-
-Download the latest release for your platform from [GitHub Releases](https://github.com/yourusername/SerialTap/releases).
-
-## Getting Started
-
-### First Connection
-
-1. Connect your serial device to your computer
-2. List available ports:
-   ```bash
-   serialtap list
-   ```
-3. Connect to the port:
-   ```bash
-   serialtap connect /dev/ttyUSB0 -b 115200
-   ```
-4. Start communicating:
-   ```
-   > AT
-   > AT+RST
-   ```
-
-### Quick Commands
-
-```bash
-# Send a command
-serialtap send /dev/ttyUSB0 "Hello\r\n"
-
-# Monitor traffic
-serialtap monitor /dev/ttyUSB0 -t
-
-# Record a session
-serialtap record /dev/ttyUSB0 -o session.txt
-```
+Binaries will be in `target/release/`.
 
 ## CLI Reference
 
-### Global Options
-
-- `--help`: Show help information
-- `--version`: Show version
-- `--format <fmt>`: Output format (text, json)
-
-### Commands
-
-#### `list`
+### `serialtap list`
 
 List all available serial ports.
 
 ```bash
-serialtap list [--format json]
+serialtap list                # Text output
+serialtap list --format json  # JSON output
 ```
 
-#### `connect`
+### `serialtap connect <port> [options]`
 
 Connect to a serial port in interactive mode.
 
-```bash
-serialtap connect <port> [options]
+| Option | Default | Description |
+|--------|---------|-------------|
+| `-b, --baud` | 115200 | Baud rate |
+| `-d, --data-bits` | 8 | Data bits (5/6/7/8) |
+| `-s, --stop-bits` | 1 | Stop bits (1/2) |
+| `-p, --parity` | none | Parity (none/odd/even) |
+| `-f, --flow` | none | Flow control (none/software/hardware) |
 
-Options:
-  -b, --baud <rate>      Baud rate (default: 115200)
-  -d, --data-bits <bits> Data bits (5, 6, 7, 8; default: 8)
-  -s, --stop-bits <bits> Stop bits (1, 2; default: 1)
-  -p, --parity <parity>  Parity (none, odd, even; default: none)
-  -f, --flow <control>   Flow control (none, software, hardware; default: none)
-```
-
-#### `send`
-
-Send data to a serial port.
+### `serialtap send <port> <data> [options]`
 
 ```bash
-serialtap send <port> <data> [options]
-
-Options:
-  -b, --baud <rate>    Baud rate (default: 115200)
-  -x, --hex            Send as hex data
+serialtap send COM1 "Hello\r\n"              # Send text
+serialtap send COM1 "48 65 6C 6C 6F" --hex   # Send HEX
 ```
 
-#### `monitor`
-
-Monitor serial port data.
+### `serialtap monitor <port> [options]`
 
 ```bash
-serialtap monitor <port> [options]
-
-Options:
-  -b, --baud <rate>    Baud rate (default: 115200)
-  -l, --log <file>     Log to file
-  -t, --timestamp      Show timestamps
-  -x, --hex            Hex mode
+serialtap monitor COM1 -t                  # Timestamps
+serialtap monitor COM1 -x                  # HEX mode
+serialtap monitor COM1 -t -l output.log    # Log to file
 ```
 
-#### `replay`
-
-Replay a script file.
+### `serialtap record <port> [options]`
 
 ```bash
-serialtap replay <port> <script> [options]
-
-Options:
-  -b, --baud <rate>    Baud rate (default: 115200)
+serialtap record COM1 -o script.txt
 ```
 
-#### `record`
-
-Record a script to a file.
+### `serialtap replay <port> <script>`
 
 ```bash
-serialtap record <port> [options]
-
-Options:
-  -o, --output <file>  Output file (default: script.txt)
-  -b, --baud <rate>    Baud rate (default: 115200)
+serialtap replay COM1 script.txt
 ```
 
-#### `agent`
+### `serialtap agent [port] <action>`
 
-Agent mode for automation (JSON output).
-
-```bash
-serialtap agent [port] <action>
-
-Actions:
-  list-ports           List all ports
-  port-info <name>     Get port information
-  send <data>          Send data
-  read                 Read data
-  run-script <script>  Run a script
-```
+JSON output mode for automation. See [CLAUDE.md](../CLAUDE.md) for details.
 
 ## GUI Guide
-
-### Launching the GUI
 
 ```bash
 serialtap-gui
@@ -185,218 +90,130 @@ serialtap-gui
 
 ### Interface Overview
 
-1. **Top Bar**: Connection controls, port selection, baud rate
-2. **Left Panel**: Settings and configuration
-3. **Center Panel**: Terminal display
-4. **Bottom Bar**: Status information
+- **Top bar**: Port selector, baud rate, Connect/Disconnect, Chart/Log/Language/Theme/Help buttons
+- **Left panel**: Serial config (collapsible), Display options, Auto reply, Recording
+- **Center**: Terminal display with TX/RX/SYS indicators
+- **Bottom**: Status bar with connection state and byte counts
 
-### Connecting
+### Language & Theme
 
-1. Click "Refresh Ports" to detect devices
-2. Select a port from the dropdown
-3. Choose baud rate and other settings
-4. Click "Connect"
-
-### Terminal Display
-
-- **Text Mode**: Default UTF-8 display
-- **HEX Mode**: Toggle for hexadecimal view
-- **Timestamps**: Enable/disable time display
-- **Auto-scroll**: Follow new data automatically
-
-### Sending Data
-
-1. Type in the input field at the bottom
-2. Press Enter or click "Send"
-3. Data appears in the terminal with TX prefix
-
-### Charts
-
-- Click "Chart" to open data visualization
-- Shows real-time data rates
-- Displays transfer statistics
-
-### Logging
-
-- Click "Log" to open log viewer
-- View application events
-- Export logs for analysis
-
-## Advanced Features
-
-### Script Recording
-
-1. Click "Start Recording" in settings
-2. Perform serial operations
-3. Click "Stop Recording"
-4. Scripts save as JSON or text format
-
-### Script Format
-
-**JSON Format**:
-```json
-{
-  "name": "test_script",
-  "description": "Test sequence",
-  "commands": [
-    {"delay_ms": 0, "action": "Send", "data": "AT+RST"},
-    {"delay_ms": 1000, "action": "Wait"},
-    {"delay_ms": 0, "action": "Send", "data": "AT+CWMODE=1"}
-  ]
-}
-```
-
-**Text Format**:
-```
-# Script: test_script
-# Description: Test sequence
-SEND 0 AT+RST
-WAIT 1000
-SEND 0 AT+CWMODE=1
-```
-
-### Protocol Parsing
-
-SerialTap includes a built-in Modbus parser:
-
-```bash
-# Monitor Modbus traffic
-serialtap monitor /dev/ttyUSB0 -x -t
-```
-
-### Custom Protocols
-
-Define custom protocols in code or via plugins:
-
-```rust
-use serialtap_core::protocol::ProtocolParser;
-
-let mut parser = ProtocolParser::new();
-parser.add_pattern("MyProtocol", r"^MY:", "Custom protocol")?;
-```
-
-### File Transfer
-
-Transfer files using standard protocols:
-
-```bash
-# Transfer with XMODEM (via script)
-serialtap replay /dev/ttyUSB0 transfer_script.txt
-```
-
-### Plugin Development
-
-Create plugins in Rust:
-
-```rust
-#[no_mangle]
-pub extern "C" fn plugin_get_info() -> *mut c_char {
-    // Return plugin information
-}
-
-#[no_mangle]
-pub extern "C" fn plugin_execute(command: *const c_char, params: *const c_char) -> *mut c_char {
-    // Execute plugin command
-}
-```
+- Click **中** / **EN** to switch language
+- Click **☀** / **☾** to switch theme
+- Click **?** to open the help guide
 
 ## Troubleshooting
 
-### Port Not Found
+| Problem | Solution |
+|---------|----------|
+| Port not found | Click Refresh, check device connection |
+| Permission denied (Linux) | `sudo usermod -a -G dialout $USER` |
+| Garbled text | Check baud rate matches device setting |
+| No data | Verify cable, check flow control settings |
 
-**Symptoms**: No ports listed in `serialtap list`
+---
 
-**Solutions**:
-1. Check device connection
-2. Install appropriate drivers
-3. On Linux, check permissions:
-   ```bash
-   ls -la /dev/tty*
-   sudo usermod -a -G dialout $USER
-   ```
+## 中文用户手册
 
-### Connection Failed
+### 目录
 
-**Symptoms**: "Connection failed" error
+- [简介](#简介)
+- [安装](#安装)
+- [CLI 参考](#cli-参考)
+- [GUI 指南](#gui-指南)
+- [故障排除](#故障排除)
 
-**Solutions**:
-1. Verify baud rate matches device
-2. Check for port conflicts
-3. Ensure proper cable connection
-4. Try different settings
+### 简介
 
-### Data Corruption
+SerialTap 是面向嵌入式开发者的跨平台串口助手，提供 CLI 和 GUI 两种界面，支持串口通信、协议分析和自动化。
 
-**Symptoms**: Garbled output or incorrect data
+### 安装
 
-**Solutions**:
-1. Verify parity settings (usually None)
-2. Check data bits (usually 8)
-3. Ensure stop bits match (usually 1)
-4. Monitor for buffer overflow
+```bash
+git clone https://github.com/yourusername/SerialTap.git
+cd SerialTap
+cargo build --release
+```
 
-### Permission Denied
+生成的二进制文件在 `target/release/` 目录下。
 
-**Symptoms**: "Permission denied" when connecting
+### CLI 参考
 
-**Solutions**:
-- **Linux**: Add user to dialout group
-  ```bash
-  sudo usermod -a -G dialout $USER
-  ```
-- **macOS**: Usually works out of the box
-- **Windows**: Run as administrator if needed
+#### `serialtap list`
 
-### Performance Issues
+列出所有可用串口。
 
-**Symptoms**: Slow data transfer or missed data
+```bash
+serialtap list                # 文本输出
+serialtap list --format json  # JSON 输出
+```
 
-**Solutions**:
-1. Use higher baud rate
-2. Optimize buffer sizes
-3. Use flow control
-4. Consider async I/O
+#### `serialtap connect <端口> [选项]`
 
-## FAQ
+连接串口进入交互模式。
 
-### Q: What baud rates are supported?
+| 选项 | 默认值 | 说明 |
+|------|--------|------|
+| `-b, --baud` | 115200 | 波特率 |
+| `-d, --data-bits` | 8 | 数据位 (5/6/7/8) |
+| `-s, --stop-bits` | 1 | 停止位 (1/2) |
+| `-p, --parity` | none | 校验位 (none/odd/even) |
+| `-f, --flow` | none | 流控 (none/software/hardware) |
 
-A: Standard rates from 1200 to 921600 baud. Custom rates may work depending on hardware.
+#### `serialtap send <端口> <数据> [选项]`
 
-### Q: Can I use SerialTap with Arduino?
+```bash
+serialtap send COM1 "Hello\r\n"              # 发送文本
+serialtap send COM1 "48 65 6C 6C 6F" --hex   # 发送十六进制
+```
 
-A: Yes! SerialTap works with any USB-to-serial device, including Arduino.
+#### `serialtap monitor <端口> [选项]`
 
-### Q: Does it support Bluetooth serial?
+```bash
+serialtap monitor COM1 -t                  # 带时间戳
+serialtap monitor COM1 -x                  # 十六进制模式
+serialtap monitor COM1 -t -l output.log    # 记录到文件
+```
 
-A: Yes, if the Bluetooth device appears as a serial port on your system.
+#### `serialtap record <端口> [选项]`
 
-### Q: Can I use it for Modbus communication?
+```bash
+serialtap record COM1 -o script.txt
+```
 
-A: Yes, SerialTap includes a built-in Modbus parser and can send/receive Modbus frames.
+#### `serialtap replay <端口> <脚本>`
 
-### Q: How do I create custom protocols?
+```bash
+serialtap replay COM1 script.txt
+```
 
-A: Use the `ProtocolParser` API in code or create a plugin with custom parsing logic.
+#### `serialtap agent [端口] <动作>`
 
-### Q: Is there a mobile version?
+JSON 输出模式，用于自动化。详见 [CLAUDE.md](../CLAUDE.md)。
 
-A: Yes, SerialTap supports iOS and Android, though mobile platforms have some limitations.
+### GUI 指南
 
-### Q: Can I automate tests?
+```bash
+serialtap-gui
+```
 
-A: Yes, use the CLI with scripts or the agent mode for JSON output.
+#### 界面说明
 
-### Q: How do I report bugs?
+- **顶部栏**: 端口选择、波特率、连接/断开、图表/日志/语言/主题/帮助按钮
+- **左侧面板**: 串口配置（可折叠）、显示选项、自动回复、录制
+- **中央区域**: 终端显示，带 TX/RX/SYS 指示
+- **底部**: 状态栏，显示连接状态和字节计数
 
-A: Please open an issue on GitHub with detailed reproduction steps.
+#### 语言和主题
 
-## Support
+- 点击 **中** / **EN** 切换语言
+- 点击 **☀** / **☾** 切换主题
+- 点击 **?** 打开使用指南
 
-- **Documentation**: See `docs/` directory
-- **Issues**: GitHub Issues
-- **Community**: GitHub Discussions
+### 故障排除
 
-## License
-
-MIT License - see LICENSE file for details.
+| 问题 | 解决方案 |
+|------|----------|
+| 端口未找到 | 点击刷新，检查设备连接 |
+| 权限不足 (Linux) | `sudo usermod -a -G dialout $USER` |
+| 文本乱码 | 确认波特率与设备设置一致 |
+| 无数据 | 检查线缆，确认流控设置 |

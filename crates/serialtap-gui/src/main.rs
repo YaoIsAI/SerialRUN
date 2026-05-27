@@ -1,6 +1,7 @@
 #![windows_subsystem = "windows"]
 
 mod app;
+mod icon;
 mod state;
 mod ui;
 
@@ -14,10 +15,13 @@ fn main() -> eframe::Result<()> {
         )
         .init();
 
+    let icon_data = icon::generate_icon();
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([800.0, 600.0])
-            .with_title("SerialTap - Serial Port Assistant"),
+            .with_inner_size([900.0, 600.0])
+            .with_min_inner_size([700.0, 400.0])
+            .with_title("SerialTap")
+            .with_icon(std::sync::Arc::new(icon_data)),
         ..Default::default()
     };
 
