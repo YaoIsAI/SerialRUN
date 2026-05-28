@@ -1,5 +1,5 @@
-use serialtap_core::config::*;
-use serialtap_core::{SerialConfig, SerialPort};
+use serialrun_core::config::*;
+use serialrun_core::{SerialConfig, SerialPort};
 
 #[test]
 fn test_serial_config_creation() {

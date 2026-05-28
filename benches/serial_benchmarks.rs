@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use serialtap_core::protocol::modbus::*;
-use serialtap_core::protocol::custom::*;
+use serialrun_core::protocol::modbus::*;
+use serialrun_core::protocol::custom::*;
 
 fn bench_modbus_crc(c: &mut Criterion) {
     let data = [0x01, 0x03, 0x00, 0x00, 0x00, 0x0A];

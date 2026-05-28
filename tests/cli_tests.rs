@@ -3,7 +3,7 @@ use predicates::prelude::*;
 
 #[test]
 fn test_list_command() {
-    Command::cargo_bin("serialtap")
+    Command::cargo_bin("serialrun")
         .unwrap()
         .arg("list")
         .assert()
@@ -12,7 +12,7 @@ fn test_list_command() {
 
 #[test]
 fn test_list_json_format() {
-    Command::cargo_bin("serialtap")
+    Command::cargo_bin("serialrun")
         .unwrap()
         .args(["list", "--format", "json"])
         .assert()
@@ -22,27 +22,27 @@ fn test_list_json_format() {
 
 #[test]
 fn test_help_command() {
-    Command::cargo_bin("serialtap")
+    Command::cargo_bin("serialrun")
         .unwrap()
         .arg("--help")
         .assert()
         .success()
-        .stdout(predicate::str::contains("SerialTap"));
+        .stdout(predicate::str::contains("SerialRUN"));
 }
 
 #[test]
 fn test_version_command() {
-    Command::cargo_bin("serialtap")
+    Command::cargo_bin("serialrun")
         .unwrap()
         .arg("--version")
         .assert()
         .success()
-        .stdout(predicate::str::contains("serialtap"));
+        .stdout(predicate::str::contains("serialrun"));
 }
 
 #[test]
 fn test_connect_help() {
-    Command::cargo_bin("serialtap")
+    Command::cargo_bin("serialrun")
         .unwrap()
         .args(["connect", "--help"])
         .assert()
@@ -52,7 +52,7 @@ fn test_connect_help() {
 
 #[test]
 fn test_send_help() {
-    Command::cargo_bin("serialtap")
+    Command::cargo_bin("serialrun")
         .unwrap()
         .args(["send", "--help"])
         .assert()
@@ -62,7 +62,7 @@ fn test_send_help() {
 
 #[test]
 fn test_monitor_help() {
-    Command::cargo_bin("serialtap")
+    Command::cargo_bin("serialrun")
         .unwrap()
         .args(["monitor", "--help"])
         .assert()
@@ -72,7 +72,7 @@ fn test_monitor_help() {
 
 #[test]
 fn test_agent_help() {
-    Command::cargo_bin("serialtap")
+    Command::cargo_bin("serialrun")
         .unwrap()
         .args(["agent", "--help"])
         .assert()
@@ -82,7 +82,7 @@ fn test_agent_help() {
 
 #[test]
 fn test_agent_list_ports() {
-    Command::cargo_bin("serialtap")
+    Command::cargo_bin("serialrun")
         .unwrap()
         .args(["agent", "list-ports"])
         .assert()

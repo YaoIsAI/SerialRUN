@@ -1,12 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/serialtap-core",
-    "crates/serialtap-cli",
-    "crates/serialtap-gui",
-    "crates/serialtap-mcp",
-    "crates/serialtap-plugin-api",
-    "plugins/example-plugin",
+    "crates/serialrun-core",
+    "crates/serialrun-cli",
+    "crates/serialrun-gui",
+    "crates/serialrun-mcp",
+    "crates/serialrun-plugin-api",
+    "plugins/serialrun-example-plugin",
 ]
 
 [workspace.dependencies]

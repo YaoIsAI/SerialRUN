@@ -1,6 +1,6 @@
-# SerialTap 使用指南
+# SerialRUN 使用指南
 
-SerialTap 是一款功能丰富的串口调试助手，支持串口通信、Modbus 调试、PLC 控制、CAN 总线分析、I2C/SPI 调试、固件烧录等多种功能。内置 MCP 服务器，允许 AI 助手通过 TCP 远程控制串口设备。
+SerialRUN 是一款功能丰富的串口调试助手，支持串口通信、Modbus 调试、PLC 控制、CAN 总线分析、I2C/SPI 调试、固件烧录等多种功能。内置 MCP 服务器，允许 AI 助手通过 TCP 远程控制串口设备。
 
 ---
 

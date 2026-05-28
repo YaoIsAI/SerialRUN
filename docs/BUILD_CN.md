@@ -1,4 +1,4 @@
-# SerialTap 构建指南
+# SerialRUN 构建指南
 
 [English](BUILD.md)
 
@@ -19,10 +19,10 @@
 
 ```bash
 rustup target add x86_64-pc-windows-msvc
-cargo build --target x86_64-pc-windows-msvc --release -p serialtap-gui
+cargo build --target x86_64-pc-windows-msvc --release -p serialrun-gui
 ```
 
-输出: `target/x86_64-pc-windows-msvc/release/serialtap-gui.exe`
+输出: `target/x86_64-pc-windows-msvc/release/serialrun-gui.exe`
 
 ## macOS
 
@@ -37,11 +37,11 @@ xcode-select --install
 ```bash
 # Apple Silicon (M1/M2/M3/M4)
 rustup target add aarch64-apple-darwin
-cargo build --target aarch64-apple-darwin --release -p serialtap-gui
+cargo build --target aarch64-apple-darwin --release -p serialrun-gui
 
 # Intel Mac
 rustup target add x86_64-apple-darwin
-cargo build --target x86_64-apple-darwin --release -p serialtap-gui
+cargo build --target x86_64-apple-darwin --release -p serialrun-gui
 ```
 
 ### 打包为 .app
@@ -50,12 +50,12 @@ cargo build --target x86_64-apple-darwin --release -p serialtap-gui
 cargo install cargo-bundle
 ```
 
-在 `crates/serialtap-gui/Cargo.toml` 中添加:
+在 `crates/serialrun-gui/Cargo.toml` 中添加:
 
 ```toml
 [package.metadata.bundle]
-name = "SerialTap"
-identifier = "com.serialtap.app"
+name = "SerialRUN"
+identifier = "com.serialrun.app"
 category = "DeveloperTool"
 short_description = "串口助手 - 嵌入式开发者工具"
 ```
@@ -63,10 +63,10 @@ short_description = "串口助手 - 嵌入式开发者工具"
 运行:
 
 ```bash
-cargo bundle --target aarch64-apple-darwin --release -p serialtap-gui
+cargo bundle --target aarch64-apple-darwin --release -p serialrun-gui
 ```
 
-输出: `target/release/bundle/osx/SerialTap.app`
+输出: `target/release/bundle/osx/SerialRUN.app`
 
 ## Linux
 
@@ -81,7 +81,7 @@ sudo apt install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
 
 ```bash
 rustup target add x86_64-unknown-linux-gnu
-cargo build --target x86_64-unknown-linux-gnu --release -p serialtap-gui
+cargo build --target x86_64-unknown-linux-gnu --release -p serialrun-gui
 ```
 
 ## Android
@@ -89,7 +89,7 @@ cargo build --target x86_64-unknown-linux-gnu --release -p serialtap-gui
 ```bash
 cargo install cargo-mobile2
 cargo android init
-cargo android build --release -p serialtap-gui
+cargo android build --release -p serialrun-gui
 ```
 
 ## iOS
@@ -97,7 +97,7 @@ cargo android build --release -p serialtap-gui
 ```bash
 cargo install cargo-mobile2
 cargo ios init
-cargo ios build --release -p serialtap-gui
+cargo ios build --release -p serialrun-gui
 ```
 
 ## 交叉编译参考
@@ -114,15 +114,15 @@ cargo ios build --release -p serialtap-gui
 
 ```bash
 rustup target add <target>
-cargo build --target <target> --release -p serialtap-gui
+cargo build --target <target> --release -p serialrun-gui
 ```
 
 ## 输出路径
 
 ```
-target/<target>/release/serialtap-gui.exe              # Windows
-target/<target>/release/serialtap-gui                  # macOS/Linux
-target/release/bundle/osx/SerialTap.app                # macOS .app
-target/release/bundle/deb/serialtap-gui_*.deb          # Debian 包
-target/release/bundle/rpm/serialtap-gui-*.rpm          # RPM 包
+target/<target>/release/serialrun-gui.exe              # Windows
+target/<target>/release/serialrun-gui                  # macOS/Linux
+target/release/bundle/osx/SerialRUN.app                # macOS .app
+target/release/bundle/deb/serialrun-gui_*.deb          # Debian 包
+target/release/bundle/rpm/serialrun-gui-*.rpm          # RPM 包
 ```

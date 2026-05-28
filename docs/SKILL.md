@@ -1,4 +1,4 @@
-# SerialTap Skill Reference
+# SerialRUN Skill Reference
 
 [中文版](SKILL_CN.md)
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-SerialTap provides serial port communication capabilities for embedded development workflows. It supports both CLI automation and interactive GUI usage.
+SerialRUN provides serial port communication capabilities for embedded development workflows. It supports both CLI automation and interactive GUI usage.
 
 ## Core Capabilities
 
@@ -51,17 +51,17 @@ SerialTap provides serial port communication capabilities for embedded developme
 ### CLI Pipeline
 
 ```bash
-serialtap list --format json | jq '.ports[0].name'
-serialtap send COM1 "test" && serialtap monitor COM1 -t -l output.log
+serialrun list --format json | jq '.ports[0].name'
+serialrun send COM1 "test" && serialrun monitor COM1 -t -l output.log
 ```
 
 ### Agent JSON API
 
 ```bash
-serialtap agent list-ports           # List ports
-serialtap agent COM1 send "data"     # Send
-serialtap agent COM1 read            # Read
-serialtap agent COM1 run-script.txt  # Execute script
+serialrun agent list-ports           # List ports
+serialrun agent COM1 send "data"     # Send
+serialrun agent COM1 read            # Read
+serialrun agent COM1 run-script.txt  # Execute script
 ```
 
 ### Plugin API

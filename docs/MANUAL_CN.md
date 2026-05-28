@@ -1,4 +1,4 @@
-# SerialTap 用户手册
+# SerialRUN 用户手册
 
 [English](MANUAL.md)
 
@@ -14,13 +14,13 @@
 
 ## 简介
 
-SerialTap 是面向嵌入式开发者的跨平台串口助手，提供 CLI 和 GUI 两种界面，支持串口通信、协议分析和自动化。
+SerialRUN 是面向嵌入式开发者的跨平台串口助手，提供 CLI 和 GUI 两种界面，支持串口通信、协议分析和自动化。
 
 ## 安装
 
 ```bash
-git clone https://github.com/yourusername/SerialTap.git
-cd SerialTap
+git clone https://github.com/yourusername/SerialRUN.git
+cd SerialRUN
 cargo build --release
 ```
 
@@ -28,16 +28,16 @@ cargo build --release
 
 ## CLI 参考
 
-### `serialtap list`
+### `serialrun list`
 
 列出所有可用串口。
 
 ```bash
-serialtap list                # 文本输出
-serialtap list --format json  # JSON 输出
+serialrun list                # 文本输出
+serialrun list --format json  # JSON 输出
 ```
 
-### `serialtap connect <端口> [选项]`
+### `serialrun connect <端口> [选项]`
 
 连接串口进入交互模式。
 
@@ -49,41 +49,41 @@ serialtap list --format json  # JSON 输出
 | `-p, --parity` | none | 校验位 (none/odd/even) |
 | `-f, --flow` | none | 流控 (none/software/hardware) |
 
-### `serialtap send <端口> <数据> [选项]`
+### `serialrun send <端口> <数据> [选项]`
 
 ```bash
-serialtap send COM1 "Hello\r\n"              # 发送文本
-serialtap send COM1 "48 65 6C 6C 6F" --hex   # 发送十六进制
+serialrun send COM1 "Hello\r\n"              # 发送文本
+serialrun send COM1 "48 65 6C 6C 6F" --hex   # 发送十六进制
 ```
 
-### `serialtap monitor <端口> [选项]`
+### `serialrun monitor <端口> [选项]`
 
 ```bash
-serialtap monitor COM1 -t                  # 带时间戳
-serialtap monitor COM1 -x                  # 十六进制模式
-serialtap monitor COM1 -t -l output.log    # 记录到文件
+serialrun monitor COM1 -t                  # 带时间戳
+serialrun monitor COM1 -x                  # 十六进制模式
+serialrun monitor COM1 -t -l output.log    # 记录到文件
 ```
 
-### `serialtap record <端口> [选项]`
+### `serialrun record <端口> [选项]`
 
 ```bash
-serialtap record COM1 -o script.txt
+serialrun record COM1 -o script.txt
 ```
 
-### `serialtap replay <端口> <脚本>`
+### `serialrun replay <端口> <脚本>`
 
 ```bash
-serialtap replay COM1 script.txt
+serialrun replay COM1 script.txt
 ```
 
-### `serialtap agent [端口] <动作>`
+### `serialrun agent [端口] <动作>`
 
 JSON 输出模式，用于自动化。详见 [CLAUDE_CN.md](../CLAUDE_CN.md)。
 
 ## GUI 指南
 
 ```bash
-serialtap-gui
+serialrun-gui
 ```
 
 ### 界面说明

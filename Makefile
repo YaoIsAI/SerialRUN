@@ -6,53 +6,53 @@ build:
 
 # Build all crates (release) and sync .app bundle
 release:
-	@mkdir -p target/release/SerialTap.app/Contents/Resources
-	@python3 scripts/gen_icon.py target/release/SerialTap.app/Contents/Resources/icon.icns
+	@mkdir -p target/release/SerialRUN.app/Contents/Resources
+	@python3 scripts/gen_icon.py target/release/SerialRUN.app/Contents/Resources/icon.icns
 	cargo build --release
-	@if [ -d target/release/SerialTap.app ]; then \
+	@if [ -d target/release/SerialRUN.app ]; then \
 		echo "Syncing .app bundle..."; \
-		cp target/release/serialtap target/release/SerialTap.app/Contents/MacOS/serialtap; \
-		cp crates/serialtap-gui/Info.plist target/release/SerialTap.app/Contents/Info.plist; \
-		codesign --force --deep --sign - target/release/SerialTap.app 2>/dev/null; \
+		cp target/release/serialrun target/release/SerialRUN.app/Contents/MacOS/serialrun; \
+		cp crates/serialrun-gui/Info.plist target/release/SerialRUN.app/Contents/Info.plist; \
+		codesign --force --deep --sign - target/release/SerialRUN.app 2>/dev/null; \
 		echo ".app bundle updated."; \
 	fi
 
 # Build macOS .app bundle with icon
 app:
 	@echo "Step 1: Generate icons from master image..."
-	@mkdir -p target/release/SerialTap.app/Contents/Resources
-	@python3 scripts/gen_icon.py target/release/SerialTap.app/Contents/Resources/icon.icns
+	@mkdir -p target/release/SerialRUN.app/Contents/Resources
+	@python3 scripts/gen_icon.py target/release/SerialRUN.app/Contents/Resources/icon.icns
 	@echo "Step 2: Build binary (embeds icon)..."
-	@cargo build --release -p serialtap-gui
+	@cargo build --release -p serialrun-gui
 	@echo "Step 3: Create .app bundle..."
-	@cp target/release/serialtap target/release/SerialTap.app/Contents/MacOS/serialtap
-	@cp crates/serialtap-gui/Info.plist target/release/SerialTap.app/Contents/Info.plist
-	@cp -r docs target/release/SerialTap.app/Contents/Resources/docs
-	@codesign --force --deep --sign - target/release/SerialTap.app 2>/dev/null
+	@cp target/release/serialrun target/release/SerialRUN.app/Contents/MacOS/serialrun
+	@cp crates/serialrun-gui/Info.plist target/release/SerialRUN.app/Contents/Info.plist
+	@cp -r docs target/release/SerialRUN.app/Contents/Resources/docs
+	@codesign --force --deep --sign - target/release/SerialRUN.app 2>/dev/null
 	@echo ""
-	@echo "Done! App bundle: target/release/SerialTap.app"
-	@echo "Run:      open target/release/SerialTap.app"
+	@echo "Done! App bundle: target/release/SerialRUN.app"
+	@echo "Run:      open target/release/SerialRUN.app"
 	@echo "Install:  make install"
 
 # Install to /Applications
 install: app
-	@rm -rf /Applications/SerialTap.app
-	@cp -r target/release/SerialTap.app /Applications/
-	@codesign --force --deep --sign - /Applications/SerialTap.app 2>/dev/null
+	@rm -rf /Applications/SerialRUN.app
+	@cp -r target/release/SerialRUN.app /Applications/
+	@codesign --force --deep --sign - /Applications/SerialRUN.app 2>/dev/null
 	@killall Dock 2>/dev/null || true
-	@echo "Installed to /Applications/SerialTap.app (signed, Dock refreshed)"
+	@echo "Installed to /Applications/SerialRUN.app (signed, Dock refreshed)"
 
 # Run (debug)
 run:
-	cargo run -p serialtap-gui
+	cargo run -p serialrun-gui
 
 # Run release .app
 run-app: app
-	open target/release/SerialTap.app
+	open target/release/SerialRUN.app
 
 # Run MCP server
 mcp:
-	cargo run -p serialtap-mcp
+	cargo run -p serialrun-mcp
 
 # Run tests
 test:
@@ -69,4 +69,4 @@ fmt:
 # Clean
 clean:
 	cargo clean
-	rm -rf target/release/SerialTap.app
+	rm -rf target/release/SerialRUN.app

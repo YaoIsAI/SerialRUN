@@ -1,6 +1,6 @@
 <div align="center">
 
-# SerialTap
+# SerialRUN
 
 **A cross-platform serial port assistant for embedded developers**
 
@@ -41,8 +41,8 @@
 ### Install
 
 ```bash
-git clone https://github.com/YaoIsAI/SerialTap.git
-cd SerialTap
+git clone https://github.com/YaoIsAI/SerialRUN.git
+cd SerialRUN
 cargo build --release
 ```
 
@@ -50,28 +50,28 @@ cargo build --release
 
 ```bash
 # List available ports
-serialtap list
+serialrun list
 
 # Connect to a port
-serialtap connect COM1 -b 115200
+serialrun connect COM1 -b 115200
 
 # Send data
-serialtap send COM1 "Hello\r\n"
+serialrun send COM1 "Hello\r\n"
 
 # Monitor with timestamps
-serialtap monitor COM1 -t -l output.log
+serialrun monitor COM1 -t -l output.log
 
 # Record a script
-serialtap record COM1 -o script.txt
+serialrun record COM1 -o script.txt
 
 # Replay a script
-serialtap replay COM1 script.txt
+serialrun replay COM1 script.txt
 ```
 
 ### GUI Usage
 
 ```bash
-serialtap-gui
+serialrun-gui
 ```
 
 ### GUI Quick Start
@@ -84,13 +84,13 @@ serialtap-gui
 ## Project Structure
 
 ```
-SerialTap/
+SerialRUN/
 ├── crates/
-│   ├── serialtap-core/       # Core library (port, protocol, checksum, data logger)
-│   ├── serialtap-cli/        # CLI application
-│   ├── serialtap-gui/        # GUI application (egui)
-│   ├── serialtap-mcp/        # MCP server for AI integration
-│   └── serialtap-plugin-api/ # Plugin API definitions
+│   ├── serialrun-core/       # Core library (port, protocol, checksum, data logger)
+│   ├── serialrun-cli/        # CLI application
+│   ├── serialrun-gui/        # GUI application (egui)
+│   ├── serialrun-mcp/        # MCP server for AI integration
+│   └── serialrun-plugin-api/ # Plugin API definitions
 ├── plugins/
 │   └── example-plugin/       # Plugin example (C FFI)
 ├── assets/                   # Embedded images (QR code)
@@ -132,19 +132,19 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed instructions including Android, 
 ## Agent Mode (Automation)
 
 ```bash
-serialtap agent list-ports                # List ports (JSON)
-serialtap agent COM1 send "AT+RST"        # Send data
-serialtap agent COM1 read --timeout 1000  # Read data
-serialtap agent COM1 run-script test.txt  # Run script
+serialrun agent list-ports                # List ports (JSON)
+serialrun agent COM1 send "AT+RST"        # Send data
+serialrun agent COM1 read --timeout 1000  # Read data
+serialrun agent COM1 run-script test.txt  # Run script
 ```
 
 ## MCP Server
 
-SerialTap includes a built-in MCP server for AI assistant integration.
+SerialRUN includes a built-in MCP server for AI assistant integration.
 
 ```bash
 # Start MCP server (default: 127.0.0.1:9527)
-serialtap-mcp
+serialrun-mcp
 ```
 
 Available tools: `list_ports`, `connect`, `disconnect`, `send`, `read`, `send_command`.

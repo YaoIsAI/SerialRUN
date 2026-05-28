@@ -1,0 +1,20 @@
+[package]
+name = "serialrun-cli"
+version = "0.1.0"
+edition = "2021"
+description = "CLI for SerialRUN serial port assistant"
+license = "MIT"
+
+[[bin]]
+name = "serialrun"
+path = "src/main.rs"
+
+[dependencies]
+serialrun-core = { path = "../serialrun-core" }
+clap = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }

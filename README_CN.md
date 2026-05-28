@@ -1,6 +1,6 @@
 <div align="center">
 
-# SerialTap
+# SerialRUN
 
 **面向嵌入式开发者的跨平台串口助手**
 
@@ -41,8 +41,8 @@
 ### 安装
 
 ```bash
-git clone https://github.com/YaoIsAI/SerialTap.git
-cd SerialTap
+git clone https://github.com/YaoIsAI/SerialRUN.git
+cd SerialRUN
 cargo build --release
 ```
 
@@ -50,28 +50,28 @@ cargo build --release
 
 ```bash
 # 列出可用串口
-serialtap list
+serialrun list
 
 # 连接串口
-serialtap connect COM1 -b 115200
+serialrun connect COM1 -b 115200
 
 # 发送数据
-serialtap send COM1 "Hello\r\n"
+serialrun send COM1 "Hello\r\n"
 
 # 带时间戳监听
-serialtap monitor COM1 -t -l output.log
+serialrun monitor COM1 -t -l output.log
 
 # 录制脚本
-serialtap record COM1 -o script.txt
+serialrun record COM1 -o script.txt
 
 # 回放脚本
-serialtap replay COM1 script.txt
+serialrun replay COM1 script.txt
 ```
 
 ### 桌面客户端使用
 
 ```bash
-serialtap-gui
+serialrun-gui
 ```
 
 ### GUI 快速开始
@@ -84,13 +84,13 @@ serialtap-gui
 ## 项目结构
 
 ```
-SerialTap/
+SerialRUN/
 ├── crates/
-│   ├── serialtap-core/       # 核心库（端口、协议、校验、数据记录）
-│   ├── serialtap-cli/        # 命令行工具
-│   ├── serialtap-gui/        # 桌面客户端 (egui)
-│   ├── serialtap-mcp/        # MCP 服务器（AI 集成）
-│   └── serialtap-plugin-api/ # 插件 API 定义
+│   ├── serialrun-core/       # 核心库（端口、协议、校验、数据记录）
+│   ├── serialrun-cli/        # 命令行工具
+│   ├── serialrun-gui/        # 桌面客户端 (egui)
+│   ├── serialrun-mcp/        # MCP 服务器（AI 集成）
+│   └── serialrun-plugin-api/ # 插件 API 定义
 ├── plugins/
 │   └── example-plugin/       # 插件示例 (C FFI)
 ├── assets/                   # 嵌入式图片（二维码）
@@ -132,19 +132,19 @@ SerialTap/
 ## Agent 模式 (自动化)
 
 ```bash
-serialtap agent list-ports                # 列出端口 (JSON)
-serialtap agent COM1 send "AT+RST"        # 发送数据
-serialtap agent COM1 read --timeout 1000  # 读取数据
-serialtap agent COM1 run-script test.txt  # 运行脚本
+serialrun agent list-ports                # 列出端口 (JSON)
+serialrun agent COM1 send "AT+RST"        # 发送数据
+serialrun agent COM1 read --timeout 1000  # 读取数据
+serialrun agent COM1 run-script test.txt  # 运行脚本
 ```
 
 ## MCP 服务器
 
-SerialTap 内置 MCP 服务器，支持 AI 助手集成。
+SerialRUN 内置 MCP 服务器，支持 AI 助手集成。
 
 ```bash
 # 启动 MCP 服务器（默认：127.0.0.1:9527）
-serialtap-mcp
+serialrun-mcp
 ```
 
 可用工具：`list_ports`、`connect`、`disconnect`、`send`、`read`、`send_command`。

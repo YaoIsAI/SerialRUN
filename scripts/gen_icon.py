@@ -69,7 +69,7 @@ def draw_icon(size: int) -> Image.Image:
 def generate_icns(output_path: str):
     """Generate .icns file using macOS iconutil."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        iconset = os.path.join(tmpdir, "SerialTap.iconset")
+        iconset = os.path.join(tmpdir, "SerialRUN.iconset")
         os.makedirs(iconset)
 
         sizes = {
@@ -114,10 +114,10 @@ def generate_preview(dst_dir: str):
 
 if __name__ == "__main__":
     project_root = os.path.dirname(SCRIPT_DIR)
-    gui_src = os.path.join(project_root, "crates", "serialtap-gui")
+    gui_src = os.path.join(project_root, "crates", "serialrun-gui")
     app_resources = os.path.join(
         project_root, "target", "release",
-        "SerialTap.app", "Contents", "Resources"
+        "SerialRUN.app", "Contents", "Resources"
     )
 
     args = sys.argv[1:]

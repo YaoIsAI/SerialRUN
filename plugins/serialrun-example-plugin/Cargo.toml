@@ -1,0 +1,15 @@
+[package]
+name = "serialrun-example-plugin"
+version = "0.1.0"
+edition = "2021"
+description = "Example plugin for SerialRUN"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+serialrun-plugin-api = { path = "../../crates/serialrun-plugin-api" }

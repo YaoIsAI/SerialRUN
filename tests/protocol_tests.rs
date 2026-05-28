@@ -1,5 +1,5 @@
-use serialtap_core::protocol::modbus::*;
-use serialtap_core::protocol::custom::*;
+use serialrun_core::protocol::modbus::*;
+use serialrun_core::protocol::custom::*;
 
 #[test]
 fn test_modbus_crc_calculation() {

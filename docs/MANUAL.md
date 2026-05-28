@@ -1,4 +1,4 @@
-# SerialTap User Manual
+# SerialRUN User Manual
 
 [中文版](MANUAL_CN.md)
 
@@ -14,13 +14,13 @@
 
 ## Introduction
 
-SerialTap is a cross-platform serial port assistant designed for embedded developers. It provides both CLI and GUI interfaces for serial communication, protocol analysis, and automation.
+SerialRUN is a cross-platform serial port assistant designed for embedded developers. It provides both CLI and GUI interfaces for serial communication, protocol analysis, and automation.
 
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/SerialTap.git
-cd SerialTap
+git clone https://github.com/yourusername/SerialRUN.git
+cd SerialRUN
 cargo build --release
 ```
 
@@ -28,16 +28,16 @@ Binaries will be in `target/release/`.
 
 ## CLI Reference
 
-### `serialtap list`
+### `serialrun list`
 
 List all available serial ports.
 
 ```bash
-serialtap list                # Text output
-serialtap list --format json  # JSON output
+serialrun list                # Text output
+serialrun list --format json  # JSON output
 ```
 
-### `serialtap connect <port> [options]`
+### `serialrun connect <port> [options]`
 
 Connect to a serial port in interactive mode.
 
@@ -49,41 +49,41 @@ Connect to a serial port in interactive mode.
 | `-p, --parity` | none | Parity (none/odd/even) |
 | `-f, --flow` | none | Flow control (none/software/hardware) |
 
-### `serialtap send <port> <data> [options]`
+### `serialrun send <port> <data> [options]`
 
 ```bash
-serialtap send COM1 "Hello\r\n"              # Send text
-serialtap send COM1 "48 65 6C 6C 6F" --hex   # Send HEX
+serialrun send COM1 "Hello\r\n"              # Send text
+serialrun send COM1 "48 65 6C 6C 6F" --hex   # Send HEX
 ```
 
-### `serialtap monitor <port> [options]`
+### `serialrun monitor <port> [options]`
 
 ```bash
-serialtap monitor COM1 -t                  # Timestamps
-serialtap monitor COM1 -x                  # HEX mode
-serialtap monitor COM1 -t -l output.log    # Log to file
+serialrun monitor COM1 -t                  # Timestamps
+serialrun monitor COM1 -x                  # HEX mode
+serialrun monitor COM1 -t -l output.log    # Log to file
 ```
 
-### `serialtap record <port> [options]`
+### `serialrun record <port> [options]`
 
 ```bash
-serialtap record COM1 -o script.txt
+serialrun record COM1 -o script.txt
 ```
 
-### `serialtap replay <port> <script>`
+### `serialrun replay <port> <script>`
 
 ```bash
-serialtap replay COM1 script.txt
+serialrun replay COM1 script.txt
 ```
 
-### `serialtap agent [port] <action>`
+### `serialrun agent [port] <action>`
 
 JSON output mode for automation. See [CLAUDE.md](../CLAUDE.md) for details.
 
 ## GUI Guide
 
 ```bash
-serialtap-gui
+serialrun-gui
 ```
 
 ### Interface Overview

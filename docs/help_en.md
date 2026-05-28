@@ -1,6 +1,6 @@
-# SerialTap User Guide
+# SerialRUN User Guide
 
-SerialTap is a feature-rich serial port debugging assistant supporting serial communication, Modbus debugging, PLC control, CAN bus analysis, I2C/SPI debugging, firmware flashing, and more. Built-in MCP server enables AI assistants to remotely control serial devices via TCP.
+SerialRUN is a feature-rich serial port debugging assistant supporting serial communication, Modbus debugging, PLC control, CAN bus analysis, I2C/SPI debugging, firmware flashing, and more. Built-in MCP server enables AI assistants to remotely control serial devices via TCP.
 
 ---
 
