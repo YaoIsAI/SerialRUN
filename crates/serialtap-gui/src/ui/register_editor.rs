@@ -88,7 +88,13 @@ fn import_register_map(state: &mut AppState, path: &std::path::Path) {
                     let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
                     if parts.len() >= 2 {
                         let trimmed = parts[0].trim_start_matches("0x").trim_start_matches("0X");
-                        let addr = u16::from_str_radix(trimmed, 16).unwrap_or_else(|_| parts[0].parse().unwrap_or(i as u16));
+                        let addr = match u16::from_str_radix(trimmed, 16) {
+                            Ok(a) => a,
+                            Err(_) => match parts[0].parse::<u16>() {
+                                Ok(a) => a,
+                                Err(_) => continue,
+                            },
+                        };
                         state.reg_map.push(RegMapEntry {
                             addr,
                             name: parts.get(1).unwrap_or(&"").to_string(),

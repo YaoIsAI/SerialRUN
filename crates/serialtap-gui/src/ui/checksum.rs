@@ -6,9 +6,6 @@ pub fn render_checksum_panel(ui: &mut egui::Ui, state: &mut AppState) {
     ui.label(T::input_data(lang));
     ui.text_edit_multiline(&mut state.checksum_input);
     ui.add_space(4.0);
-    if ui.button(T::send_request(lang)).clicked() {
-        // Parse hex and calculate
-    }
     ui.separator();
     let hex = state.checksum_input.replace(' ', "").replace("0x", "").replace("0X", "");
     if !hex.is_empty() && hex.len() % 2 == 0 {

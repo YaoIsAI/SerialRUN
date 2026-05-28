@@ -114,9 +114,9 @@ fn render_frame_list(ui: &mut egui::Ui, state: &mut AppState) {
                 // ID
                 ui.label(egui::RichText::new(&id_str).color(id_color).monospace().small().strong());
                 // IDE
-                if frame.is_ext {
-                    ui.label(egui::RichText::new("EXT").color(egui::Color32::from_rgb(150, 150, 255)).monospace().small());
-                }
+                let ext_text = if frame.is_ext { "EXT" } else { "   " };
+                let ext_color = if frame.is_ext { egui::Color32::from_rgb(150, 150, 255) } else { egui::Color32::TRANSPARENT };
+                ui.label(egui::RichText::new(ext_text).color(ext_color).monospace().small());
                 // DLC
                 ui.label(egui::RichText::new(format!("DLC={}", frame.dlc)).monospace().small());
                 // Data

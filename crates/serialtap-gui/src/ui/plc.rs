@@ -1,4 +1,4 @@
-use crate::plc_presets::{self, PlcModel};
+use crate::plc_presets;
 use crate::state::{AppState, PlcBrand, PlcDataType, PlcRegisterDef, PlcRegisterValue, T};
 use eframe::egui;
 use serialtap_core::protocol::{ModbusFrame, ModbusParser};
@@ -336,6 +336,6 @@ fn write_coil(state: &mut AppState, reg: &PlcRegisterDef, on: bool) {
     let frame = ModbusFrame::new(state.plc.slave_id, serialtap_core::protocol::ModbusFunction::WriteSingleCoil, data);
     if let Some(ref mut port) = state.port {
         let _ = port.write(&frame.to_bytes());
-        plc_log(state, &format!("Coil {} → {}", reg.name, if on { "ON" } else { "OFF" }));
+        plc_log(state, &format!("Coil {} => {}", reg.name, if on { "ON" } else { "OFF" }));
     }
 }

@@ -1,4 +1,4 @@
-use crate::state::{AppState, Direction, T};
+use crate::state::{AppState, Direction, ScriptAction, ScriptCommand, T};
 use eframe::egui;
 use std::time::Duration;
 
@@ -115,6 +115,16 @@ fn do_send(state: &mut AppState) {
         Ok(n) => {
             state.add_terminal_line(Direction::Tx, display, false);
             state.add_log_entry(crate::state::LogLevel::Info, &format!("Sent {} bytes", n));
+            // Data logger
+            super::data_logger::log_data(state, "TX", &bytes);
+            // Recording
+            if state.recording {
+                state.script_commands.push(ScriptCommand {
+                    delay_ms: 0,
+                    action: ScriptAction::Send,
+                    data: Some(data.clone()),
+                });
+            }
         }
         Err(e) => {
             state.add_terminal_line(Direction::System, format!("Send error: {}", e), false);
@@ -131,8 +141,23 @@ fn do_send(state: &mut AppState) {
             Ok(n) if n > 0 => {
                 state.rx_count += n as u64;
                 let received = String::from_utf8_lossy(&buf[..n]).to_string();
-                state.add_terminal_line(Direction::Rx, received, false);
+                state.add_terminal_line(Direction::Rx, received.clone(), false);
                 state.add_log_entry(crate::state::LogLevel::Info, &format!("Received {} bytes", n));
+                // Data logger
+                super::data_logger::log_data(state, "RX", &buf[..n]);
+                // Auto-reply
+                if state.auto_reply_enabled && !state.auto_reply_pattern.is_empty() && !state.auto_reply_response.is_empty() {
+                    if received.contains(&state.auto_reply_pattern) {
+                        let reply = state.auto_reply_response.clone();
+                        let reply_bytes = reply.as_bytes().to_vec();
+                        if let Some(ref mut p) = state.port {
+                            if let Ok(_) = p.write(&reply_bytes) {
+                                state.add_terminal_line(Direction::Tx, reply, false);
+                                state.add_log_entry(crate::state::LogLevel::Info, &format!("Auto-reply sent: {}", state.auto_reply_response));
+                            }
+                        }
+                    }
+                }
             }
             _ => {}
         }

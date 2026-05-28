@@ -16,13 +16,18 @@ fn main() -> eframe::Result<()> {
         )
         .init();
 
-    let icon_data = icon::generate_icon();
+    let icon_data = icon::generate_icon().map(|d| std::sync::Arc::new(d));
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([900.0, 600.0])
-            .with_min_inner_size([700.0, 400.0])
-            .with_title("SerialTap")
-            .with_icon(std::sync::Arc::new(icon_data)),
+        viewport: {
+            let mut vb = egui::ViewportBuilder::default()
+                .with_inner_size([900.0, 600.0])
+                .with_min_inner_size([700.0, 400.0])
+                .with_title("SerialTap");
+            if let Some(icon) = icon_data {
+                vb = vb.with_icon(icon);
+            }
+            vb
+        },
         ..Default::default()
     };
 
@@ -45,15 +50,12 @@ fn setup_custom_fonts(ctx: &egui::Context) {
         egui::FontData::from_static(font_data),
     );
 
-    fonts.families
-        .get_mut(&egui::FontFamily::Proportional)
-        .unwrap()
-        .insert(0, "msyh".to_owned());
-
-    fonts.families
-        .get_mut(&egui::FontFamily::Monospace)
-        .unwrap()
-        .insert(0, "msyh".to_owned());
+    if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Proportional) {
+        family.insert(0, "msyh".to_owned());
+    }
+    if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
+        family.insert(0, "msyh".to_owned());
+    }
 
     ctx.set_fonts(fonts);
 }

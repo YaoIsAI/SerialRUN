@@ -111,8 +111,9 @@ fn auto_detect_baud(port_name: &str) -> Option<u32> {
         let _ = port.clear_buffer(serialtap_core::port::ClearBuffer::All);
         std::thread::sleep(std::time::Duration::from_millis(100));
         let mut buf = [0u8; 256];
-        if let Ok(n) = port.read(&mut buf) { let _ = port.disconnect(); if n > 0 { return Some(baud); } }
+        let n = port.read(&mut buf).unwrap_or(0);
         let _ = port.disconnect();
+        if n > 0 { return Some(baud); }
     }
     None
 }

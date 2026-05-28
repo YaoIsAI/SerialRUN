@@ -8,56 +8,53 @@ pub fn render_settings_panel(ui: &mut egui::Ui, state: &mut AppState, _ctx: &egu
     ui.add_space(4.0);
 
     // Serial config section
-    if ui
-        .collapsing(T::serial_config(lang), |ui| {
-            egui::Grid::new("settings_grid").show(ui, |ui| {
-                ui.label(T::data_bits(lang));
-                egui::ComboBox::from_id_salt("data_bits")
-                    .width(80.0)
-                    .selected_text(format!("{:?}", state.config.data_bits))
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut state.config.data_bits, DataBits::Five, "5");
-                        ui.selectable_value(&mut state.config.data_bits, DataBits::Six, "6");
-                        ui.selectable_value(&mut state.config.data_bits, DataBits::Seven, "7");
-                        ui.selectable_value(&mut state.config.data_bits, DataBits::Eight, "8");
-                    });
-                ui.end_row();
+    ui.collapsing(T::serial_config(lang), |ui| {
+        egui::Grid::new("settings_grid").show(ui, |ui| {
+            ui.label(T::data_bits(lang));
+            egui::ComboBox::from_id_salt("data_bits")
+                .width(80.0)
+                .selected_text(format!("{:?}", state.config.data_bits))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut state.config.data_bits, DataBits::Five, "5");
+                    ui.selectable_value(&mut state.config.data_bits, DataBits::Six, "6");
+                    ui.selectable_value(&mut state.config.data_bits, DataBits::Seven, "7");
+                    ui.selectable_value(&mut state.config.data_bits, DataBits::Eight, "8");
+                });
+            ui.end_row();
 
-                ui.label(T::stop_bits(lang));
-                egui::ComboBox::from_id_salt("stop_bits")
-                    .width(80.0)
-                    .selected_text(format!("{:?}", state.config.stop_bits))
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut state.config.stop_bits, StopBits::One, "1");
-                        ui.selectable_value(&mut state.config.stop_bits, StopBits::Two, "2");
-                    });
-                ui.end_row();
+            ui.label(T::stop_bits(lang));
+            egui::ComboBox::from_id_salt("stop_bits")
+                .width(80.0)
+                .selected_text(format!("{:?}", state.config.stop_bits))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut state.config.stop_bits, StopBits::One, "1");
+                    ui.selectable_value(&mut state.config.stop_bits, StopBits::Two, "2");
+                });
+            ui.end_row();
 
-                ui.label(T::parity(lang));
-                egui::ComboBox::from_id_salt("parity")
-                    .width(80.0)
-                    .selected_text(format!("{:?}", state.config.parity))
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut state.config.parity, Parity::None, "None");
-                        ui.selectable_value(&mut state.config.parity, Parity::Odd, "Odd");
-                        ui.selectable_value(&mut state.config.parity, Parity::Even, "Even");
-                    });
-                ui.end_row();
+            ui.label(T::parity(lang));
+            egui::ComboBox::from_id_salt("parity")
+                .width(80.0)
+                .selected_text(format!("{:?}", state.config.parity))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut state.config.parity, Parity::None, "None");
+                    ui.selectable_value(&mut state.config.parity, Parity::Odd, "Odd");
+                    ui.selectable_value(&mut state.config.parity, Parity::Even, "Even");
+                });
+            ui.end_row();
 
-                ui.label(T::flow_control(lang));
-                egui::ComboBox::from_id_salt("flow_control")
-                    .width(80.0)
-                    .selected_text(format!("{:?}", state.config.flow_control))
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut state.config.flow_control, FlowControl::None, "None");
-                        ui.selectable_value(&mut state.config.flow_control, FlowControl::Software, "SW");
-                        ui.selectable_value(&mut state.config.flow_control, FlowControl::Hardware, "HW");
-                    });
-                ui.end_row();
-            });
-        })
-        .body_response.is_some()
-    {}
+            ui.label(T::flow_control(lang));
+            egui::ComboBox::from_id_salt("flow_control")
+                .width(80.0)
+                .selected_text(format!("{:?}", state.config.flow_control))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut state.config.flow_control, FlowControl::None, "None");
+                    ui.selectable_value(&mut state.config.flow_control, FlowControl::Software, "SW");
+                    ui.selectable_value(&mut state.config.flow_control, FlowControl::Hardware, "HW");
+                });
+            ui.end_row();
+        });
+    });
 
     ui.separator();
 
