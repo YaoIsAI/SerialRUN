@@ -22,7 +22,16 @@
 - **数据可视化** — 实时图表和统计信息
 - **脚本录制** — 录制和回放串口通信会话
 - **文件传输** — 支持 XMODEM / YMODEM / ZMODEM
+- **CAN 总线分析** — SLCAN 协议解析、帧过滤、按 ID 统计
+- **I2C/SPI 调试** — 寄存器读写，支持地址和数据宽度配置
+- **串口示波器** — 实时波形显示，支持触发和光标测量
+- **烧录器** — STM32 ISP 和 ESP32 串口烧录
+- **寄存器编辑器** — CSV/JSON 导入导出，报警阈值监控
+- **数据记录器** — 持续 CSV 记录，带时间戳
+- **帧生成器** — 可视化 Modbus 帧构造，实时十六进制预览
+- **PLC 控制** — Modbus 寄存器轮询，内置品牌预设（西门子、三菱等）
 - **插件系统** — 可扩展架构，支持动态加载插件
+- **MCP 服务器** — 内置 TCP 服务器，支持 AI 助手集成
 - **十六进制模式** — 以十六进制格式收发数据
 - **自动回复** — 自动响应匹配的模式
 - **双语界面** — 英文/中文语言切换，深色/浅色主题
@@ -32,7 +41,7 @@
 ### 安装
 
 ```bash
-git clone https://github.com/yourusername/SerialTap.git
+git clone https://github.com/YaoIsAI/SerialTap.git
 cd SerialTap
 cargo build --release
 ```
@@ -77,15 +86,37 @@ serialtap-gui
 ```
 SerialTap/
 ├── crates/
-│   ├── serialtap-core/       # 核心串口逻辑库
+│   ├── serialtap-core/       # 核心库（端口、协议、校验、数据记录）
 │   ├── serialtap-cli/        # 命令行工具
-│   └── serialtap-gui/        # 桌面客户端 (egui)
+│   ├── serialtap-gui/        # 桌面客户端 (egui)
+│   ├── serialtap-mcp/        # MCP 服务器（AI 集成）
+│   └── serialtap-plugin-api/ # 插件 API 定义
 ├── plugins/
 │   └── example-plugin/       # 插件示例 (C FFI)
+├── assets/                   # 嵌入式图片（二维码）
 ├── docs/                     # 文档
 ├── tests/                    # 集成测试
 └── benches/                  # 性能测试
 ```
+
+## GUI 面板
+
+| 面板 | 说明 |
+|------|------|
+| 终端 | 串口收发，支持 HEX 模式、时间戳、CRC |
+| Modbus | RTU 监听，解析功能码 |
+| PLC 控制 | 寄存器轮询，内置品牌预设 |
+| CAN 总线 | SLCAN 帧捕获和分析 |
+| I2C/SPI | 寄存器读写调试工具 |
+| 示波器 | 实时波形显示 |
+| 文件传输 | XMODEM/YMODEM/ZMODEM |
+| 帧生成器 | 可视化 Modbus 帧构造 |
+| 烧录器 | STM32 ISP / ESP32 串口烧录 |
+| 数据记录器 | CSV 记录，带时间戳 |
+| 寄存器编辑器 | 导入导出寄存器映射 |
+| 图表 | 多系列实时数据可视化 |
+| 插件管理 | 动态插件发现和加载 |
+| 日志查看 | 应用日志，支持过滤和导出 |
 
 ## 跨平台构建
 
@@ -106,6 +137,17 @@ serialtap agent COM1 send "AT+RST"        # 发送数据
 serialtap agent COM1 read --timeout 1000  # 读取数据
 serialtap agent COM1 run-script test.txt  # 运行脚本
 ```
+
+## MCP 服务器
+
+SerialTap 内置 MCP 服务器，支持 AI 助手集成。
+
+```bash
+# 启动 MCP 服务器（默认：127.0.0.1:9527）
+serialtap-mcp
+```
+
+可用工具：`list_ports`、`connect`、`disconnect`、`send`、`read`、`send_command`。
 
 ## 插件开发
 

@@ -216,7 +216,7 @@ impl SerialTapMcp {
                         }
                     }
                     "read" => {
-                        let timeout_ms = arguments.get("timeout_ms").and_then(|v| v.as_u64()).unwrap_or(1000) as u64;
+                        let _timeout_ms = arguments.get("timeout_ms").and_then(|v| v.as_u64()).unwrap_or(1000) as u64;
                         let max_bytes = arguments.get("max_bytes").and_then(|v| v.as_u64()).unwrap_or(1024) as usize;
 
                         let Some(ref mut port) = self.port else {

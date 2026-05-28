@@ -27,6 +27,7 @@ app:
 	@echo "Step 3: Create .app bundle..."
 	@cp target/release/serialtap target/release/SerialTap.app/Contents/MacOS/serialtap
 	@cp crates/serialtap-gui/Info.plist target/release/SerialTap.app/Contents/Info.plist
+	@cp -r docs target/release/SerialTap.app/Contents/Resources/docs
 	@codesign --force --deep --sign - target/release/SerialTap.app 2>/dev/null
 	@echo ""
 	@echo "Done! App bundle: target/release/SerialTap.app"

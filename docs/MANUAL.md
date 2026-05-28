@@ -88,15 +88,34 @@ serialtap-gui
 
 ### Interface Overview
 
-- **Top bar**: Port selector, baud rate, Connect/Disconnect, Chart/Log/Language/Theme/Help buttons
-- **Left panel**: Serial config (collapsible), Display options, Auto reply, Recording
+- **Top bar**: Tool buttons (Log, Chart, PLC, Modbus, File Transfer, Frame Builder, Data Logger, CAN, I2C/SPI, Oscilloscope, Flasher, Register Editor, Plugins), Theme/Language/Help
+- **Left panel**: Port selector, baud rate, Auto-detect, Connect/Disconnect
 - **Center**: Terminal display with TX/RX/SYS indicators
 - **Bottom**: Status bar with connection state and byte counts
+
+### GUI Panels
+
+| Panel | Description |
+|-------|-------------|
+| Terminal | Serial TX/RX with HEX mode, timestamps, CRC checksums |
+| Modbus | RTU monitor with function code parsing and register display |
+| PLC Control | Modbus register polling with brand presets (Siemens, Mitsubishi, Delta, etc.) |
+| CAN Bus | SLCAN frame capture, ID filtering, per-ID statistics |
+| I2C/SPI | Register read/write debug tool with address and data width config |
+| Oscilloscope | Real-time waveform display with trigger and cursor measurement |
+| File Transfer | XMODEM / YMODEM / ZMODEM protocol transfer |
+| Frame Builder | Visual Modbus frame construction with live hex preview |
+| Flasher | STM32 ISP and ESP32 serial flashing |
+| Data Logger | Continuous CSV recording with timestamp |
+| Register Editor | CSV/JSON import/export, alarm threshold monitoring |
+| Chart | Multi-series real-time data visualization |
+| Plugin Manager | Dynamic plugin discovery and loading |
+| Log Viewer | Application log with filter and export |
 
 ### Language and Theme
 
 - Click **中** / **EN** to switch language
-- Click **☀** / **☾** to switch theme
+- Click **Dark** / **Light** to switch theme
 - Click **?** to open the help guide
 
 ## Troubleshooting

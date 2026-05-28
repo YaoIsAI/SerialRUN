@@ -234,7 +234,7 @@ enum MdBlock<'a> {
     Hr,                         // ---
 }
 
-fn parse_md(text: &str) -> Vec<MdBlock> {
+fn parse_md(text: &str) -> Vec<MdBlock<'_>> {
     let lines: Vec<&str> = text.lines().collect();
     let mut blocks = Vec::new();
     let mut i = 0;
@@ -405,7 +405,7 @@ fn render_table(ui: &mut egui::Ui, rows: &[Vec<&str>]) {
             ui.horizontal(|ui| {
                 for col_idx in 0..max_cols {
                     let cell_text = row.get(col_idx).copied().unwrap_or("");
-                    let cell_width = match max_cols {
+                    let _cell_width = match max_cols {
                         2 => 200.0,
                         3 => 150.0,
                         _ => 120.0,

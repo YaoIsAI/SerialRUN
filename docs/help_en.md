@@ -226,7 +226,8 @@ Scans `plugins/` directory for extension plugins:
 ## Troubleshooting
 
 **Q: Port list is empty?**
-A: Click the refresh button `↻`. If still empty, check if the device is connected and drivers are installed. Linux users may need `sudo usermod -a -G dialout $USER` for serial port permissions.
+A: Click the refresh button `↻`. If still empty, check if the device is connected and drivers are installed. Linux users may need 
+`sudo usermod -a -G dialout $USER` for serial port permissions.
 
 **Q: No data received after connecting?**
 A: Check that the baud rate matches the device settings, verify wiring (TX/RX cross-connected), and check flow control settings.

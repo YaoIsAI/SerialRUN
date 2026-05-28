@@ -22,7 +22,16 @@
 - **Data Visualization** — Real-time charts and statistics
 - **Script Recording** — Record and replay serial communication sessions
 - **File Transfer** — XMODEM / YMODEM / ZMODEM support
+- **CAN Bus Analyzer** — SLCAN protocol parsing, frame filtering, per-ID statistics
+- **I2C/SPI Debug** — Register read/write with address and data width config
+- **Serial Oscilloscope** — Real-time waveform display with trigger and cursor measurement
+- **Flasher** — STM32 ISP and ESP32 serial flashing
+- **Register Editor** — CSV/JSON import/export, alarm threshold monitoring
+- **Data Logger** — Continuous CSV recording with timestamp
+- **Frame Builder** — Visual Modbus frame construction with live hex preview
+- **PLC Control** — Modbus register polling with brand presets (Siemens, Mitsubishi, etc.)
 - **Plugin System** — Extensible architecture with dynamic plugin loading
+- **MCP Server** — Built-in TCP server for AI assistant integration
 - **HEX Mode** — Send and receive data in hexadecimal format
 - **Auto Reply** — Automatically respond to matched patterns
 - **Bilingual UI** — English / Chinese language switching, Dark / Light themes
@@ -32,7 +41,7 @@
 ### Install
 
 ```bash
-git clone https://github.com/yourusername/SerialTap.git
+git clone https://github.com/YaoIsAI/SerialTap.git
 cd SerialTap
 cargo build --release
 ```
@@ -77,15 +86,37 @@ serialtap-gui
 ```
 SerialTap/
 ├── crates/
-│   ├── serialtap-core/       # Core library
+│   ├── serialtap-core/       # Core library (port, protocol, checksum, data logger)
 │   ├── serialtap-cli/        # CLI application
-│   └── serialtap-gui/        # GUI application (egui)
+│   ├── serialtap-gui/        # GUI application (egui)
+│   ├── serialtap-mcp/        # MCP server for AI integration
+│   └── serialtap-plugin-api/ # Plugin API definitions
 ├── plugins/
 │   └── example-plugin/       # Plugin example (C FFI)
+├── assets/                   # Embedded images (QR code)
 ├── docs/                     # Documentation
 ├── tests/                    # Integration tests
 └── benches/                  # Benchmarks
 ```
+
+## GUI Panels
+
+| Panel | Description |
+|-------|-------------|
+| Terminal | Serial TX/RX with HEX mode, timestamps, CRC |
+| Modbus | RTU monitor with function code parsing |
+| PLC Control | Register polling with brand presets |
+| CAN Bus | SLCAN frame capture and analysis |
+| I2C/SPI | Register read/write debug tool |
+| Oscilloscope | Real-time waveform display |
+| File Transfer | XMODEM/YMODEM/ZMODEM |
+| Frame Builder | Visual Modbus frame construction |
+| Flasher | STM32 ISP / ESP32 serial flashing |
+| Data Logger | CSV recording with timestamp |
+| Register Editor | Import/export register maps |
+| Chart | Multi-series real-time data visualization |
+| Plugin Manager | Dynamic plugin discovery and loading |
+| Log Viewer | Application log with filter and export |
 
 ## Build for Different Platforms
 
@@ -106,6 +137,17 @@ serialtap agent COM1 send "AT+RST"        # Send data
 serialtap agent COM1 read --timeout 1000  # Read data
 serialtap agent COM1 run-script test.txt  # Run script
 ```
+
+## MCP Server
+
+SerialTap includes a built-in MCP server for AI assistant integration.
+
+```bash
+# Start MCP server (default: 127.0.0.1:9527)
+serialtap-mcp
+```
+
+Available tools: `list_ports`, `connect`, `disconnect`, `send`, `read`, `send_command`.
 
 ## Plugin Development
 

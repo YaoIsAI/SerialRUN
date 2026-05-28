@@ -738,35 +738,29 @@ pub enum ScriptAction {
 }
 
 fn load_help_file(filename: &str) -> String {
-    // Try multiple locations: exe dir, current dir, docs/
-    let candidates = [
-        std::path::PathBuf::from(filename),
-        std::path::PathBuf::from(format!("docs/{}", filename)),
-    ];
-    // Also try relative to executable
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            let mut p = std::path::PathBuf::from(dir);
-            p.push(filename);
-            // We'll check this below
-        }
+    // 1. Current working directory (works when running from terminal in project root)
+    let cwd_path = std::path::PathBuf::from(format!("docs/{}", filename));
+    if let Ok(content) = std::fs::read_to_string(&cwd_path) {
+        return content;
     }
-    for path in &candidates {
-        if let Ok(content) = std::fs::read_to_string(path) {
-            return content;
-        }
-    }
-    // Fallback: try exe directory
+    // 2. Relative to executable
     if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            let p = dir.join(filename);
-            if let Ok(content) = std::fs::read_to_string(p) {
+        if let Some(exe_dir) = exe.parent() {
+            // Dev build: <exe_dir>/docs/filename
+            let p = exe_dir.join(format!("docs/{}", filename));
+            if let Ok(content) = std::fs::read_to_string(&p) {
+                return content;
+            }
+            // macOS .app bundle: Contents/Resources/docs/filename
+            let p = exe_dir.join(format!("../Resources/docs/{}", filename));
+            if let Ok(content) = std::fs::read_to_string(&p) {
                 return content;
             }
         }
     }
-    format!("# {}\n\nHelp file not found. Place `{}` next to the executable or in `docs/`.", filename.trim_end_matches(".md").replace('_', " "), filename)
+    format!("# {}\n\nHelp file not found.", filename.trim_end_matches(".md").replace('_', " "))
 }
+
 
 impl AppState {
     pub fn new() -> Self {

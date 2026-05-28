@@ -1,6 +1,6 @@
 use crate::state::{AppState, ModbusFunctionCode, T};
 use eframe::egui;
-use serialtap_core::protocol::{ModbusFrame, ModbusParser};
+use serialtap_core::protocol::ModbusParser;
 
 pub fn render_frame_builder_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;

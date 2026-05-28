@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::mpsc;
 use std::time::Duration;
 
 /// A handle for async operations that run in background threads
