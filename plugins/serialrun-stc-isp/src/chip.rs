@@ -92,26 +92,51 @@ pub fn parse_hex_file(content: &str) -> Result<Vec<u8>, String> {
     let mut binary = Vec::new();
     let mut base_addr: u32 = 0;
 
-    for line in content.lines() {
+    for (line_num, line) in content.lines().enumerate() {
         let line = line.trim();
         if line.is_empty() || !line.starts_with(':') {
             continue;
         }
 
-        let bytes = hex_to_bytes(&line[1..]).map_err(|e| format!("Hex parse error: {}", e))?;
+        let bytes = hex_to_bytes(&line[1..])
+            .map_err(|e| format!("Line {}: hex parse error: {}", line_num + 1, e))?;
+
         if bytes.len() < 5 {
-            return Err("Invalid HEX record".to_string());
+            return Err(format!("Line {}: invalid HEX record (too short)", line_num + 1));
         }
 
-        let byte_count = bytes[0] as u32;
+        let byte_count = bytes[0] as usize;
         let addr = ((bytes[1] as u32) << 8) | (bytes[2] as u32);
         let record_type = bytes[3];
+
+        // Validate byte_count against actual data
+        if bytes.len() < 4 + byte_count + 1 {
+            return Err(format!(
+                "Line {}: byte_count {} exceeds record length",
+                line_num + 1, byte_count
+            ));
+        }
+
+        // Validate checksum (sum of all bytes except last should be 0x00 mod 256)
+        let checksum_sum: u8 = bytes[..4 + byte_count + 1].iter().fold(0u8, |acc, &b| acc.wrapping_add(b));
+        if checksum_sum != 0 {
+            return Err(format!(
+                "Line {}: checksum mismatch (sum={:#04x})",
+                line_num + 1, checksum_sum
+            ));
+        }
 
         match record_type {
             0x00 => {
                 // Data record
                 let start = (base_addr + addr) as usize;
-                let data = &bytes[4..(4 + byte_count as usize)];
+                if start > 1024 * 1024 {
+                    return Err(format!(
+                        "Line {}: address {:#x} exceeds 1MB limit",
+                        line_num + 1, start
+                    ));
+                }
+                let data = &bytes[4..4 + byte_count];
                 if start + data.len() > binary.len() {
                     binary.resize(start + data.len(), 0xFF);
                 }
@@ -187,9 +212,11 @@ mod tests {
     #[test]
     fn test_parse_hex_file() {
         // Minimal Intel HEX: one data record + end record
-        let hex = ":03000000010203F2\n:00000001FF\n";
+        // Record: :02 0000 00 0102 XX
+        // Checksum = -(02+00+00+00+01+02) mod 256 = -(0x05) = 0xFB
+        let hex = ":020000000102FB\n:00000001FF\n";
         let binary = parse_hex_file(hex).unwrap();
-        assert_eq!(binary, vec![0x01, 0x02, 0x03]);
+        assert_eq!(binary, vec![0x01, 0x02]);
     }
 
     #[test]

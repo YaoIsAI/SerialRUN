@@ -55,7 +55,7 @@ pub fn erase_packet(start_addr: u32, end_addr: u32) -> Vec<u8> {
 
 /// Write flash command (128 bytes per block)
 pub fn write_packet(address: u32, data: &[u8]) -> Vec<u8> {
-    assert!(data.len() <= 128, "Block size must be <= 128 bytes");
+    debug_assert!(data.len() <= 128, "Block size must be <= 128 bytes");
 
     let mut packet = vec![CMD写入];
     packet.extend_from_slice(&address.to_le_bytes());

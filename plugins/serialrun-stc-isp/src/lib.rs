@@ -146,8 +146,9 @@ fn get_callbacks() -> Option<PluginCallbacks> {
 fn log_info(msg: &str) {
     if let Some(cbs) = get_callbacks() {
         if let Some(log) = cbs.log_info {
-            let m = CString::new(msg).unwrap();
-            log(m.as_ptr());
+            if let Ok(m) = CString::new(msg) {
+                log(m.as_ptr());
+            }
         }
     }
 }
@@ -155,8 +156,19 @@ fn log_info(msg: &str) {
 fn log_warn(msg: &str) {
     if let Some(cbs) = get_callbacks() {
         if let Some(log) = cbs.log_warn {
-            let m = CString::new(msg).unwrap();
-            log(m.as_ptr());
+            if let Ok(m) = CString::new(msg) {
+                log(m.as_ptr());
+            }
+        }
+    }
+}
+
+fn log_error(msg: &str) {
+    if let Some(cbs) = get_callbacks() {
+        if let Some(log) = cbs.log_error {
+            if let Ok(m) = CString::new(msg) {
+                log(m.as_ptr());
+            }
         }
     }
 }
@@ -164,8 +176,9 @@ fn log_warn(msg: &str) {
 fn set_progress(percent: f32, msg: &str) {
     if let Some(cbs) = get_callbacks() {
         if let Some(progress) = cbs.progress_set {
-            let m = CString::new(msg).unwrap();
-            progress(percent, m.as_ptr());
+            if let Ok(m) = CString::new(msg) {
+                progress(percent, m.as_ptr());
+            }
         }
     }
 }
@@ -255,12 +268,11 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
 
     // Read firmware file
     set_progress(5.0, "Reading firmware file...");
-    let content = match std::fs::read_to_string(firmware_path) {
-        Ok(c) => c,
-        Err(e) => return PluginResult::error(format!("Failed to read file: {}", e)),
-    };
-
-    let firmware = if firmware_path.ends_with(".hex") {
+    let firmware = if firmware_path.to_lowercase().ends_with(".hex") {
+        let content = match std::fs::read_to_string(firmware_path) {
+            Ok(c) => c,
+            Err(e) => return PluginResult::error(format!("Failed to read HEX file: {}", e)),
+        };
         match parse_hex_file(&content) {
             Ok(f) => f,
             Err(e) => return PluginResult::error(format!("HEX parse error: {}", e)),
@@ -272,6 +284,10 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
         }
     };
 
+    if firmware.is_empty() {
+        return PluginResult::error("Firmware file is empty");
+    }
+
     log_info(&format!("Firmware size: {} bytes", firmware.len()));
     set_progress(10.0, &format!("Firmware: {} bytes", firmware.len()));
 
@@ -279,6 +295,7 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
     set_progress(15.0, "Detecting MCU...");
     let trigger = isp_trigger_packet();
     if !serial_write(&trigger) {
+        set_status(PluginStatus::Error);
         return PluginResult::error("Failed to send ISP trigger");
     }
 
@@ -288,10 +305,14 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
             if let Some(info) = parse_handshake_response(&buf[..n]) {
                 ChipInfo::from_handshake(info.family_code, info.header_version)
             } else {
+                set_status(PluginStatus::Error);
                 return PluginResult::error("Invalid handshake. Power cycle MCU while sending ISP trigger.");
             }
         }
-        None => return PluginResult::error("No response. Power cycle MCU while sending ISP trigger."),
+        None => {
+            set_status(PluginStatus::Error);
+            return PluginResult::error("No response. Power cycle MCU while sending ISP trigger.");
+        }
     };
 
     log_info(&format!("Detected: {}", chip.info_message));
@@ -304,9 +325,13 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
 
     // Erase flash
     set_progress(25.0, "Erasing flash...");
-    let erase_end = (firmware.len() as u32 + 0xFF) & !0xFF; // Align to 256 bytes
+    let erase_end = std::cmp::min(
+        (firmware.len() as u32 + 0xFF) & !0xFF,
+        chip.flash_size,
+    );
     let erase_pkt = erase_packet(0, erase_end);
     if !serial_write(&erase_pkt) {
+        set_status(PluginStatus::Error);
         return PluginResult::error("Failed to send erase command");
     }
 
@@ -314,7 +339,10 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
         Some(n) if n > 0 && buf[0] == 0x46 => {
             log_info("Flash erased successfully");
         }
-        _ => return PluginResult::error("Erase failed or timed out"),
+        _ => {
+            set_status(PluginStatus::Error);
+            return PluginResult::error("Erase failed or timed out");
+        }
     }
 
     set_progress(40.0, "Writing firmware...");
@@ -333,6 +361,7 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
         let write_pkt = write_packet(addr, chunk);
 
         if !serial_write(&write_pkt) {
+            set_status(PluginStatus::Error);
             return PluginResult::error(format!("Failed to write block {}/{}", i + 1, total_blocks));
         }
 
@@ -341,7 +370,10 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
                 let percent = 40.0 + (i as f32 / total_blocks as f32) * 40.0;
                 set_progress(percent, &format!("Writing block {}/{}", i + 1, total_blocks));
             }
-            _ => return PluginResult::error(format!("Write failed at block {}/{}", i + 1, total_blocks)),
+            _ => {
+                set_status(PluginStatus::Error);
+                return PluginResult::error(format!("Write failed at block {}/{}", i + 1, total_blocks));
+            }
         }
     }
 
@@ -351,6 +383,7 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
     let crc = stc_crc16(&firmware);
     let verify_pkt = verify_packet(0, firmware.len() as u32, crc);
     if !serial_write(&verify_pkt) {
+        set_status(PluginStatus::Error);
         return PluginResult::error("Failed to send verify command");
     }
 
@@ -358,7 +391,10 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
         Some(n) if n > 0 && buf[0] == 0x46 => {
             log_info("Verification passed");
         }
-        _ => return PluginResult::error("Verification failed"),
+        _ => {
+            set_status(PluginStatus::Error);
+            return PluginResult::error("Verification failed");
+        }
     }
 
     set_progress(90.0, "Resetting MCU...");
