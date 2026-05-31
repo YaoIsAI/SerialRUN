@@ -31,6 +31,9 @@ pub fn parse_handshake_response(data: &[u8]) -> Option<HandshakeInfo> {
         family_code: data[1],
         header_version: data[2],
         echo_back: data[3],
+        mcu_id: ((data[4] as u16) << 8) | (data[5] as u16),
+        flash_size_kb: ((data[6] as u16) << 8) | (data[7] as u16),
+        eeprom_size_kb: ((data[8] as u16) << 8) | (data[9] as u16),
     })
 }
 
@@ -41,6 +44,9 @@ pub struct HandshakeInfo {
     pub family_code: u8,
     pub header_version: u8,
     pub echo_back: u8,
+    pub mcu_id: u16,
+    pub flash_size_kb: u16,
+    pub eeprom_size_kb: u16,
 }
 
 /// Erase flash command
@@ -120,11 +126,16 @@ mod tests {
 
     #[test]
     fn test_parse_handshake() {
-        let data = vec![0x46, 0x01, 0x02, 0x43, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        // ACK=0x46, family=0x25, version=0x00, echo=0x43
+        // MCU ID=0x1234, Flash=64KB, EEPROM=32KB
+        let data = vec![0x46, 0x25, 0x00, 0x43, 0x12, 0x34, 0x00, 0x40, 0x00, 0x20];
         let info = parse_handshake_response(&data).unwrap();
         assert_eq!(info.ack, 0x46);
-        assert_eq!(info.family_code, 0x01);
+        assert_eq!(info.family_code, 0x25);
         assert_eq!(info.echo_back, 0x43);
+        assert_eq!(info.mcu_id, 0x1234);
+        assert_eq!(info.flash_size_kb, 64);
+        assert_eq!(info.eeprom_size_kb, 32);
     }
 
     #[test]

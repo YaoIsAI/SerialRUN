@@ -232,7 +232,10 @@ fn handle_detect(params: &serde_json::Value) -> PluginResult {
     match serial_read(&mut buf, 2000) {
         Some(n) => {
             if let Some(info) = parse_handshake_response(&buf[..n]) {
-                let chip = ChipInfo::from_handshake(info.family_code, info.header_version);
+                let chip = ChipInfo::from_handshake(
+                    info.family_code, info.header_version,
+                    info.mcu_id, info.flash_size_kb, info.eeprom_size_kb,
+                );
                 set_progress(100.0, "MCU detected");
                 set_status(PluginStatus::Success);
                 log_info(&format!("Detected: {}", chip.info_message));
@@ -303,7 +306,10 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
     let chip = match serial_read(&mut buf, 2000) {
         Some(n) => {
             if let Some(info) = parse_handshake_response(&buf[..n]) {
-                ChipInfo::from_handshake(info.family_code, info.header_version)
+                ChipInfo::from_handshake(
+                    info.family_code, info.header_version,
+                    info.mcu_id, info.flash_size_kb, info.eeprom_size_kb,
+                )
             } else {
                 set_status(PluginStatus::Error);
                 return PluginResult::error("Invalid handshake. Power cycle MCU while sending ISP trigger.");

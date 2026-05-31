@@ -49,37 +49,40 @@ impl std::fmt::Display for StcFamily {
 pub struct ChipInfo {
     pub family: StcFamily,
     pub family_code: u8,
-    pub flash_size: u32,       // bytes
-    pub eeprom_size: u32,      // bytes
+    pub mcu_id: u16,
+    pub flash_size: u32,       // bytes (from handshake response)
+    pub eeprom_size: u32,      // bytes (from handshake response)
     pub info_message: String,
 }
 
 impl ChipInfo {
-    pub fn from_handshake(family_code: u8, _header_version: u8) -> Self {
+    /// Create ChipInfo from parsed handshake response data.
+    /// Flash/EEPROM sizes come directly from the MCU's handshake response.
+    pub fn from_handshake(
+        family_code: u8,
+        _header_version: u8,
+        mcu_id: u16,
+        flash_size_kb: u16,
+        eeprom_size_kb: u16,
+    ) -> Self {
         let family = StcFamily::from_family_code(family_code);
 
-        // Flash sizes based on family (typical defaults)
-        let (flash_size, eeprom_size) = match family {
-            StcFamily::STC89 => (64 * 1024, 8 * 1024),      // 64KB Flash, 8KB EEPROM
-            StcFamily::STC12 => (8 * 1024, 4 * 1024),       // 8KB Flash, 4KB EEPROM
-            StcFamily::STC15 => (16 * 1024, 8 * 1024),      // 16KB Flash, 8KB EEPROM
-            StcFamily::STC8 => (32 * 1024, 8 * 1024),       // 32KB Flash, 8KB EEPROM
-            StcFamily::STC8G => (64 * 1024, 32 * 1024),     // 64KB Flash, 32KB EEPROM
-            StcFamily::STC8H => (64 * 1024, 32 * 1024),     // 64KB Flash, 32KB EEPROM
-            StcFamily::Unknown(_) => (32 * 1024, 8 * 1024), // Default
-        };
+        // Use actual sizes from handshake response
+        let flash_size = (flash_size_kb as u32) * 1024;
+        let eeprom_size = (eeprom_size_kb as u32) * 1024;
 
         let info_message = format!(
-            "{} (family code: 0x{:02X}), Flash: {}KB, EEPROM: {}KB",
+            "{} (ID: 0x{:04X}), Flash: {}KB, EEPROM: {}KB",
             family.name(),
-            family_code,
-            flash_size / 1024,
-            eeprom_size / 1024
+            mcu_id,
+            flash_size_kb,
+            eeprom_size_kb
         );
 
         Self {
             family,
             family_code,
+            mcu_id,
             flash_size,
             eeprom_size,
             info_message,
@@ -204,9 +207,11 @@ mod tests {
 
     #[test]
     fn test_chip_info() {
-        let info = ChipInfo::from_handshake(0x25, 0x00);
+        let info = ChipInfo::from_handshake(0x25, 0x00, 0x1234, 64, 32);
         assert_eq!(info.family, StcFamily::STC8);
-        assert_eq!(info.flash_size, 32 * 1024);
+        assert_eq!(info.mcu_id, 0x1234);
+        assert_eq!(info.flash_size, 64 * 1024);
+        assert_eq!(info.eeprom_size, 32 * 1024);
     }
 
     #[test]
