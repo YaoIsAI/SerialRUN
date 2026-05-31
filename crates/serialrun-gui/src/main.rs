@@ -9,6 +9,7 @@ mod port_owner;
 mod state;
 pub mod theme;
 mod ui;
+pub mod util;
 
 use eframe::egui;
 
@@ -33,7 +34,7 @@ fn main() -> eframe::Result<()> {
         viewport: {
             let mut vb = egui::ViewportBuilder::default()
                 .with_inner_size([900.0, 600.0])
-                .with_min_inner_size([700.0, 400.0])
+                .with_min_inner_size([700.0, 500.0])
                 .with_title("SerialRUN");
             if let Some(icon) = icon_data {
                 vb = vb.with_icon(icon);
@@ -56,17 +57,36 @@ fn main() -> eframe::Result<()> {
 fn setup_custom_fonts(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
 
+    // Microsoft YaHei - best CJK rendering quality (Chinese/Japanese)
     let font_data = include_bytes!("../fonts/msyh.ttc");
     fonts.font_data.insert(
         "msyh".to_owned(),
         egui::FontData::from_static(font_data),
     );
 
-    if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Proportional) {
-        family.insert(0, "msyh".to_owned());
-    }
-    if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
-        family.insert(0, "msyh".to_owned());
+    // NotoSansSC - covers scripts msyh misses (Korean, Thai, etc.)
+    if let Ok(noto_data) = std::fs::read("C:\\Windows\\Fonts\\NotoSansSC-VF.ttf") {
+        fonts.font_data.insert(
+            "noto".to_owned(),
+            egui::FontData::from_owned(noto_data),
+        );
+        // NotoSansSC as fallback for glyphs msyh doesn't have
+        if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Proportional) {
+            family.insert(0, "msyh".to_owned());
+            family.push("noto".to_owned());
+        }
+        if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
+            family.insert(0, "msyh".to_owned());
+            family.push("noto".to_owned());
+        }
+    } else {
+        // Fallback: msyh only
+        if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Proportional) {
+            family.insert(0, "msyh".to_owned());
+        }
+        if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
+            family.insert(0, "msyh".to_owned());
+        }
     }
 
     ctx.set_fonts(fonts);

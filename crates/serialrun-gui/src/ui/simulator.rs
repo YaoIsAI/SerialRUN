@@ -212,17 +212,22 @@ fn poll_sim_logs(state: &mut AppState) {
         }
     }
     if let Some(rx) = &state.sim_log_rx {
+        let mut sim_entries = Vec::new();
         while let Ok(entry) = rx.try_recv() {
             state.simulator.log.push_back(crate::state::SimulatorLogEntry {
                 timestamp: entry.timestamp,
-                direction: entry.direction,
-                hex: entry.hex,
-                decoded: entry.decoded,
+                direction: entry.direction.clone(),
+                hex: entry.hex.clone(),
+                decoded: entry.decoded.clone(),
                 success: entry.success,
             });
-            if state.simulator.log.len() > 200 {
+            sim_entries.push(format!("[Simulator] {} {} | {}", entry.direction, entry.hex, entry.decoded));
+            if state.simulator.log.len() > 1000 {
                 state.simulator.log.pop_front();
             }
+        }
+        for msg in sim_entries {
+            state.add_log_entry(crate::state::LogLevel::Info, &msg);
         }
     }
     if state.simulator.running && state.sim_stop.is_none() {
@@ -231,9 +236,5 @@ fn poll_sim_logs(state: &mut AppState) {
 }
 
 fn get_local_ip() -> Option<String> {
-    use std::net::UdpSocket;
-    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
-    socket.connect("8.8.8.8:80").ok()?;
-    let addr = socket.local_addr().ok()?;
-    Some(addr.ip().to_string())
+    crate::util::get_local_ip()
 }

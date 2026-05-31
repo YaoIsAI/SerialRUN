@@ -90,20 +90,21 @@ serialrun-gui
 
 - **Top bar**: Tool buttons (Log, Chart, PLC, Modbus, Bridge, Simulator, File Transfer, Frame Builder, Data Logger, CAN, I2C/SPI, Oscilloscope, Flasher, Register Editor, Plugins), Theme/Language/Help
 - **Left panel**: Port selector, baud rate, Auto-detect, Connect/Disconnect
-- **Center**: Terminal display with TX/RX/SYS indicators
+- **Center**: Terminal display with TX/RX/SYS indicators, auto-wrapping toolbar
 - **Bottom**: Status bar with connection state and byte counts
+- **Floating panels**: All feature panels are independent OS windows that can be dragged freely and resized. Child windows always stay on top of the main window.
 
 ### GUI Panels
 
 | Panel | Description |
 |-------|-------------|
-| Terminal | Serial TX/RX with HEX mode, timestamps, CRC checksums |
-| Modbus | RTU monitor with function code parsing and register display |
-| PLC Control | Modbus register polling with brand presets (Siemens, Mitsubishi, Delta, etc.) |
+| Terminal | Serial TX/RX with HEX mode, timestamps, CRC checksums, auto-wrapping toolbar |
+| Modbus | RTU monitor with function code parsing, register display, configurable response timeout (50-5000ms), TX/RX shown in terminal |
+| PLC Control | Modbus register polling with brand presets (Siemens, Mitsubishi, Delta, etc.), TX shown in terminal |
 | TCP/RTU Bridge | Bridge Modbus TCP clients to serial RTU devices |
 | HMI Simulator | Virtual Modbus slave with configurable registers and coils |
 | CAN Bus | SLCAN frame capture, ID filtering, per-ID statistics |
-| I2C/SPI | Register read/write debug tool with address and data width config |
+| I2C/SPI | Register read/write debug tool with address and data width config, TX shown in terminal |
 | Oscilloscope | Real-time waveform display with trigger and cursor measurement |
 | File Transfer | XMODEM / YMODEM / ZMODEM protocol transfer |
 | Frame Builder | Visual Modbus frame construction with live hex preview |

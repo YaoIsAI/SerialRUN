@@ -1,16 +1,72 @@
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
+use std::time::Duration;
+use base64::Engine as _;
 
 // ── MCP Lifecycle ──
+
+/// Serial command from MCP server to GUI — the GUI executes all serial
+/// operations through its own port_owner so state stays in sync.
+pub enum McpSerialRequest {
+    Connect {
+        port_name: String,
+        baud_rate: u32,
+        data_bits: u8,
+        stop_bits: u8,
+        parity: String,
+        flow_control: String,
+        resp: mpsc::Sender<Result<String, String>>,
+    },
+    Disconnect {
+        resp: mpsc::Sender<Result<String, String>>,
+    },
+    Send {
+        data: Vec<u8>,
+        pause_after: bool,
+        resp: mpsc::Sender<Result<usize, String>>,
+    },
+    Read {
+        timeout_ms: u64,
+        resume: bool,
+        resp: mpsc::Sender<Result<Vec<u8>, String>>,
+    },
+    ReadWait {
+        timeout_ms: u64,
+        resp: mpsc::Sender<Result<Vec<u8>, String>>,
+    },
+    /// Write data then read response (exclusive — pauses read loop)
+    SendRead {
+        data: Vec<u8>,
+        timeout_ms: u64,
+        resp: mpsc::Sender<Result<Vec<u8>, String>>,
+    },
+    /// Subscribe to serial port events (returns a receiver for real-time data push)
+    SubscribeEvents {
+        resp: mpsc::Sender<Option<mpsc::Receiver<crate::port_owner::PortEvent>>>,
+    },
+    IsConnected {
+        resp: mpsc::Sender<bool>,
+    },
+    GetConfig {
+        key: Option<String>,
+        resp: mpsc::Sender<serde_json::Value>,
+    },
+    SetConfig {
+        key: String,
+        value: serde_json::Value,
+        resp: mpsc::Sender<Result<String, String>>,
+    },
+}
 
 pub enum McpCommand {
     Start { bind_addr: String, port: u16 },
     Stop,
     Reconfigure { bind_addr: String, port: u16 },
-    /// Set the shared port_owner command sender for serial operations
-    SetPortOwner(Option<std::sync::mpsc::Sender<crate::port_owner::PortCommand>>),
+    /// Set the channel for MCP to send serial commands to GUI
+    SetSerialRequestTx(Option<mpsc::Sender<McpSerialRequest>>),
 }
 
 /// Access log entry sent from MCP server to GUI
@@ -65,14 +121,22 @@ impl McpHandle {
 
 /// Shared state between MCP manager and handler threads
 struct McpShared {
-    port_owner: Option<mpsc::Sender<crate::port_owner::PortCommand>>,
-    /// Whether the port is actually connected
-    connected: std::sync::atomic::AtomicBool,
+    /// Channel to send serial commands to GUI (GUI executes all serial ops)
+    serial_req_tx: Option<mpsc::Sender<McpSerialRequest>>,
+    /// Whether the port is actually connected (from GUI's perspective)
+    connected: AtomicBool,
     /// Active client count for concurrency control
-    active_clients: std::sync::atomic::AtomicUsize,
+    active_clients: AtomicUsize,
     /// Access log entries (IP, time, action)
-    access_log: std::sync::Mutex<Vec<AccessLogEntry>>,
+    access_log: Mutex<Vec<AccessLogEntry>>,
+    /// AI connection info (for status tool)
+    ai_port_name: Mutex<String>,
+    ai_baud_rate: std::sync::atomic::AtomicU32,
+    ai_tx_count: std::sync::atomic::AtomicU64,
+    ai_rx_count: std::sync::atomic::AtomicU64,
 }
+
+use std::sync::atomic::AtomicU32;
 
 #[derive(Clone, serde::Serialize)]
 struct AccessLogEntry {
@@ -85,13 +149,17 @@ struct AccessLogEntry {
 
 fn mcp_manager(cmd_rx: mpsc::Receiver<McpCommand>, status_tx: mpsc::Sender<McpStatus>, log_tx: mpsc::Sender<McpAccessLogEntry>) {
     let mut running = false;
-    let mut stop_flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let mut stop_flag = Arc::new(AtomicBool::new(false));
     let mut current_thread: Option<std::thread::JoinHandle<()>> = None;
     let shared = Arc::new(Mutex::new(McpShared {
-        port_owner: None,
-        connected: std::sync::atomic::AtomicBool::new(false),
-        active_clients: std::sync::atomic::AtomicUsize::new(0),
-        access_log: std::sync::Mutex::new(Vec::new()),
+        serial_req_tx: None,
+        connected: AtomicBool::new(false),
+        active_clients: AtomicUsize::new(0),
+        access_log: Mutex::new(Vec::new()),
+        ai_port_name: Mutex::new(String::new()),
+        ai_baud_rate: AtomicU32::new(0),
+        ai_tx_count: std::sync::atomic::AtomicU64::new(0),
+        ai_rx_count: std::sync::atomic::AtomicU64::new(0),
     }));
 
     loop {
@@ -134,9 +202,9 @@ fn mcp_manager(cmd_rx: mpsc::Receiver<McpCommand>, status_tx: mpsc::Sender<McpSt
                 current_thread = Some(handle);
                 running = true;
             }
-            Ok(McpCommand::SetPortOwner(po)) => {
+            Ok(McpCommand::SetSerialRequestTx(tx)) => {
                 if let Ok(mut sh) = shared.lock() {
-                    sh.port_owner = po;
+                    sh.serial_req_tx = tx;
                 }
             }
             Err(_) => break,
@@ -173,7 +241,7 @@ fn run_mcp_listener(
             break;
         }
         match listener.accept() {
-            Ok((mut stream, addr)) => {
+            Ok((stream, addr)) => {
                 // Accept inherits non-blocking from listener; reset to blocking for read/write
                 let _ = stream.set_nonblocking(false);
                 let client_ip = addr.ip().to_string();
@@ -232,25 +300,6 @@ impl McpResponse {
     }
 }
 
-/// Helper: send a WriteRead command through port_owner and wait for response
-fn port_write_read(
-    po: &mpsc::Sender<crate::port_owner::PortCommand>,
-    data: Vec<u8>,
-    timeout_ms: u64,
-) -> Result<Vec<u8>, String> {
-    let (resp_tx, resp_rx) = mpsc::channel();
-    let _ = po.send(crate::port_owner::PortCommand::WriteRead { data, timeout_ms, resp_tx });
-    resp_rx.recv().unwrap_or_else(|e| Err(format!("Channel closed: {}", e)))
-}
-
-/// Helper: send a Write command through port_owner
-fn port_write(
-    po: &mpsc::Sender<crate::port_owner::PortCommand>,
-    data: Vec<u8>,
-) {
-    let _ = po.send(crate::port_owner::PortCommand::Write(data));
-}
-
 fn handle_request(
     request: McpRequest,
     shared: &Mutex<McpShared>,
@@ -274,7 +323,7 @@ fn handle_request(
                     },
                     {
                         "name": "connect",
-                        "description": "Connect to a serial port via the GUI's port owner",
+                        "description": "Connect to a serial port (independently or via GUI)",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -282,7 +331,8 @@ fn handle_request(
                                 "baud_rate": { "type": "integer", "description": "Baud rate (default: 115200)" },
                                 "data_bits": { "type": "integer", "description": "Data bits: 5, 6, 7, 8 (default: 8)" },
                                 "stop_bits": { "type": "integer", "description": "Stop bits: 1, 2 (default: 1)" },
-                                "parity": { "type": "string", "description": "Parity: None, Odd, Even (default: None)" }
+                                "parity": { "type": "string", "description": "Parity: None, Odd, Even (default: None)" },
+                                "flow_control": { "type": "string", "description": "Flow control: None, Software, Hardware (default: None)" }
                             },
                             "required": ["port"]
                         }
@@ -294,24 +344,27 @@ fn handle_request(
                     },
                     {
                         "name": "send",
-                        "description": "Send data to serial port (text or hex)",
+                        "description": "Send data to serial port (text or hex). Use pause_after=true to keep reading paused for a subsequent read call.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
                                 "data": { "type": "string", "description": "Data to send (text or hex string)" },
-                                "hex": { "type": "boolean", "description": "If true, data is interpreted as hex" }
+                                "hex": { "type": "boolean", "description": "If true, data is interpreted as hex" },
+                                "pause_after": { "type": "boolean", "description": "If true, pauses the read loop after sending so next read() can receive the response" }
                             },
                             "required": ["data"]
                         }
                     },
                     {
                         "name": "read",
-                        "description": "Read data from serial port",
+                        "description": "Read data from serial port. After send(pause_after=true), use resume=false to keep reading paused.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
                                 "timeout_ms": { "type": "integer", "description": "Read timeout in ms (default: 1000)" },
-                                "max_bytes": { "type": "integer", "description": "Maximum bytes to read (default: 1024)" }
+                                "max_bytes": { "type": "integer", "description": "Maximum bytes to read (default: 1024)" },
+                                "resume": { "type": "boolean", "description": "If true (default), resumes the read loop after reading. Set to false when reading after send(pause_after=true)." },
+                                "format": { "type": "string", "description": "Output format: 'hex' (space-separated hex), 'text' (UTF-8), 'raw' (base64). Default: 'hex'", "enum": ["hex", "text", "raw"] }
                             }
                         }
                     },
@@ -329,13 +382,16 @@ fn handle_request(
                     },
                     {
                         "name": "modbus_read",
-                        "description": "Read Modbus RTU holding registers",
+                        "description": "Read Modbus RTU holding registers with optional engineering value conversion",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
                                 "slave_id": { "type": "integer", "description": "Slave ID (1-247)", "default": 1 },
                                 "address": { "type": "integer", "description": "Start register address" },
-                                "quantity": { "type": "integer", "description": "Number of registers (default: 1)" }
+                                "quantity": { "type": "integer", "description": "Number of registers (default: 1)" },
+                                "scale": { "type": "number", "description": "Scale factor: value = raw * scale + offset (default: 1.0)" },
+                                "offset": { "type": "number", "description": "Offset added after scaling (default: 0.0)" },
+                                "unit": { "type": "string", "description": "Unit label for engineering values (default: '')" }
                             },
                             "required": ["address"]
                         }
@@ -395,6 +451,36 @@ fn handle_request(
                             "type": "object",
                             "properties": {}
                         }
+                    },
+                    {
+                        "name": "status",
+                        "description": "Get serial port status, connection info, and byte counters",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {}
+                        }
+                    },
+                    {
+                        "name": "get_config",
+                        "description": "Get all UI settings or specific setting values",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "key": { "type": "string", "description": "Setting key (optional, returns all if omitted)" }
+                            }
+                        }
+                    },
+                    {
+                        "name": "set_config",
+                        "description": "Update a UI setting (syncs to GUI immediately)",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "key": { "type": "string", "description": "Setting key" },
+                                "value": { "description": "New value" }
+                            },
+                            "required": ["key", "value"]
+                        }
                     }
                 ]
             });
@@ -403,6 +489,19 @@ fn handle_request(
         "tools/call" => {
             let tool_name = request.params.get("name").and_then(|v| v.as_str()).unwrap_or("");
             let arguments = request.params.get("arguments").cloned().unwrap_or(serde_json::json!({}));
+
+            // Sync McpShared.connected with GUI's actual state (Bug 4 fix)
+            if tool_name != "list_ports" && tool_name != "get_access_log" {
+                if let Some(ref tx) = { let sh = shared.lock().unwrap(); sh.serial_req_tx.clone() } {
+                    let (stx, srx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::IsConnected { resp: stx });
+                    if let Ok(gui_connected) = srx.recv_timeout(Duration::from_secs(1)) {
+                        if let Ok(sh) = shared.lock() {
+                            sh.connected.store(gui_connected, Ordering::Relaxed);
+                        }
+                    }
+                }
+            }
 
             match tool_name {
                 "list_ports" => {
@@ -425,94 +524,94 @@ fn handle_request(
                 "connect" => {
                     let port_name = arguments.get("port").and_then(|v| v.as_str()).unwrap_or("");
                     let baud_rate = arguments.get("baud_rate").and_then(|v| v.as_u64()).unwrap_or(115200) as u32;
+                    let data_bits = arguments.get("data_bits").and_then(|v| v.as_u64()).unwrap_or(8) as u8;
+                    let stop_bits = arguments.get("stop_bits").and_then(|v| v.as_u64()).unwrap_or(1) as u8;
+                    let parity = arguments.get("parity").and_then(|v| v.as_str()).unwrap_or("None").to_string();
+                    let flow_control = arguments.get("flow_control").and_then(|v| v.as_str()).unwrap_or("None").to_string();
 
                     if port_name.is_empty() {
                         return McpResponse::error(request.id, -32602, "Port name is required".into());
                     }
 
-                    // Get or create port_owner
-                    let po = {
-                        let mut sh = match shared.lock() {
+                    let tx = {
+                        let sh = match shared.lock() {
                             Ok(sh) => sh,
                             Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
                         };
-                        if sh.port_owner.is_none() {
-                            // Create a new port_owner for MCP
-                            let new_po = crate::port_owner::PortOwnerHandle::start();
-                            sh.port_owner = Some(new_po.cmd_tx());
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "GUI not available. Start SerialRUN first.".into()),
                         }
-                        sh.port_owner.as_ref().unwrap().clone()
                     };
 
-                    let config = serialrun_core::config::SerialConfig {
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::Connect {
                         port_name: port_name.to_string(),
-                        baud_rate,
-                        ..Default::default()
-                    };
-                    let _ = po.send(crate::port_owner::PortCommand::Open(config));
-                    // Wait for connection result by polling for Opened event
-                    let (verify_tx, verify_rx) = mpsc::channel();
-                    let po_clone = po.clone();
-                    std::thread::spawn(move || {
-                        // Try WriteRead with empty data to verify port is open
-                        for _ in 0..5 {
-                            std::thread::sleep(std::time::Duration::from_millis(100));
-                            let (rtx, rrx) = mpsc::channel();
-                            let _ = po_clone.send(crate::port_owner::PortCommand::WriteRead {
-                                data: vec![],
-                                timeout_ms: 50,
-                                resp_tx: rtx,
-                            });
-                            if let Ok(result) = rrx.recv() {
-                                // If we get any response (even error), port is open
-                                let _ = verify_tx.send(true);
-                                return;
-                            }
-                        }
-                        let _ = verify_tx.send(false);
+                        baud_rate, data_bits, stop_bits, parity, flow_control,
+                        resp: resp_tx,
                     });
-                    let connected = verify_rx.recv().unwrap_or(false);
-                    if connected {
-                        // Set connected flag
-                        if let Ok(sh) = shared.lock() {
-                            sh.connected.store(true, std::sync::atomic::Ordering::Relaxed);
+                    match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                        Ok(Ok(msg)) => {
+                            if let Ok(sh) = shared.lock() {
+                                sh.connected.store(true, Ordering::Relaxed);
+                                *sh.ai_port_name.lock().unwrap() = port_name.to_string();
+                                sh.ai_baud_rate.store(baud_rate, Ordering::Relaxed);
+                            }
+                            McpResponse::success(request.id, serde_json::json!({
+                                "content": [{ "type": "text", "text": msg }]
+                            }))
                         }
-                        McpResponse::success(request.id, serde_json::json!({
-                            "content": [{ "type": "text", "text": format!("Connected to {} at {} baud", port_name, baud_rate) }]
-                        }))
-                    } else {
-                        McpResponse::error(request.id, -1, format!("Failed to connect to {}", port_name))
+                        Ok(Err(e)) => {
+                            if let Ok(sh) = shared.lock() {
+                                sh.connected.store(false, Ordering::Relaxed);
+                            }
+                            McpResponse::error(request.id, -1, e)
+                        }
+                        Err(_) => {
+                            if let Ok(sh) = shared.lock() {
+                                sh.connected.store(false, Ordering::Relaxed);
+                            }
+                            McpResponse::error(request.id, -1, "Timeout waiting for GUI".into())
+                        }
                     }
                 }
                 "disconnect" => {
-                    let sh = match shared.lock() {
-                        Ok(sh) => sh,
-                        Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                    let tx = {
+                        let sh = match shared.lock() {
+                            Ok(sh) => sh,
+                            Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                        };
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "GUI not available".into()),
+                        }
                     };
-                    let Some(ref po) = sh.port_owner else {
-                        return McpResponse::error(request.id, -1, "Not connected to port owner".into());
-                    };
-                    let _ = po.send(crate::port_owner::PortCommand::Close);
-                    sh.connected.store(false, std::sync::atomic::Ordering::Relaxed);
-                    McpResponse::success(request.id, serde_json::json!({
-                        "content": [{ "type": "text", "text": "Disconnected" }]
-                    }))
+
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::Disconnect { resp: resp_tx });
+                    match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                        Ok(Ok(msg)) => {
+                            if let Ok(sh) = shared.lock() {
+                                sh.connected.store(false, Ordering::Relaxed);
+                                *sh.ai_port_name.lock().unwrap() = String::new();
+                                sh.ai_baud_rate.store(0, Ordering::Relaxed);
+                            }
+                            McpResponse::success(request.id, serde_json::json!({
+                                "content": [{ "type": "text", "text": msg }]
+                            }))
+                        }
+                        Ok(Err(e)) => McpResponse::error(request.id, -1, e),
+                        Err(_) => McpResponse::error(request.id, -1, "Timeout waiting for GUI".into()),
+                    }
                 }
                 "send" => {
                     let data = arguments.get("data").and_then(|v| v.as_str()).unwrap_or("");
                     let hex = arguments.get("hex").and_then(|v| v.as_bool()).unwrap_or(false);
+                    let pause_after = arguments.get("pause_after").and_then(|v| v.as_bool()).unwrap_or(false);
 
                     if data.is_empty() {
                         return McpResponse::error(request.id, -32602, "Data is required".into());
                     }
-
-                    let sh = match shared.lock() {
-                        Ok(sh) => sh,
-                        Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
-                    };
-                    let Some(ref po) = sh.port_owner else {
-                        return McpResponse::error(request.id, -1, "Not connected".into());
-                    };
 
                     let bytes = if hex {
                         data.split_whitespace()
@@ -521,34 +620,75 @@ fn handle_request(
                     } else {
                         data.as_bytes().to_vec()
                     };
+                    let _len = bytes.len();
 
-                    let len = bytes.len();
-                    let _ = po.send(crate::port_owner::PortCommand::Write(bytes));
-                    McpResponse::success(request.id, serde_json::json!({
-                        "content": [{ "type": "text", "text": format!("Sent {} bytes", len) }]
-                    }))
+                    let tx = {
+                        let sh = match shared.lock() {
+                            Ok(sh) => sh,
+                            Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                        };
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "Not connected".into()),
+                        }
+                    };
+
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::Send { data: bytes, pause_after, resp: resp_tx });
+                    match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                        Ok(Ok(n)) => {
+                            if let Ok(sh) = shared.lock() {
+                                sh.ai_tx_count.fetch_add(n as u64, Ordering::Relaxed);
+                            }
+                            McpResponse::success(request.id, serde_json::json!({
+                                "content": [{ "type": "text", "text": format!("Sent {} bytes{}", n, if pause_after { " (read loop paused)" } else { "" }) }]
+                            }))
+                        }
+                        Ok(Err(e)) => McpResponse::error(request.id, -1, e),
+                        Err(_) => McpResponse::error(request.id, -1, "Timeout".into()),
+                    }
                 }
                 "read" => {
                     let timeout_ms = arguments.get("timeout_ms").and_then(|v| v.as_u64()).unwrap_or(1000);
+                    let resume = arguments.get("resume").and_then(|v| v.as_bool()).unwrap_or(true);
+                    let format = arguments.get("format").and_then(|v| v.as_str()).unwrap_or("hex");
 
-                    let sh = match shared.lock() {
-                        Ok(sh) => sh,
-                        Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
-                    };
-                    let Some(ref po) = sh.port_owner else {
-                        return McpResponse::error(request.id, -1, "Not connected".into());
+                    let tx = {
+                        let sh = match shared.lock() {
+                            Ok(sh) => sh,
+                            Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                        };
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "Not connected".into()),
+                        }
                     };
 
-                    // Use WriteRead with empty data to just read
-                    match port_write_read(po, vec![], timeout_ms) {
-                        Ok(data) => {
-                            let data_hex = data.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ");
-                            let data_text = String::from_utf8_lossy(&data).to_string();
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::Read { timeout_ms, resume, resp: resp_tx });
+                    match resp_rx.recv_timeout(Duration::from_secs(6)) {
+                        Ok(Ok(data)) => {
+                            if !data.is_empty() {
+                                if let Ok(sh) = shared.lock() {
+                                    sh.ai_rx_count.fetch_add(data.len() as u64, Ordering::Relaxed);
+                                }
+                            }
+                            let formatted = match format {
+                                "text" => String::from_utf8_lossy(&data).to_string(),
+                                "raw" => base64::engine::general_purpose::STANDARD.encode(&*data),
+                                _ => data.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" "),
+                            };
                             McpResponse::success(request.id, serde_json::json!({
-                                "content": [{ "type": "text", "text": format!("Read {} bytes\nHEX: {}\nText: {}", data.len(), data_hex, data_text) }]
+                                "content": [{
+                                    "type": "text",
+                                    "text": formatted,
+                                    "format": format,
+                                    "length": data.len()
+                                }]
                             }))
                         }
-                        Err(e) => McpResponse::error(request.id, -1, e)
+                        Ok(Err(e)) => McpResponse::error(request.id, -1, e),
+                        Err(_) => McpResponse::error(request.id, -1, "Timeout".into()),
                     }
                 }
                 "send_command" => {
@@ -559,27 +699,33 @@ fn handle_request(
                         return McpResponse::error(request.id, -32602, "Command is required".into());
                     }
 
-                    let sh = match shared.lock() {
-                        Ok(sh) => sh,
-                        Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
-                    };
-                    let Some(ref po) = sh.port_owner else {
-                        return McpResponse::error(request.id, -1, "Not connected".into());
-                    };
-
                     let mut cmd_bytes = command.as_bytes().to_vec();
                     if !command.ends_with("\r\n") && !command.ends_with('\n') && !command.ends_with('\r') {
                         cmd_bytes.extend_from_slice(b"\r\n");
                     }
 
-                    match port_write_read(po, cmd_bytes, timeout_ms) {
-                        Ok(data) => {
+                    let tx = {
+                        let sh = match shared.lock() {
+                            Ok(sh) => sh,
+                            Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                        };
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "Not connected".into()),
+                        }
+                    };
+
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::SendRead { data: cmd_bytes, timeout_ms, resp: resp_tx });
+                    match resp_rx.recv_timeout(Duration::from_secs(6)) {
+                        Ok(Ok(data)) => {
                             let response = String::from_utf8_lossy(&data).to_string();
                             McpResponse::success(request.id, serde_json::json!({
                                 "content": [{ "type": "text", "text": response }]
                             }))
                         }
-                        Err(e) => McpResponse::error(request.id, -1, e)
+                        Ok(Err(e)) => McpResponse::error(request.id, -1, e),
+                        Err(_) => McpResponse::error(request.id, -1, "Timeout".into()),
                     }
                 }
                 "modbus_read" => {
@@ -589,21 +735,36 @@ fn handle_request(
                         None => return McpResponse::error(request.id, -32602, "address is required".into()),
                     };
                     let quantity = arguments.get("quantity").and_then(|v| v.as_u64()).unwrap_or(1) as u16;
-
-                    let sh = match shared.lock() {
-                        Ok(sh) => sh,
-                        Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
-                    };
-                    let Some(ref po) = sh.port_owner else {
-                        return McpResponse::error(request.id, -1, "Not connected".into());
-                    };
+                    if quantity == 0 || quantity > 125 {
+                        return McpResponse::error(request.id, -32602, "quantity must be 1-125".into());
+                    }
+                    let scale = arguments.get("scale").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                    let offset = arguments.get("offset").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                    let unit = arguments.get("unit").and_then(|v| v.as_str()).unwrap_or("");
 
                     use serialrun_core::protocol::{ModbusFrame, ModbusParser, ModbusFunction};
                     let frame = ModbusParser::build_read_request(slave_id, ModbusFunction::ReadHoldingRegisters, address, quantity);
                     let req = frame.to_bytes();
 
-                    match port_write_read(po, req, 200) {
-                        Ok(resp) if resp.len() >= 4 => {
+                    let tx = {
+                        let sh = match shared.lock() {
+                            Ok(sh) => sh,
+                            Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                        };
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "Not connected".into()),
+                        }
+                    };
+
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::SendRead { data: req.clone(), timeout_ms: 200, resp: resp_tx });
+                    match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                        Ok(Ok(resp)) if resp.len() >= 4 => {
+                            if let Ok(sh) = shared.lock() {
+                                sh.ai_tx_count.fetch_add(req.len() as u64, Ordering::Relaxed);
+                                sh.ai_rx_count.fetch_add(resp.len() as u64, Ordering::Relaxed);
+                            }
                             match ModbusFrame::parse(&resp) {
                                 Ok(f) => {
                                     let hex = resp.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ");
@@ -614,8 +775,24 @@ fn handle_request(
                                         values.push(u16::from_be_bytes([data[i], data[i+1]]));
                                         i += 2;
                                     }
+                                    let use_conversion = (scale - 1.0).abs() > f64::EPSILON || offset.abs() > f64::EPSILON || !unit.is_empty();
+                                    let result_text = if use_conversion {
+                                        let engineering: Vec<serde_json::Value> = values.iter().map(|v| {
+                                            let eng = *v as f64 * scale + offset;
+                                            if unit.is_empty() {
+                                                serde_json::json!({"raw": v, "value": format!("{:.3}", eng)})
+                                            } else {
+                                                serde_json::json!({"raw": v, "value": format!("{:.3}", eng), "unit": unit})
+                                            }
+                                        }).collect();
+                                        format!("Read {} registers from slave {}\nHEX: {}\nRaw: {:?}\nEngineering: {}",
+                                            quantity, slave_id, hex, values,
+                                            serde_json::to_string_pretty(&engineering).unwrap())
+                                    } else {
+                                        format!("Read {} registers from slave {}\nHEX: {}\nValues: {:?}", quantity, slave_id, hex, values)
+                                    };
                                     McpResponse::success(request.id, serde_json::json!({
-                                        "content": [{ "type": "text", "text": format!("Read {} registers from slave {}\nHEX: {}\nValues: {:?}", quantity, slave_id, hex, values) }]
+                                        "content": [{ "type": "text", "text": result_text }]
                                     }))
                                 }
                                 Err(e) => McpResponse::error(request.id, -1, format!("Parse error: {}", e))
@@ -631,24 +808,38 @@ fn handle_request(
                         None => return McpResponse::error(request.id, -32602, "address is required".into()),
                     };
                     let value = match arguments.get("value").and_then(|v| v.as_u64()) {
-                        Some(v) => v as u16,
+                        Some(v) => {
+                            if v > 65535 {
+                                return McpResponse::error(request.id, -32602, "value must be 0-65535".into());
+                            }
+                            v as u16
+                        }
                         None => return McpResponse::error(request.id, -32602, "value is required".into()),
-                    };
-
-                    let sh = match shared.lock() {
-                        Ok(sh) => sh,
-                        Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
-                    };
-                    let Some(ref po) = sh.port_owner else {
-                        return McpResponse::error(request.id, -1, "Not connected".into());
                     };
 
                     use serialrun_core::protocol::ModbusParser;
                     let frame = ModbusParser::build_write_single(slave_id, address, value);
                     let req = frame.to_bytes();
 
-                    match port_write_read(po, req, 200) {
-                        Ok(resp) if resp.len() >= 4 => {
+                    let tx = {
+                        let sh = match shared.lock() {
+                            Ok(sh) => sh,
+                            Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                        };
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "Not connected".into()),
+                        }
+                    };
+
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::SendRead { data: req.clone(), timeout_ms: 200, resp: resp_tx });
+                    match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                        Ok(Ok(resp)) if resp.len() >= 4 => {
+                            if let Ok(sh) = shared.lock() {
+                                sh.ai_tx_count.fetch_add(req.len() as u64, Ordering::Relaxed);
+                                sh.ai_rx_count.fetch_add(resp.len() as u64, Ordering::Relaxed);
+                            }
                             let hex = resp.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ");
                             McpResponse::success(request.id, serde_json::json!({
                                 "content": [{ "type": "text", "text": format!("Wrote {} to register 0x{:04X} (slave {})\nResponse: {}", value, address, slave_id, hex) }]
@@ -675,12 +866,15 @@ fn handle_request(
                         return McpResponse::error(request.id, -1, "No registers defined for this brand".into());
                     }
 
-                    let sh = match shared.lock() {
-                        Ok(sh) => sh,
-                        Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
-                    };
-                    let Some(ref po) = sh.port_owner else {
-                        return McpResponse::error(request.id, -1, "Not connected".into());
+                    let tx = {
+                        let sh = match shared.lock() {
+                            Ok(sh) => sh,
+                            Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                        };
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "Not connected".into()),
+                        }
                     };
 
                     use serialrun_core::protocol::{ModbusFrame, ModbusParser, ModbusFunction};
@@ -692,8 +886,10 @@ fn handle_request(
                         };
                         let frame = ModbusParser::build_read_request(slave_id, ModbusFunction::ReadHoldingRegisters, reg.addr, qty);
                         let req = frame.to_bytes();
-                        match port_write_read(po, req, 200) {
-                            Ok(resp) if resp.len() >= 4 => {
+                        let (resp_tx, resp_rx) = mpsc::channel();
+                        let _ = tx.send(McpSerialRequest::SendRead { data: req.clone(), timeout_ms: 200, resp: resp_tx });
+                        match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                            Ok(Ok(resp)) if resp.len() >= 4 => {
                                 if let Ok(f) = ModbusFrame::parse(&resp) {
                                     let data = &f.data;
                                     let val_str = match reg.data_type {
@@ -754,21 +950,33 @@ fn handle_request(
                         _ => return McpResponse::error(request.id, -32602, format!("Unknown brand: {}", brand_name)),
                     };
 
-                    let sh = match shared.lock() {
-                        Ok(sh) => sh,
-                        Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
-                    };
-                    let Some(ref po) = sh.port_owner else {
-                        return McpResponse::error(request.id, -1, "Not connected".into());
-                    };
-
                     use serialrun_core::protocol::ModbusParser;
+                    if value < 0.0 || value > 65535.0 {
+                        return McpResponse::error(request.id, -32602, "value must be 0-65535".into());
+                    }
                     let raw_val = value as u16;
                     let frame = ModbusParser::build_write_single(slave_id, address, raw_val);
                     let req = frame.to_bytes();
 
-                    match port_write_read(po, req, 200) {
-                        Ok(resp) if resp.len() >= 4 => {
+                    let tx = {
+                        let sh = match shared.lock() {
+                            Ok(sh) => sh,
+                            Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                        };
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "Not connected".into()),
+                        }
+                    };
+
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::SendRead { data: req.clone(), timeout_ms: 200, resp: resp_tx });
+                    match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                        Ok(Ok(resp)) if resp.len() >= 4 => {
+                            if let Ok(sh) = shared.lock() {
+                                sh.ai_tx_count.fetch_add(req.len() as u64, Ordering::Relaxed);
+                                sh.ai_rx_count.fetch_add(resp.len() as u64, Ordering::Relaxed);
+                            }
                             McpResponse::success(request.id, serde_json::json!({
                                 "content": [{ "type": "text", "text": format!("Wrote {} to {} register 0x{:04X} (slave {})", value, brand_name, address, slave_id) }]
                             }))
@@ -821,6 +1029,79 @@ fn handle_request(
                         ) }]
                     }))
                 }
+                "status" => {
+                    let sh = match shared.lock() {
+                        Ok(sh) => sh,
+                        Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                    };
+                    let connected = sh.connected.load(Ordering::Relaxed);
+                    let has_serial_tx = sh.serial_req_tx.is_some();
+                    let ai_port = sh.ai_port_name.lock().unwrap().clone();
+                    let gui_connected = connected && has_serial_tx && ai_port.is_empty();
+                    let ai_connected = connected && has_serial_tx && !ai_port.is_empty();
+                    let active_clients = sh.active_clients.load(Ordering::Relaxed);
+                    let ai_baud = sh.ai_baud_rate.load(Ordering::Relaxed);
+                    let ai_tx = sh.ai_tx_count.load(Ordering::Relaxed);
+                    let ai_rx = sh.ai_rx_count.load(Ordering::Relaxed);
+
+                    let status = serde_json::json!({
+                        "connection": {
+                            "gui_connected": gui_connected,
+                            "ai_connected": ai_connected,
+                            "port": if ai_connected { &ai_port } else { "N/A" },
+                            "baud_rate": if ai_connected { ai_baud } else { 0 },
+                        },
+                        "mcp": {
+                            "active_clients": active_clients,
+                            "server_version": "0.2.0",
+                        },
+                        "counters": {
+                            "ai_tx_bytes": ai_tx,
+                            "ai_rx_bytes": ai_rx,
+                        }
+                    });
+                    McpResponse::success(request.id, serde_json::json!({
+                        "content": [{ "type": "text", "text": serde_json::to_string_pretty(&status).unwrap() }]
+                    }))
+                }
+                "get_config" => {
+                    let key = arguments.get("key").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let tx = { let sh = shared.lock().unwrap(); sh.serial_req_tx.clone() };
+                    if let Some(tx) = tx {
+                        let _ = tx.send(McpSerialRequest::GetConfig { key, resp: resp_tx });
+                        match resp_rx.recv_timeout(Duration::from_secs(2)) {
+                            Ok(val) => McpResponse::success(request.id, serde_json::json!({
+                                "content": [{ "type": "text", "text": serde_json::to_string_pretty(&val).unwrap() }]
+                            })),
+                            Err(_) => McpResponse::error(request.id, -1, "Timeout".into()),
+                        }
+                    } else {
+                        McpResponse::error(request.id, -1, "Not connected".into())
+                    }
+                }
+                "set_config" => {
+                    let key = arguments.get("key").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let value = arguments.get("value").cloned().unwrap_or(serde_json::Value::Null);
+                    if key.is_empty() {
+                        McpResponse::error(request.id, -32602, "key is required".into())
+                    } else {
+                        let (resp_tx, resp_rx) = mpsc::channel();
+                        let tx = { let sh = shared.lock().unwrap(); sh.serial_req_tx.clone() };
+                        if let Some(tx) = tx {
+                            let _ = tx.send(McpSerialRequest::SetConfig { key, value, resp: resp_tx });
+                            match resp_rx.recv_timeout(Duration::from_secs(2)) {
+                                Ok(Ok(msg)) => McpResponse::success(request.id, serde_json::json!({
+                                    "content": [{ "type": "text", "text": msg }]
+                                })),
+                                Ok(Err(e)) => McpResponse::error(request.id, -32602, e),
+                                Err(_) => McpResponse::error(request.id, -1, "Timeout".into()),
+                            }
+                        } else {
+                            McpResponse::error(request.id, -1, "Not connected".into())
+                        }
+                    }
+                }
                 _ => McpResponse::error(request.id, -32601, format!("Unknown tool: {}", tool_name))
             }
         }
@@ -831,25 +1112,69 @@ fn handle_request(
     }
 }
 
-fn handle_client(mut stream: TcpStream, shared: Arc<Mutex<McpShared>>, client_ip: String, log_tx: mpsc::Sender<McpAccessLogEntry>) {
-    // Log client connect
-    log_access(&shared, &client_ip, "CONNECT", "client connected", &log_tx);
+fn handle_client(stream: TcpStream, shared: Arc<Mutex<McpShared>>, client_ip: String, log_tx: mpsc::Sender<McpAccessLogEntry>) {
+    // Wrap stream in Arc<Mutex> for thread-safe writes (Bug 2 fix)
+    let stream = Arc::new(Mutex::new(stream));
+
+    // Log client connect with device info
+    let connect_detail = {
+        let sh = shared.lock().unwrap();
+        if sh.connected.load(Ordering::Relaxed) {
+            let port = sh.ai_port_name.lock().unwrap().clone();
+            if port.is_empty() {
+                "GUI connected".to_string()
+            } else {
+                format!("AI: {}", port)
+            }
+        } else {
+            "No port open".to_string()
+        }
+    };
+    log_access(&shared, &client_ip, "CONNECT", &connect_detail, &log_tx);
     eprintln!("[MCP] Client connected: {}", client_ip);
 
     // Increment active client count
     {
         let sh = shared.lock().unwrap();
-        sh.active_clients.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        sh.active_clients.fetch_add(1, Ordering::Relaxed);
     }
+
+    // Subscribe to serial port events for real-time push notifications
+    let push_stop = Arc::new(AtomicBool::new(false));
+    let push_handle = {
+        let tx = {
+            let sh = shared.lock().unwrap();
+            sh.serial_req_tx.clone()
+        };
+        if let Some(tx) = tx {
+            let (sub_tx, sub_rx) = mpsc::channel();
+            let _ = tx.send(McpSerialRequest::SubscribeEvents { resp: sub_tx });
+            match sub_rx.recv_timeout(Duration::from_secs(2)) {
+                Ok(Some(evt_rx)) => {
+                    let write_stream = stream.clone();
+                    let stop = push_stop.clone();
+                    let ip = client_ip.clone();
+                    Some(std::thread::spawn(move || {
+                        event_push_thread(write_stream, evt_rx, stop, ip);
+                    }))
+                }
+                _ => None,
+            }
+        } else { None }
+    };
 
     let mut buf = Vec::new();
     let mut tmp = [0u8; 4096];
 
     loop {
-        let n = match stream.read(&mut tmp) {
-            Ok(0) => break,
-            Ok(n) => n,
-            Err(_) => break,
+        // Read from the stream (lock briefly for read)
+        let n = {
+            let mut s = stream.lock().unwrap();
+            match s.read(&mut tmp) {
+                Ok(0) => break,
+                Ok(n) => n,
+                Err(_) => break,
+            }
         };
         buf.extend_from_slice(&tmp[..n]);
 
@@ -863,39 +1188,137 @@ fn handle_client(mut stream: TcpStream, shared: Arc<Mutex<McpShared>>, client_ip
                 Ok(r) => r,
                 Err(e) => {
                     let response = McpResponse::error(None, -32700, format!("Parse error: {}", e));
-                    let _ = write!(stream, "{}\n", serde_json::to_string(&response).unwrap());
-                    let _ = stream.flush();
+                    let mut s = stream.lock().unwrap();
+                    let _ = write!(s, "{}\n", serde_json::to_string(&response).unwrap());
+                    let _ = s.flush();
                     continue;
                 }
             };
 
-            // Log tool call
-            let tool_name = request.params.get("name").and_then(|v| v.as_str()).unwrap_or(&request.method);
-            log_access(&shared, &client_ip, "CALL", tool_name, &log_tx);
+            // Log tool call with arguments
+            let tool_name = request.params.get("name").and_then(|v| v.as_str()).unwrap_or(&request.method).to_string();
+            let call_detail = {
+                let args = request.params.get("arguments");
+                match args {
+                    Some(a) if !a.is_object() || a.as_object().map_or(false, |m| !m.is_empty()) => {
+                        let args_str = serde_json::to_string(a).unwrap_or_default();
+                        // Truncate long args for readability
+                        if args_str.len() > 120 {
+                            format!("{}({}...)", tool_name, &args_str[..120])
+                        } else {
+                            format!("{}({})", tool_name, args_str)
+                        }
+                    }
+                    _ => tool_name.clone(),
+                }
+            };
+            log_access(&shared, &client_ip, "CALL", &call_detail, &log_tx);
 
             let response = handle_request(request, &shared);
-            let _ = write!(stream, "{}\n", serde_json::to_string(&response).unwrap());
-            let _ = stream.flush();
+            let resp_bytes = serde_json::to_string(&response).unwrap();
+            let resp_line = format!("{}\n", resp_bytes);
+            {
+                let mut s = stream.lock().unwrap();
+                let _ = s.write_all(resp_line.as_bytes());
+                let _ = s.flush();
+            }
+
+            // For disconnect, wait for the response to be fully delivered
+            // before the client closes the connection
+            if tool_name == "disconnect" {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
         }
     }
 
-    // Decrement active client count and log disconnect
-    {
-        let sh = shared.lock().unwrap();
-        sh.active_clients.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+    // Signal push thread to stop and join it
+    push_stop.store(true, Ordering::Relaxed);
+    if let Some(h) = push_handle {
+        let _ = h.join();
     }
-    log_access(&shared, &client_ip, "DISCONNECT", "client disconnected", &log_tx);
+
+    // Decrement active client count and log disconnect
+    let disconnect_detail = {
+        let sh = shared.lock().unwrap();
+        let prev = sh.active_clients.fetch_sub(1, Ordering::Relaxed);
+        let remaining = if prev > 0 { prev - 1 } else { 0 };
+        format!("{} clients remaining", remaining)
+    };
+    log_access(&shared, &client_ip, "DISCONNECT", &disconnect_detail, &log_tx);
     eprintln!("[MCP] Client disconnected: {}", client_ip);
+}
+
+/// Push serial port events to MCP client as JSON-RPC notifications
+fn event_push_thread(
+    write_stream: Arc<Mutex<TcpStream>>,
+    evt_rx: mpsc::Receiver<crate::port_owner::PortEvent>,
+    stop: Arc<AtomicBool>,
+    client_ip: String,
+) {
+    use crate::port_owner::PortEvent;
+    loop {
+        if stop.load(Ordering::Relaxed) { break; }
+        match evt_rx.recv_timeout(Duration::from_millis(100)) {
+            Ok(PortEvent::Data(data)) => {
+                let b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+                let notification = serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "method": "notifications/serial_data",
+                    "params": {
+                        "data": b64,
+                        "length": data.len(),
+                        "timestamp": chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string()
+                    }
+                });
+                let msg = format!("{}\n", serde_json::to_string(&notification).unwrap());
+                let mut s = write_stream.lock().unwrap();
+                if s.write_all(msg.as_bytes()).is_err() { break; }
+                let _ = s.flush();
+            }
+            Ok(PortEvent::Opened(ok, msg)) => {
+                let notification = serde_json::json!({
+                    "jsonrpc": "2.0", "method": "notifications/serial_event",
+                    "params": { "event": "opened", "success": ok, "message": msg, "client_ip": client_ip }
+                });
+                let msg = format!("{}\n", serde_json::to_string(&notification).unwrap());
+                let mut s = write_stream.lock().unwrap();
+                if s.write_all(msg.as_bytes()).is_err() { break; }
+                let _ = s.flush();
+            }
+            Ok(PortEvent::Closed) => {
+                let notification = serde_json::json!({
+                    "jsonrpc": "2.0", "method": "notifications/serial_event",
+                    "params": { "event": "closed", "client_ip": client_ip }
+                });
+                let msg = format!("{}\n", serde_json::to_string(&notification).unwrap());
+                let mut s = write_stream.lock().unwrap();
+                if s.write_all(msg.as_bytes()).is_err() { break; }
+                let _ = s.flush();
+            }
+            Ok(PortEvent::Error(e)) => {
+                let notification = serde_json::json!({
+                    "jsonrpc": "2.0", "method": "notifications/serial_event",
+                    "params": { "event": "error", "message": e, "client_ip": client_ip }
+                });
+                let msg = format!("{}\n", serde_json::to_string(&notification).unwrap());
+                let mut s = write_stream.lock().unwrap();
+                if s.write_all(msg.as_bytes()).is_err() { break; }
+                let _ = s.flush();
+            }
+            Ok(_) => {}
+            Err(mpsc::RecvTimeoutError::Timeout) => { continue; }
+            Err(mpsc::RecvTimeoutError::Disconnected) => { break; }
+        }
+    }
+    eprintln!("[MCP] Event push thread stopped for {}", client_ip);
 }
 
 fn log_access(shared: &Arc<Mutex<McpShared>>, client_ip: &str, action: &str, detail: &str, log_tx: &mpsc::Sender<McpAccessLogEntry>) {
     let ts = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
 
-    // Get device info from shared state
     let device_info = {
         let sh = shared.lock().unwrap();
-        if let Some(ref po) = sh.port_owner {
-            // Try to get device info by sending a test command
+        if sh.connected.load(Ordering::Relaxed) {
             format!("SerialRUN@{}", client_ip)
         } else {
             "No device connected".to_string()

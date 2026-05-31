@@ -92,7 +92,7 @@
 - ✅ 类型安全
 
 **技术债务：**
-- CAN/Scope 直接打开串口（-5，已修复竞态条件）
+- ✅ CAN/Scope/Modbus/PLC/I2C 竞态条件已修复（使用 ReadExclusive 暂停连续读取循环）
 - 部分 UI 模块重复代码（-3）
 - 无单元测试（-5）
 - 无集成测试（-2）
@@ -108,9 +108,17 @@
 
 **已修复的关键问题：**
 - ✅ Drop 中移除 join() 避免 GUI 冻结
-- ✅ write_read 添加 recv_timeout
+- ✅ 协议面板（Modbus/PLC/I2C）使用 ReadExclusive 替代 WriteRead，消除数据竞争
 - ✅ CAN/Scope 正确释放端口
 - ✅ MCP 连接验证
+- ✅ RX 累积超时压缩 bug 修复（min(accum_timeout_ms, 10) → accum_timeout_ms）
+- ✅ T/O auto-aggregate 不再覆盖用户手动设置
+- ✅ TX 标签正确显示 TEXT/HEX 模式
+- ✅ 所有浮动面板改为独立 OS 窗口（multi-viewport）
+- ✅ 终端工具栏 horizontal_wrapped 自动换行
+- ✅ Modbus/PLC/I2C 面板 TX/RX 同步显示在终端
+- ✅ Modbus 面板可配置响应超时
+- ✅ app.rs 重构（update() 411→80 行，new() 90→20 行）
 
 **已知限制：**
 - Windows 串口 read 超时不完全可靠（-5）

@@ -11,7 +11,6 @@ pub fn render_settings_panel(ui: &mut egui::Ui, state: &mut AppState, _ctx: &egu
     // Serial config section
     ui.collapsing(T::serial_config(lang), |ui| {
         egui::Grid::new("settings_grid").show(ui, |ui| {
-            let mut changed = false;
             ui.label(T::data_bits(lang));
             let db_text = match state.config.data_bits { DataBits::Five=>"5", DataBits::Six=>"6", DataBits::Seven=>"7", DataBits::Eight=>"8" };
             egui::ComboBox::from_id_salt("data_bits")
@@ -60,18 +59,7 @@ pub fn render_settings_panel(ui: &mut egui::Ui, state: &mut AppState, _ctx: &egu
                 });
             ui.end_row();
         });
-        // Save serial config when changed
-        crate::app::save_prefs_from_state(state);
     });
-
-    ui.separator();
-
-    // Display settings
-    ui.label(T::display(lang));
-    ui.add_space(4.0);
-    ui.checkbox(&mut state.hex_mode, T::hex_mode(lang));
-    ui.checkbox(&mut state.show_timestamp, T::show_timestamp(lang));
-    ui.checkbox(&mut state.auto_scroll, T::auto_scroll(lang));
 
     ui.separator();
 
@@ -302,9 +290,5 @@ fn stop_replay(state: &mut AppState) {
 }
 
 fn get_local_ip() -> Option<String> {
-    use std::net::UdpSocket;
-    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
-    socket.connect("8.8.8.8:80").ok()?;
-    let addr = socket.local_addr().ok()?;
-    Some(addr.ip().to_string())
+    crate::util::get_local_ip()
 }

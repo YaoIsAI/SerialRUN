@@ -9,11 +9,11 @@ SerialRUN is a feature-rich serial port debugging assistant supporting serial co
 1. Connect your serial device to the computer via USB
 2. Click the refresh button `↻` in the left panel to detect ports
 3. Select a serial port from the dropdown (e.g., COM3)
-4. Set the baud rate (default 115200, works for most devices)
+4. Set the baud rate (default 115200, supports custom values)
 5. Click the green "Connect" button
 6. Type commands in the bottom terminal input box and click "Send"
 
-If you don't know the baud rate, click the **Auto** button to auto-detect.
+If you don't know the baud rate, click the **Auto** button to auto-detect (progress shown in status bar).
 
 ---
 
@@ -46,22 +46,26 @@ Three system buttons on the right side of the toolbar:
 - **Dark/Light** — Switch dark/light theme (auto-saved)
 - **EN/中** — Switch English/Chinese interface (auto-saved)
 
+> **Note**: All feature panels (Log, Chart, Modbus, PLC, etc.) are now independent OS windows that can be dragged anywhere on screen and resized independently. Child windows always stay on top of the main window.
+
 ### Left Panel
 
 - **Serial Port** — Select serial device from dropdown, click `↻` to refresh port list
-- **Baud Rate** — Select communication speed: 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600
-- **Auto Button** — Auto-detect baud rate by trying each speed until data is received
+- **Baud Rate** — Type custom baud rate directly, click to show common rates (300-921600)
+- **Auto Button** — Auto-detect baud rate, progress shown in status bar (ASCII spinner animation)
 - **Port Config** — Data bits (5-8), stop bits (1/2), parity (None/Odd/Even), flow control (None/Software/Hardware)
-- **Display Settings** — HEX mode, timestamp display, auto-scroll
 - **Auto Reply** — Set match pattern and reply content, auto-send reply when matching data is received
-- **MCP Server** — Enable/configure MCP server, view access logs
+- **MCP Server** — Enable/configure MCP server, one-click copy connection info, view access logs
 - **Record/Replay** — Record serial operation scripts, save and replay later
 
 ### Bottom Status Bar
 
 - **Connection Status** — Shows current connected port and baud rate
-- **Data Statistics** — RX/TX byte counters
-- **Error Display** — Red error message (auto-dismiss after 5 seconds)
+- **Data Statistics** — RX/TX byte counters and real-time rate
+- **Recording Indicator** — Red `● Recording` marker
+- **AI Connection** — Yellow `AI: COM4 @ 9600 baud` indicator (MCP independent connection)
+- **Baud Detection** — ASCII spinner `[-\|/] 115200...` shows current detection progress
+- **Error Display** — Red `✗` + error message (auto-dismiss after 5 seconds)
 - **Warning History** — Red dot + count, click to view warning/error history
 
 ### Terminal Area
@@ -71,12 +75,24 @@ Terminal displays all send/receive data with color-coded directions:
 - Blue `↑ TX` — Sent data
 - Yellow `⚙ SYS` — System messages
 
-Top toolbar options:
-- **TX HEX** — Toggle hex input mode
-- **RX HEX** — Toggle hex display mode for received data
-- **Show Timestamp** — Display timestamp before each message (format: YYYY-MM-DD HH:MM:SS.mmm)
+Terminal top toolbar (adaptive width, auto-wraps on narrow windows):
+- **Timestamp** — Display timestamp before each message (format: YYYY-MM-DD HH:MM:SS.mmm)
 - **Auto Scroll** — Auto-scroll to latest message
-- **CRC** — Auto-append checksum on send (8 algorithms)
+- **CRC** — Auto-append checksum on send (hover for algorithm descriptions)
+- **DTR/RTS** — Shown when connected, control Data Terminal Ready / Request To Send signals
+- **Auto Send** — Repeatedly send input content at set interval
+- **T/O** — RX timeout setting (hover for description), auto-calculated by baud rate or manual
+- **Save/Clear** — Export terminal log / Clear terminal display
+
+> The toolbar uses `horizontal_wrapped` layout — controls automatically wrap to the next line when the window is too narrow.
+
+Right-click context menu:
+- **Copy** — Copy current line content
+- **Copy All** — Copy all terminal data (with timestamps and direction markers)
+- **Convert to HEX** — Convert text line to hexadecimal display (TEXT lines only)
+- **Resend** — Re-send the line data (TX lines only, requires connection)
+
+Terminal auto-detects data format: text commands display as text, binary data (e.g., Modbus RTU frames) display as HEX. Supports Chinese, Japanese, English, Russian, and other languages.
 
 ---
 
@@ -105,6 +121,8 @@ Three collapsible sections:
 - Slave ID: 0-247
 - Function codes: 01 Read Coils / 02 Read Discrete Inputs / 03 Read Holding Registers / 04 Read Input Registers / 05 Write Single Coil / 06 Write Single Register / 15 Write Multiple Coils / 16 Write Multiple Registers
 - Start address and quantity/write value
+- **Response Timeout** — Configurable Modbus response wait time (50-5000ms, default 500ms), increase for slow devices
+- TX/RX data is also displayed in the terminal panel
 - Display last request and response hex data
 
 **Register Monitor**
@@ -238,14 +256,23 @@ Scans `plugins/` directory for extension plugins:
 ## Tips
 
 - When debugging a new device, start with **115200** baud rate
-- If you don't know the baud rate, use the **Auto** button
+- If you don't know the baud rate, click the **Auto** button (progress shown in status bar)
+- You can type custom baud rates directly in the baud rate input field (e.g., 74880, 250000)
 - In HEX mode, sending data automatically strips spaces and `0x` prefixes
 - You can append **CRC checksums** when sending text for data integrity
 - **Auto Reply** is useful for protocol debugging that requires responses
 - Use **Record/Replay** to quickly repeat test sequences
+- Right-click terminal data lines for quick copy, copy all, convert to HEX, or resend
+- Terminal auto-detects text/HEX format: AT commands display as text, Modbus frames as HEX
+- Multi-language terminal display: Chinese, Japanese, English, Russian, Arabic, etc.
+- **RX Timeout (T/O)** auto-calculates optimal merge time by baud rate, or set manually
 - For Modbus debugging, use "Quick Request" first to verify connectivity, then "Register Monitor" for continuous observation
 - PLC controller supports custom brands — import your own register definitions
 - All configuration and logs auto-save to `~/.serialrun/` directory, survives restart
+- All feature panels (Log, Chart, Modbus, PLC, etc.) are independent OS windows — drag freely and resize
+- Child windows always stay on top of the main window
+- Data sent from Modbus/PLC/I2C panels is also displayed in the terminal
+- Modbus panel supports configurable response timeout — increase for slow devices
 
 ---
 
@@ -298,8 +325,8 @@ SEND AT+CWMODE=1
 ### HEX Mode
 
 The terminal supports independent TX/RX HEX modes:
-- **TX HEX** — When checked, input is parsed as hexadecimal (e.g., `48 65 6C 6C 6F`)
-- **RX HEX** — When checked, received data displays as space-separated hex (e.g., `4F 4B 0D 0A`)
+- **TXT/HEX toggle** — Switch on the left of the input box, input parsed accordingly
+- In HEX mode, sending data automatically strips spaces and `0x` prefixes
 - Supports `0x` prefixes (e.g., `0x48 0x65`), auto-strips spaces
 
 ### Line Endings
@@ -312,7 +339,7 @@ Automatically append line endings when sending text:
 
 ### Auto Send
 
-Click **Auto** to repeatedly send the input content at a set interval:
+Click **Auto Send** to repeatedly send the input content at a set interval:
 - Configurable interval (100ms - 60s)
 - Useful for heartbeat packets, polling requests, etc.
 - Click **Stop Auto** to cancel
@@ -331,9 +358,18 @@ The **Keep input** checkbox on the left of the terminal input:
 - Useful for repeatedly sending the same command during debugging
 - Default: off (input clears after sending)
 
+### RX Timeout (T/O)
+
+Controls the wait time for merging fragmented data:
+- **Auto mode** — Check T/O to auto-calculate optimal timeout by baud rate (displays as `XXms (auto)`)
+  - ≤4800 baud: 100ms | ≤9600: 50ms | ≤19200: 30ms | ≤57600: 15ms | >57600: 10ms
+- **Manual mode** — Uncheck to set custom value (10-2000ms), changes take effect immediately
+- Auto mode syncs calculated value directly to the serial read thread without overwriting manual settings
+- For devices with inter-chunk gaps >10ms (e.g., MCU responses), switch to manual mode and increase the timeout
+
 ### Checksum
 
-Automatically append checksums when sending, supporting 8 algorithms:
+Automatically append checksums when sending. Hover over CRC label for algorithm descriptions. Supports 8 algorithms:
 - **CRC-16/MODBUS** — Modbus RTU standard (polynomial 0xA001)
 - **CRC-16/CCITT** — CCITT standard (polynomial 0x1021)
 - **CRC-16/XMODEM** — XMODEM file transfer protocol
@@ -341,8 +377,6 @@ Automatically append checksums when sending, supporting 8 algorithms:
 - **LRC** — Longitudinal Redundancy Check (Modbus ASCII)
 - **Checksum-8** — 8-bit additive
 - **Checksum-16** — 16-bit additive
-
-Hover over algorithm names in the Checksum panel for detailed descriptions.
 
 ---
 
@@ -370,7 +404,7 @@ SerialRUN has a unified error notification system:
 ## MCP Server
 
 SerialRUN includes a built-in MCP (Model Context Protocol) server, allowing AI assistants to remotely control serial devices via TCP.
-All serial operations are routed through the GUI's port manager, ensuring no conflict with GUI operations.
+RX data is automatically captured by background continuous monitoring and stored in a buffer. The read operation retrieves data from the buffer without blocking the serial port.
 
 ### Setup
 
@@ -380,21 +414,25 @@ In the left settings panel, find "MCP Server":
 3. Choose bind address:
    - **Localhost only** — Only local AI assistants can connect (recommended)
    - **All interfaces (LAN)** — Allow LAN AI assistants to connect
+4. Click **Copy MCP Info** button to one-click copy connection info and tool descriptions for your AI assistant
 
-### Available Tools (11)
+### Available Tools (14)
 
 | Tool | Description |
 |------|-------------|
 | `list_ports` | List all available serial ports |
-| `connect` | Connect to serial port (supports baud rate, data bits, stop bits, parity) |
+| `connect` | Connect to serial port (supports baud rate, data bits, stop bits, parity, flow control) |
 | `disconnect` | Disconnect from current connection |
-| `send` | Send data (supports text and hex) |
-| `read` | Read data (with timeout) |
-| `send_command` | Send command and wait for response (write-read mode) |
-| `modbus_read` | Read Modbus RTU holding registers |
+| `send` | Send data (supports text and hex), no response wait |
+| `read` | Read data from RX buffer (auto-captured by background monitor, non-blocking) |
+| `send_command` | Send command and read response from buffer (recommended for AT commands) |
+| `modbus_read` | Read Modbus RTU holding registers (with engineering value conversion) |
 | `modbus_write` | Write Modbus RTU holding register |
 | `plc_read` | Read all registers from a PLC preset brand |
 | `plc_write` | Write to a PLC register by address |
+| `status` | View connection status, byte counters, MCP server info |
+| `get_config` | Read UI settings (supports all or single key) |
+| `set_config` | Update UI setting (syncs to GUI immediately) |
 | `get_access_log` | View access log (client IPs, tool calls, timestamps) |
 
 ### Usage
@@ -404,12 +442,14 @@ In the left settings panel, find "MCP Server":
 3. Paste the copied content to any MCP-capable AI assistant
 4. The AI assistant can then control your serial devices via TCP
 
+Or in the left settings panel, click **Copy MCP Info** button to quickly copy connection info.
+
 AI assistants can use the `tools/list` method to discover all available tools and their parameters.
 
 ### Access Log
 
 - All MCP operations automatically log client IP addresses
-- Left settings panel shows last 20 access records
+- Left settings panel shows access record count, click to view detailed log
 - Color coded: 🟢 CONNECT, 🔴 DISCONNECT, 🔵 CALL
 - Query full log via `get_access_log` tool
 
@@ -429,10 +469,11 @@ SerialRUN automatically saves the following data to `~/.serialrun/` directory:
 
 | File | Content | Save Trigger |
 |------|---------|--------------|
-| `config.toml` | Theme, language, baud rate, etc. | When settings change |
-| `logs.json` | Log records | Auto-save every 10 entries |
-| `terminal.json` | Terminal send/receive records | Auto-save every 5 entries |
-| `warnings.json` | Warning/error history | On each new entry |
+| `config.toml` | Theme, language, baud rate, etc. | Auto-save on settings change |
+| `terminal.json` | Terminal records (max 5000) | Saved each frame when new data arrives |
+| `logs.json` | Log records (max 2000) | Saved each frame when new entries arrive |
+| `warnings.json` | Warning/error history (max 1000) | Saved on each new entry |
+| `mcp_access_log.json` | MCP access log (max 1000) | Saved on each new entry |
 
 All data automatically restores on app restart.
 

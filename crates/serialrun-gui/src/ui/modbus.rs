@@ -1,6 +1,22 @@
-use crate::state::{AppState, ModbusFrameLogEntry, ModbusFunctionCode, MonitorEntry, T};
+use crate::state::{AppState, Language, ModbusFrameLogEntry, ModbusFunctionCode, MonitorEntry, T};
 use eframe::egui;
 use serialrun_core::protocol::{ModbusFrame, ModbusParser};
+
+/// Map Modbus exception code to human-readable description
+fn modbus_exception_name(code: u8) -> &'static str {
+    match code {
+        0x01 => "Illegal Function",
+        0x02 => "Illegal Data Address",
+        0x03 => "Illegal Data Value",
+        0x04 => "Slave Device Failure",
+        0x05 => "Acknowledge",
+        0x06 => "Slave Device Busy",
+        0x08 => "Memory Parity Error",
+        0x0A => "Gateway Path Unavailable",
+        0x0B => "Gateway Target Failed to Respond",
+        _ => "Unknown Exception",
+    }
+}
 
 pub fn render_modbus_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
@@ -12,19 +28,35 @@ pub fn render_modbus_panel(ui: &mut egui::Ui, state: &mut AppState) {
             match result {
                 Ok(resp) => {
                     let resp_hex = hex_str(&resp);
+                    state.add_log_entry(crate::state::LogLevel::Info, &format!("[Modbus] RX: {}", resp_hex));
+                    state.add_terminal_line(crate::state::Direction::Rx, format!("[Modbus] {}", resp_hex), true);
                     if let Ok(f) = ModbusFrame::parse(&resp) {
                         state.modbus.last_response_hex = resp_hex.clone();
+                        let is_err = f.is_exception();
+                        let decoded = if is_err {
+                            let code = f.exception_code().unwrap_or(0);
+                            let name = modbus_exception_name(code);
+                            format!("Exception 0x{:02X}: {}", code, name)
+                        } else {
+                            ModbusParser::format_frame(&f)
+                        };
                         state.modbus.frame_log.push_back(ModbusFrameLogEntry {
                             timestamp: chrono::Utc::now().timestamp_millis(),
                             request_hex: state.modbus.last_request_hex.clone(),
                             response_hex: resp_hex,
-                            decoded: ModbusParser::format_frame(&f),
-                            is_error: false,
+                            decoded,
+                            is_error: is_err,
                         });
-                        if state.modbus.frame_log.len() > 200 { state.modbus.frame_log.pop_front(); }
+                        if is_err {
+                            let code = f.exception_code().unwrap_or(0);
+                            state.modbus.last_error = Some(format!("Exception 0x{:02X}: {}", code, modbus_exception_name(code)));
+                        }
+                        if state.modbus.frame_log.len() > 1000 { state.modbus.frame_log.pop_front(); }
+                    } else {
+                        state.modbus.last_error = Some("Response parse error — check baud rate and wiring".into());
                     }
                 }
-                Err(e) => { state.modbus.last_error = Some(e.clone()); state.show_error(&e); }
+                Err(e) => { state.modbus.last_error = Some(e.clone()); state.add_log_entry(crate::state::LogLevel::Error, &format!("[Modbus] Error: {}", e)); state.show_error(&e); }
             }
         }
     }
@@ -61,6 +93,11 @@ fn render_quick_request(ui: &mut egui::Ui, state: &mut AppState) {
         ui.end_row();
     });
     ui.add_space(4.0);
+    ui.horizontal(|ui| {
+        ui.label(if lang == Language::Chinese { "响应超时" } else { "Timeout" });
+        ui.add(egui::DragValue::new(&mut state.modbus.response_timeout_ms).range(50..=5000).suffix("ms"));
+    });
+    ui.add_space(4.0);
     if ui.button(T::send_request(lang)).clicked() { do_modbus_request(state); }
     if let Some(ref err) = state.modbus.last_error { ui.colored_label(egui::Color32::RED, err.as_str()); }
     if !state.modbus.last_request_hex.is_empty() {
@@ -85,16 +122,19 @@ fn do_modbus_request(state: &mut AppState) {
     let req_bytes = frame.to_bytes();
     let req_hex = hex_str(&req_bytes);
     state.modbus.last_request_hex = req_hex.clone();
+    state.add_log_entry(crate::state::LogLevel::Info, &format!("[Modbus] TX: {}", req_hex));
+    state.add_terminal_line(crate::state::Direction::Tx, format!("[Modbus] {}", req_hex), true);
 
     // Start async request via port owner
     if state.modbus_async_receiver.is_none() {
         let (tx, rx) = std::sync::mpsc::channel();
         let po = state.port_owner.as_ref().map(|p| p.cmd_tx());
+        let timeout_ms = state.modbus.response_timeout_ms;
         state.modbus_async_receiver = Some(rx);
         std::thread::spawn(move || {
             let Some(cmd_tx) = po else { let _ = tx.send(Err("Not connected".into())); return; };
             let (resp_tx, resp_rx) = std::sync::mpsc::channel();
-            let _ = cmd_tx.send(crate::port_owner::PortCommand::WriteRead { data: req_bytes, timeout_ms: 100, resp_tx });
+            let _ = cmd_tx.send(crate::port_owner::PortCommand::ReadExclusive { data: req_bytes, timeout_ms, resp_tx });
             let result = resp_rx.recv().unwrap_or_else(|e| Err(format!("Channel closed: {}", e)));
             let _ = tx.send(result.and_then(|data| {
                 if data.len() >= 4 { Ok(data) } else { Err("Response too short".into()) }
@@ -174,7 +214,7 @@ fn do_monitor_poll(state: &mut AppState) {
     state.modbus_monitor_async = Some(rx);
     std::thread::spawn(move || {
         let (resp_tx, resp_rx) = std::sync::mpsc::channel();
-        let _ = po.send(crate::port_owner::PortCommand::WriteRead { data: req, timeout_ms: 50, resp_tx });
+        let _ = po.send(crate::port_owner::PortCommand::ReadExclusive { data: req, timeout_ms: 50, resp_tx });
         let result = resp_rx.recv().unwrap_or_else(|e| Err(format!("Channel closed: {}", e)));
         let _ = tx.send(result);
     });
@@ -195,4 +235,4 @@ fn render_frame_log(ui: &mut egui::Ui, state: &mut AppState) {
     if ui.button(T::clear_frame_log(lang)).clicked() { state.modbus.frame_log.clear(); }
 }
 
-fn hex_str(bytes: &[u8]) -> String { bytes.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ") }
+fn hex_str(bytes: &[u8]) -> String { crate::util::format_hex(bytes) }

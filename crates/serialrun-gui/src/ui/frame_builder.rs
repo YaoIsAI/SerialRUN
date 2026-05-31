@@ -43,6 +43,7 @@ pub fn render_frame_builder_panel(ui: &mut egui::Ui, state: &mut AppState) {
         }
         if ui.button(T::send(lang)).clicked() && !state.frame_builder_hex.is_empty() && state.is_connected && state.fb_write_async.is_none() {
             if let Some(bytes) = parse_hex(&state.frame_builder_hex) {
+                state.add_terminal_line(crate::state::Direction::Tx, crate::ui::terminal::format_hex_bytes(&bytes), true);
                 if let Some(ref po) = state.port_owner {
                     po.send(crate::port_owner::PortCommand::Write(bytes));
                 }

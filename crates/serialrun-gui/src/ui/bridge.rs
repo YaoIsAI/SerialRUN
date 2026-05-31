@@ -118,18 +118,24 @@ fn poll_bridge_logs(state: &mut AppState) {
         }
     }
     if let Some(rx) = &state.bridge_log_rx {
+        let mut bridge_entries = Vec::new();
         while let Ok(entry) = rx.try_recv() {
             state.bridge.log.push_back(crate::state::BridgeLogEntry {
                 timestamp: entry.timestamp,
-                client_addr: entry.client_addr,
-                direction: entry.direction,
-                request_hex: entry.request_hex,
-                response_hex: entry.response_hex,
+                client_addr: entry.client_addr.clone(),
+                direction: entry.direction.clone(),
+                request_hex: entry.request_hex.clone(),
+                response_hex: entry.response_hex.clone(),
                 success: entry.success,
             });
-            if state.bridge.log.len() > 200 {
+            bridge_entries.push(format!("[TCP/Bridge] {} from {}: TX {} | RX {}",
+                entry.direction, entry.client_addr, entry.request_hex, entry.response_hex));
+            if state.bridge.log.len() > 1000 {
                 state.bridge.log.pop_front();
             }
+        }
+        for msg in bridge_entries {
+            state.add_log_entry(crate::state::LogLevel::Info, &msg);
         }
     }
     if state.bridge.running && state.bridge_stop.is_none() {
@@ -138,9 +144,5 @@ fn poll_bridge_logs(state: &mut AppState) {
 }
 
 fn get_local_ip() -> Option<String> {
-    use std::net::UdpSocket;
-    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
-    socket.connect("8.8.8.8:80").ok()?;
-    let addr = socket.local_addr().ok()?;
-    Some(addr.ip().to_string())
+    crate::util::get_local_ip()
 }

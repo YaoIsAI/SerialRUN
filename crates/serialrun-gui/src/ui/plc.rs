@@ -91,7 +91,7 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
                         ui.horizontal(|ui| {
                             match reg.data_type {
                                 PlcDataType::Bool => {
-                                    let mut on = val.as_ref().map(|v| v.raw_u16 != 0).unwrap_or(false);
+                                    let on = val.as_ref().map(|v| v.raw_u16 != 0).unwrap_or(false);
                                     let on_text = if on { "ON" } else { "OFF" };
                                     if ui.small_button(on_text).clicked() {
                                         write_coil(state, reg, !on);
@@ -257,7 +257,8 @@ fn get_register_defs(state: &AppState) -> Vec<PlcRegisterDef> {
 
 fn plc_log(state: &mut AppState, msg: &str) {
     state.plc.plc_log.push_back(format!("{} {}", chrono::Local::now().format("%H:%M:%S"), msg));
-    if state.plc.plc_log.len() > 50 { state.plc.plc_log.pop_front(); }
+    if state.plc.plc_log.len() > 500 { state.plc.plc_log.pop_front(); }
+    state.add_log_entry(crate::state::LogLevel::Info, &format!("[PLC] {}", msg));
 }
 
 /// Batch read: coalesce contiguous registers into single requests.
@@ -293,7 +294,7 @@ fn do_read_all(state: &mut AppState) {
             );
             let req = frame.to_bytes();
             let (resp_tx, resp_rx) = std::sync::mpsc::channel();
-            let _ = po.send(crate::port_owner::PortCommand::WriteRead { data: req, timeout_ms: 100, resp_tx });
+            let _ = po.send(crate::port_owner::PortCommand::ReadExclusive { data: req, timeout_ms: 100, resp_tx });
             let result = resp_rx.recv().unwrap_or_else(|e| Err(format!("Channel closed: {}", e)));
             match result {
                 Ok(resp) if resp.len() >= 4 => {
@@ -438,6 +439,7 @@ fn do_write_register(state: &mut AppState) {
         }
     };
 
+    state.add_terminal_line(crate::state::Direction::Tx, crate::ui::terminal::format_hex_bytes(&frame_bytes), true);
     if let Some(ref po) = state.port_owner {
         po.send(crate::port_owner::PortCommand::Write(frame_bytes));
     }
@@ -452,8 +454,10 @@ fn write_coil(state: &mut AppState, reg: &PlcRegisterDef, on: bool) {
         vec![(reg.addr >> 8) as u8, reg.addr as u8, 0x00, 0x00]
     };
     let frame = ModbusFrame::new(state.plc.slave_id, serialrun_core::protocol::ModbusFunction::WriteSingleCoil, data);
+    let frame_bytes = frame.to_bytes();
+    state.add_terminal_line(crate::state::Direction::Tx, crate::ui::terminal::format_hex_bytes(&frame_bytes), true);
     if let Some(ref po) = state.port_owner {
-        po.send(crate::port_owner::PortCommand::Write(frame.to_bytes()));
+        po.send(crate::port_owner::PortCommand::Write(frame_bytes));
     }
     plc_log(state, &format!("Coil {} => {}", reg.name, if on { "ON" } else { "OFF" }));
 }

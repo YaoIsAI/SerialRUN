@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 140" width="440" height="140">
+  <defs>
+    <style>
+      .bg { fill: #121218; }
+      .border { fill: none; stroke: #2a5a2d; stroke-width: 2; }
+      .title-bar { fill: #1a3a1d; }
+      .dot-red { fill: #ff5f56; }
+      .dot-yellow { fill: #ffbd2e; }
+      .dot-green { fill: #27c93f; }
+      .pixel { fill: #4caf50; }
+      .pixel-dim { fill: #2e7d32; }
+      .pixel-bright { fill: #81c784; }
+      .text-green { fill: #4caf50; font-family: monospace; font-size: 11px; }
+      .text-dim { fill: #6a9b6d; font-family: monospace; font-size: 10px; }
+      .text-accent { fill: #a5d6a7; font-family: monospace; font-size: 10px; }
+      .cursor { fill: #4caf50; opacity: 0.8; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" x="0" y="0" width="440" height="140" rx="6"/>
+
+  <!-- Terminal window border -->
+  <rect class="border" x="4" y="4" width="432" height="132" rx="4"/>
+
+  <!-- Title bar -->
+  <rect class="title-bar" x="4" y="4" width="432" height="22" rx="4"/>
+  <circle class="dot-red" cx="18" cy="15" r="4"/>
+  <circle class="dot-yellow" cx="32" cy="15" r="4"/>
+  <circle class="dot-green" cx="46" cy="15" r="4"/>
+  <text class="text-dim" x="220" y="18" text-anchor="middle" font-size="11">~/serialrun</text>
+
+  <!-- Pixel art "S" -->
+  <rect class="pixel" x="24" y="40" width="8" height="8"/>
+  <rect class="pixel" x="16" y="48" width="8" height="8"/>
+  <rect class="pixel" x="16" y="56" width="8" height="8"/>
+  <rect class="pixel" x="24" y="64" width="8" height="8"/>
+  <rect class="pixel" x="32" y="72" width="8" height="8"/>
+  <rect class="pixel" x="16" y="72" width="8" height="8"/>
+
+  <!-- Pixel art "E" -->
+  <rect class="pixel" x="48" y="40" width="8" height="40"/>
+  <rect class="pixel" x="56" y="40" width="16" height="8"/>
+  <rect class="pixel" x="56" y="56" width="12" height="8"/>
+  <rect class="pixel" x="56" y="72" width="16" height="8"/>
+
+  <!-- Pixel art "R" -->
+  <rect class="pixel" x="80" y="40" width="8" height="40"/>
+  <rect class="pixel" x="88" y="40" width="12" height="8"/>
+  <rect class="pixel" x="96" y="48" width="8" height="8"/>
+  <rect class="pixel" x="88" y="56" width="12" height="8"/>
+  <rect class="pixel" x="92" y="64" width="8" height="8"/>
+  <rect class="pixel" x="96" y="72" width="8" height="8"/>
+
+  <!-- Pixel art "I" -->
+  <rect class="pixel" x="116" y="40" width="16" height="8"/>
+  <rect class="pixel" x="122" y="48" width="4" height="24"/>
+  <rect class="pixel" x="116" y="72" width="16" height="8"/>
+
+  <!-- Pixel art "A" -->
+  <rect class="pixel-dim" x="142" y="48" width="8" height="32"/>
+  <rect class="pixel-dim" x="162" y="48" width="8" height="32"/>
+  <rect class="pixel-dim" x="150" y="40" width="12" height="8"/>
+  <rect class="pixel-dim" x="150" y="60" width="12" height="8"/>
+
+  <!-- Pixel art "L" -->
+  <rect class="pixel" x="178" y="40" width="8" height="40"/>
+  <rect class="pixel" x="186" y="72" width="16" height="8"/>
+
+  <!-- Pixel art "R" -->
+  <rect class="pixel" x="210" y="40" width="8" height="40"/>
+  <rect class="pixel" x="218" y="40" width="12" height="8"/>
+  <rect class="pixel" x="226" y="48" width="8" height="8"/>
+  <rect class="pixel" x="218" y="56" width="12" height="8"/>
+  <rect class="pixel" x="222" y="64" width="8" height="8"/>
+  <rect class="pixel" x="226" y="72" width="8" height="8"/>
+
+  <!-- Pixel art "U" -->
+  <rect class="pixel" x="242" y="40" width="8" height="32"/>
+  <rect class="pixel" x="266" y="40" width="8" height="32"/>
+  <rect class="pixel" x="250" y="72" width="16" height="8"/>
+
+  <!-- Pixel art "N" -->
+  <rect class="pixel" x="282" y="40" width="8" height="40"/>
+  <rect class="pixel" x="306" y="40" width="8" height="40"/>
+  <rect class="pixel-bright" x="290" y="48" width="4" height="4"/>
+  <rect class="pixel-bright" x="294" y="52" width="4" height="4"/>
+  <rect class="pixel-bright" x="298" y="56" width="4" height="4"/>
+  <rect class="pixel-bright" x="302" y="60" width="4" height="4"/>
+
+  <!-- Decorative dots -->
+  <rect class="pixel-dim" x="324" y="44" width="4" height="4"/>
+  <rect class="pixel-dim" x="332" y="44" width="4" height="4"/>
+  <rect class="pixel-dim" x="340" y="44" width="4" height="4"/>
+  <rect class="pixel-dim" x="324" y="52" width="4" height="4"/>
+  <rect class="pixel-dim" x="340" y="52" width="4" height="4"/>
+  <rect class="pixel-dim" x="324" y="60" width="4" height="4"/>
+  <rect class="pixel-dim" x="332" y="60" width="4" height="4"/>
+  <rect class="pixel-dim" x="340" y="60" width="4" height="4"/>
+  <rect class="pixel-dim" x="324" y="68" width="4" height="4"/>
+  <rect class="pixel-dim" x="340" y="68" width="4" height="4"/>
+  <rect class="pixel-dim" x="324" y="76" width="4" height="4"/>
+  <rect class="pixel-dim" x="332" y="76" width="4" height="4"/>
+  <rect class="pixel-dim" x="340" y="76" width="4" height="4"/>
+
+  <!-- Terminal prompt lines -->
+  <text class="text-green" x="16" y="104">$ serialrun connect COM3 -b 115200</text>
+  <text class="text-accent" x="16" y="116">[OK] Connected to COM3 @ 115200 baud</text>
+  <text class="text-dim" x="16" y="128">RX: 0 bytes | TX: 0 bytes | MCP: ready</text>
+
+  <!-- Blinking cursor -->
+  <rect class="cursor" x="388" y="120" width="8" height="12"/>
+</svg>

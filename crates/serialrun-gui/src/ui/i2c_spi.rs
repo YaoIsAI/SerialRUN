@@ -91,7 +91,7 @@ fn i2c_scan(state: &mut AppState) {
         for scan_addr in 0x08..=0x77u8 {
             let cmd = vec![scan_addr << 1, 0x01];
             let (resp_tx, resp_rx) = std::sync::mpsc::channel();
-            let _ = po.send(crate::port_owner::PortCommand::WriteRead { data: cmd, timeout_ms: 20, resp_tx });
+            let _ = po.send(crate::port_owner::PortCommand::ReadExclusive { data: cmd, timeout_ms: 20, resp_tx });
             if let Ok(Ok(data)) = resp_rx.recv() {
                 if !data.is_empty() { found.push(format!("0x{:02X}", scan_addr)); }
             }
@@ -120,7 +120,7 @@ fn i2c_read(state: &mut AppState) {
     std::thread::spawn(move || {
         let cmd = vec![addr << 1 | 0x01, reg];
         let (resp_tx, resp_rx) = std::sync::mpsc::channel();
-        let _ = po.send(crate::port_owner::PortCommand::WriteRead { data: cmd, timeout_ms: 100, resp_tx });
+        let _ = po.send(crate::port_owner::PortCommand::ReadExclusive { data: cmd, timeout_ms: 100, resp_tx });
         let result = match resp_rx.recv() {
             Ok(Ok(buf)) if !buf.is_empty() => {
                 let hex = buf.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ");
@@ -146,6 +146,7 @@ fn i2c_write(state: &mut AppState) {
     let mut cmd = vec![addr << 1, reg];
     cmd.extend_from_slice(&data);
     let data_len = data.len();
+    state.add_terminal_line(crate::state::Direction::Tx, crate::ui::terminal::format_hex_bytes(&cmd), true);
     let (tx, rx) = std::sync::mpsc::channel();
     state.i2c_async_receiver = Some(rx);
     if let Some(ref po) = state.port_owner {
@@ -167,7 +168,7 @@ fn spi_transfer(state: &mut AppState) {
 
     std::thread::spawn(move || {
         let (resp_tx, resp_rx) = std::sync::mpsc::channel();
-        let _ = po.send(crate::port_owner::PortCommand::WriteRead { data: data.clone(), timeout_ms: 100, resp_tx });
+        let _ = po.send(crate::port_owner::PortCommand::ReadExclusive { data: data.clone(), timeout_ms: 100, resp_tx });
         let result = match resp_rx.recv() {
             Ok(Ok(buf)) => {
                 let hex = buf.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ");

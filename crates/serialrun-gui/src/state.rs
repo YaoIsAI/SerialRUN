@@ -5,10 +5,12 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::mpsc;
 
 /// Persisted user preferences (theme, language, serial config, etc.)
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct UserPrefs {
+    // Theme & Language
     pub theme: Theme,
     pub language: Language,
+    // Serial config
     #[serde(default = "default_baud_rate")]
     pub baud_rate: u32,
     #[serde(default = "default_data_bits")]
@@ -17,12 +19,61 @@ pub struct UserPrefs {
     pub stop_bits: String,
     #[serde(default = "default_parity")]
     pub parity: String,
+    #[serde(default = "default_flow_control")]
+    pub flow_control: String,
+    // Terminal display
+    #[serde(default)]
+    pub hex_mode: bool,
+    #[serde(default = "default_true")]
+    pub show_timestamp: bool,
+    #[serde(default = "default_true")]
+    pub auto_scroll: bool,
+    #[serde(default)]
+    pub keep_input: bool,
+    #[serde(default)]
+    pub line_ending: String,
+    #[serde(default)]
+    pub terminal_checksum_mode: String,
+    // Auto-send
+    #[serde(default)]
+    pub auto_send_enabled: bool,
+    #[serde(default = "default_auto_send_interval")]
+    pub auto_send_interval_ms: u64,
+    // DTR/RTS
+    #[serde(default = "default_true")]
+    pub dtr: bool,
+    #[serde(default)]
+    pub rts: bool,
+    // Auto-reply
+    #[serde(default)]
+    pub auto_reply_enabled: bool,
+    #[serde(default)]
+    pub auto_reply_pattern: String,
+    #[serde(default)]
+    pub auto_reply_response: String,
+    // MCP
+    #[serde(default = "default_true")]
+    pub mcp_enabled: bool,
+    #[serde(default = "default_mcp_port")]
+    pub mcp_port: u16,
+    #[serde(default)]
+    pub mcp_bind_lan: bool,
+    // RX aggregation
+    #[serde(default = "default_rx_aggregate_ms")]
+    pub rx_aggregate_ms: u64,
+    #[serde(default = "default_true")]
+    pub rx_auto_aggregate: bool,
 }
 
 fn default_baud_rate() -> u32 { 115200 }
 fn default_data_bits() -> String { "8".into() }
 fn default_stop_bits() -> String { "1".into() }
 fn default_parity() -> String { "None".into() }
+fn default_flow_control() -> String { "None".into() }
+fn default_true() -> bool { true }
+fn default_auto_send_interval() -> u64 { 1000 }
+fn default_mcp_port() -> u16 { 9527 }
+fn default_rx_aggregate_ms() -> u64 { 150 }
 
 impl Default for UserPrefs {
     fn default() -> Self {
@@ -33,7 +84,149 @@ impl Default for UserPrefs {
             data_bits: "8".into(),
             stop_bits: "1".into(),
             parity: "None".into(),
+            flow_control: "None".into(),
+            hex_mode: false,
+            show_timestamp: true,
+            auto_scroll: true,
+            keep_input: false,
+            line_ending: "None".into(),
+            terminal_checksum_mode: "None".into(),
+            auto_send_enabled: false,
+            auto_send_interval_ms: 1000,
+            dtr: true,
+            rts: false,
+            auto_reply_enabled: false,
+            auto_reply_pattern: String::new(),
+            auto_reply_response: String::new(),
+            mcp_enabled: true,
+            mcp_port: 9527,
+            mcp_bind_lan: false,
+            rx_aggregate_ms: 150,
+            rx_auto_aggregate: true,
         }
+    }
+}
+
+impl UserPrefs {
+    /// Build UserPrefs from current AppState for saving
+    pub fn from_state(state: &AppState) -> Self {
+        Self {
+            theme: state.theme,
+            language: state.language,
+            baud_rate: state.config.baud_rate,
+            data_bits: match state.config.data_bits {
+                serialrun_core::config::DataBits::Five => "5".into(),
+                serialrun_core::config::DataBits::Six => "6".into(),
+                serialrun_core::config::DataBits::Seven => "7".into(),
+                serialrun_core::config::DataBits::Eight => "8".into(),
+            },
+            stop_bits: match state.config.stop_bits {
+                serialrun_core::config::StopBits::Two => "2".into(),
+                _ => "1".into(),
+            },
+            parity: match state.config.parity {
+                serialrun_core::config::Parity::Odd => "Odd".into(),
+                serialrun_core::config::Parity::Even => "Even".into(),
+                _ => "None".into(),
+            },
+            flow_control: match state.config.flow_control {
+                serialrun_core::config::FlowControl::Software => "Software".into(),
+                serialrun_core::config::FlowControl::Hardware => "Hardware".into(),
+                _ => "None".into(),
+            },
+            hex_mode: state.hex_mode,
+            show_timestamp: state.show_timestamp,
+            auto_scroll: state.auto_scroll,
+            keep_input: state.keep_input,
+            line_ending: match state.line_ending {
+                LineEnding::CR => "CR".into(),
+                LineEnding::LF => "LF".into(),
+                LineEnding::CRLF => "CRLF".into(),
+                _ => "None".into(),
+            },
+            terminal_checksum_mode: match state.terminal_checksum_mode {
+                ChecksumMode::Crc16Modbus => "Crc16Modbus".into(),
+                ChecksumMode::Crc16Ccitt => "Crc16Ccitt".into(),
+                ChecksumMode::Crc16Xmodem => "Crc16Xmodem".into(),
+                ChecksumMode::Crc32 => "Crc32".into(),
+                ChecksumMode::Lrc => "Lrc".into(),
+                ChecksumMode::Checksum8 => "Checksum8".into(),
+                ChecksumMode::Checksum16 => "Checksum16".into(),
+                _ => "None".into(),
+            },
+            auto_send_enabled: state.auto_send_enabled,
+            auto_send_interval_ms: state.auto_send_interval_ms,
+            dtr: state.dtr,
+            rts: state.rts,
+            auto_reply_enabled: state.auto_reply_enabled,
+            auto_reply_pattern: state.auto_reply_pattern.clone(),
+            auto_reply_response: state.auto_reply_response.clone(),
+            mcp_enabled: state.mcp_enabled,
+            mcp_port: state.mcp_port,
+            mcp_bind_lan: state.mcp_bind_lan,
+            rx_aggregate_ms: state.rx_aggregate_ms,
+            rx_auto_aggregate: state.rx_auto_aggregate,
+        }
+    }
+
+    /// Apply persisted preferences to AppState (inverse of from_state).
+    pub fn apply_to(&self, state: &mut AppState) {
+        state.language = self.language;
+        state.theme = self.theme;
+        state.config.baud_rate = self.baud_rate;
+        state.baud_rate_text = self.baud_rate.to_string();
+        state.config.data_bits = match self.data_bits.as_str() {
+            "5" => serialrun_core::config::DataBits::Five,
+            "6" => serialrun_core::config::DataBits::Six,
+            "7" => serialrun_core::config::DataBits::Seven,
+            _ => serialrun_core::config::DataBits::Eight,
+        };
+        state.config.stop_bits = match self.stop_bits.as_str() {
+            "2" => serialrun_core::config::StopBits::Two,
+            _ => serialrun_core::config::StopBits::One,
+        };
+        state.config.parity = match self.parity.as_str() {
+            "Odd" => serialrun_core::config::Parity::Odd,
+            "Even" => serialrun_core::config::Parity::Even,
+            _ => serialrun_core::config::Parity::None,
+        };
+        state.config.flow_control = match self.flow_control.as_str() {
+            "Software" => serialrun_core::config::FlowControl::Software,
+            "Hardware" => serialrun_core::config::FlowControl::Hardware,
+            _ => serialrun_core::config::FlowControl::None,
+        };
+        state.hex_mode = self.hex_mode;
+        state.show_timestamp = self.show_timestamp;
+        state.auto_scroll = self.auto_scroll;
+        state.keep_input = self.keep_input;
+        state.line_ending = match self.line_ending.as_str() {
+            "CR" => LineEnding::CR,
+            "LF" => LineEnding::LF,
+            "CRLF" => LineEnding::CRLF,
+            _ => LineEnding::None,
+        };
+        state.terminal_checksum_mode = match self.terminal_checksum_mode.as_str() {
+            "Crc16Modbus" => ChecksumMode::Crc16Modbus,
+            "Crc16Ccitt" => ChecksumMode::Crc16Ccitt,
+            "Crc16Xmodem" => ChecksumMode::Crc16Xmodem,
+            "Crc32" => ChecksumMode::Crc32,
+            "Lrc" => ChecksumMode::Lrc,
+            "Checksum8" => ChecksumMode::Checksum8,
+            "Checksum16" => ChecksumMode::Checksum16,
+            _ => ChecksumMode::None,
+        };
+        state.auto_send_enabled = self.auto_send_enabled;
+        state.auto_send_interval_ms = self.auto_send_interval_ms;
+        state.dtr = self.dtr;
+        state.rts = self.rts;
+        state.auto_reply_enabled = self.auto_reply_enabled;
+        state.auto_reply_pattern = self.auto_reply_pattern.clone();
+        state.auto_reply_response = self.auto_reply_response.clone();
+        state.mcp_enabled = self.mcp_enabled;
+        state.mcp_port = self.mcp_port;
+        state.mcp_bind_lan = self.mcp_bind_lan;
+        state.rx_aggregate_ms = self.rx_aggregate_ms;
+        state.rx_auto_aggregate = self.rx_auto_aggregate;
     }
 }
 
@@ -553,8 +746,6 @@ impl T {
     pub fn mcp_warning(l: Language) -> &'static str { match l { Language::English => "LAN mode: anyone on the network can control serial ports. Use with caution.", Language::Chinese => "局域网模式：网络中任何人都可以控制串口端口，请谨慎使用。" } }
 
     // ── Terminal ──
-    pub fn tx_hex(l: Language) -> &'static str { match l { Language::English => "TX HEX", Language::Chinese => "发送HEX" } }
-    pub fn rx_hex(l: Language) -> &'static str { match l { Language::English => "RX HEX", Language::Chinese => "接收HEX" } }
     pub fn crc_label(l: Language) -> &'static str { match l { Language::English => "CRC:", Language::Chinese => "CRC:" } }
     pub fn line_ending(l: Language) -> &'static str { match l { Language::English => "End:", Language::Chinese => "行尾:" } }
     pub fn auto_send(l: Language) -> &'static str { match l { Language::English => "Auto", Language::Chinese => "自动发送" } }
@@ -668,6 +859,7 @@ pub struct ModbusState {
     pub monitor_entries: Vec<MonitorEntry>, pub monitor_polling: bool, pub monitor_interval_ms: u64, pub last_poll_time: i64,
     pub monitor_slave_id: u8, pub monitor_start_addr: String, pub monitor_quantity: String, pub monitor_function: ModbusFunctionCode,
     pub frame_log: VecDeque<ModbusFrameLogEntry>,
+    pub response_timeout_ms: u64,
 }
 
 #[derive(Clone)]
@@ -789,6 +981,13 @@ impl McuType { pub fn label(&self) -> &'static str { match self { Self::Stm32=>"
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct RegMapEntry { pub addr: u16, pub name: String, pub data_type: String, pub value: String, pub description: String }
 
+// ── Auto-detect types ──
+
+pub enum AutoDetectMsg {
+    Progress(u32),
+    Done(Option<u32>),
+}
+
 // ── Plugin types ──
 #[derive(Clone)]
 pub struct PluginInfo { pub name: String, pub version: String, pub author: String, pub loaded: bool }
@@ -797,12 +996,17 @@ pub struct AppState {
     pub ports: Vec<SerialPortInfo>,
     pub selected_port: Option<String>,
     pub config: SerialConfig,
+    pub baud_rate_text: String,
     pub is_connected: bool,
     pub terminal_buffer: VecDeque<TerminalLine>,
     pub input_buffer: String,
     pub hex_mode: bool,
-    pub rx_hex_mode: bool,
     pub auto_scroll: bool,
+    pub scroll_to_bottom_pending: bool,
+    pub terminal_dirty: bool,
+    pub logs_dirty: bool,
+    pub terminal_last_save: i64,
+    pub logs_last_save: i64,
     pub show_timestamp: bool,
     // SSCOM-like features
     pub line_ending: LineEnding,
@@ -817,6 +1021,11 @@ pub struct AppState {
     pub show_log_window: bool,
     pub rx_count: u64,
     pub tx_count: u64,
+    pub rx_rate: f64,
+    pub tx_rate: f64,
+    pub rate_last_check: i64,
+    pub rate_last_rx: u64,
+    pub rate_last_tx: u64,
     pub chart_data: Vec<f64>,
     pub log_entries: Vec<LogEntry>,
     pub auto_reply_enabled: bool,
@@ -902,16 +1111,14 @@ pub struct AppState {
     // Copy button state (help panel)
     pub copied: bool,
     pub copied_time: i64,
-    // Terminal line copy feedback
-    pub term_copied_ts: i64,
-    pub term_copied_time: i64,
+    pub rx_aggregate_ms: u64,
+    pub rx_auto_aggregate: bool,
     // Auto-detect
-    pub auto_detect_receiver: Option<std::sync::mpsc::Receiver<Option<u32>>>,
+    pub auto_detect_receiver: Option<std::sync::mpsc::Receiver<AutoDetectMsg>>,
     pub auto_detect_running: bool,
+    pub auto_detect_progress: Option<u32>,
     // Port owner (persistent reader/writer thread)
     pub port_owner: Option<crate::port_owner::PortOwnerHandle>,
-    // HEX input error message
-    pub hex_error: Option<String>,
     // Global error notification
     pub global_error: Option<String>,
     pub global_error_time: i64,
@@ -957,6 +1164,19 @@ pub struct AppState {
     // MCP access log (for GUI display)
     pub mcp_access_log: VecDeque<crate::mcp_server::McpAccessLogEntry>,
     pub show_mcp_log_popup: bool,
+    // Log viewer search
+    pub log_search: String,
+    pub log_level_filter: Option<LogLevel>,
+    // AI connection status (from MCP independent connect)
+    pub ai_connected: bool,
+    pub ai_port_name: String,
+    pub ai_baud_rate: u32,
+    pub ai_tx_count: u64,
+    pub ai_rx_count: u64,
+    /// Who initiated the current connection: empty = GUI, "MCP" = AI
+    pub connected_by: String,
+    /// MCP connect operation in progress — GUI connect button disabled
+    pub mcp_connect_in_progress: bool,
     // Device identification for traceability
     pub device_id: String,
     pub device_model: String,
@@ -968,6 +1188,9 @@ pub struct TerminalLine {
     pub direction: Direction,
     pub content: String,
     pub is_hex: bool,
+    /// Source of the data: empty for manual UI, "MCP" for AI-initiated
+    #[serde(default)]
+    pub source: String,
 }
 
 #[derive(Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -1088,25 +1311,35 @@ impl AppState {
             ports: Vec::new(),
             selected_port: None,
             config: SerialConfig::default(),
+            baud_rate_text: "115200".into(),
             is_connected: false,
             terminal_buffer: VecDeque::new(),
             input_buffer: String::new(),
             hex_mode: false,
-            rx_hex_mode: false,
             auto_scroll: true,
+            scroll_to_bottom_pending: false,
+            terminal_dirty: false,
+            logs_dirty: false,
+            terminal_last_save: 0,
+            logs_last_save: 0,
             show_timestamp: true,
             line_ending: LineEnding::None,
             dtr: true,
             rts: false,
             auto_send_enabled: false,
             auto_send_interval_ms: 1000,
-            auto_send_last_time: 0,
+            auto_send_last_time: chrono::Utc::now().timestamp_millis(),
             keep_input: false,
             terminal_checksum_mode: ChecksumMode::None,
             show_chart_window: false,
             show_log_window: false,
             rx_count: 0,
             tx_count: 0,
+            rx_rate: 0.0,
+            tx_rate: 0.0,
+            rate_last_check: chrono::Utc::now().timestamp_millis(),
+            rate_last_rx: 0,
+            rate_last_tx: 0,
             chart_data: Vec::new(),
             log_entries: Vec::new(),
             auto_reply_enabled: false,
@@ -1123,7 +1356,7 @@ impl AppState {
             theme: Theme::Dark,
             show_help: false,
             show_modbus_window: false,
-            modbus: ModbusState { slave_id: 1, function_code: ModbusFunctionCode::ReadHoldingRegisters, start_addr: "0".into(), quantity: "10".into(), write_value: String::new(), last_request_hex: String::new(), last_response_hex: String::new(), last_error: None, monitor_entries: Vec::new(), monitor_polling: false, monitor_interval_ms: 1000, last_poll_time: 0, monitor_slave_id: 1, monitor_start_addr: "0".into(), monitor_quantity: "10".into(), monitor_function: ModbusFunctionCode::ReadHoldingRegisters, frame_log: VecDeque::new() },
+            modbus: ModbusState { slave_id: 1, function_code: ModbusFunctionCode::ReadHoldingRegisters, start_addr: "0".into(), quantity: "10".into(), write_value: String::new(), last_request_hex: String::new(), last_response_hex: String::new(), last_error: None, monitor_entries: Vec::new(), monitor_polling: false, monitor_interval_ms: 1000, last_poll_time: 0, monitor_slave_id: 1, monitor_start_addr: "0".into(), monitor_quantity: "10".into(), monitor_function: ModbusFunctionCode::ReadHoldingRegisters, frame_log: VecDeque::new(), response_timeout_ms: 500 },
             show_plc_window: false,
             plc: PlcState {
                 selected_brand: PlcBrand::Siemens, selected_model: None, slave_id: 1,
@@ -1153,12 +1386,12 @@ impl AppState {
             help_content_en: load_help_file("help_en.md"),
             copied: false,
             copied_time: 0,
-            term_copied_ts: 0,
-            term_copied_time: 0,
+            rx_aggregate_ms: 150,
+            rx_auto_aggregate: true,
             auto_detect_receiver: None,
             auto_detect_running: false,
+            auto_detect_progress: None,
             port_owner: None,
-            hex_error: None,
             global_error: None,
             global_error_time: 0,
             warning_history: VecDeque::new(),
@@ -1196,6 +1429,15 @@ impl AppState {
             mcp_cmd_tx: None,
             mcp_access_log: VecDeque::new(),
             show_mcp_log_popup: false,
+            log_search: String::new(),
+            log_level_filter: None,
+            ai_connected: false,
+            ai_port_name: String::new(),
+            ai_baud_rate: 0,
+            ai_tx_count: 0,
+            ai_rx_count: 0,
+            connected_by: String::new(),
+            mcp_connect_in_progress: false,
             device_id: String::new(),
             device_model: String::new(),
         };
@@ -1212,20 +1454,25 @@ impl AppState {
     }
 
     pub fn add_terminal_line(&mut self, direction: Direction, content: String, is_hex: bool) {
+        self.add_terminal_line_source(direction, content, is_hex, "");
+    }
+
+    pub fn add_terminal_line_source(&mut self, direction: Direction, content: String, is_hex: bool, source: &str) {
         let line = TerminalLine {
             timestamp: chrono::Utc::now().timestamp_millis(),
             direction,
             content,
             is_hex,
+            source: source.to_string(),
         };
         self.terminal_buffer.push_back(line);
-        if self.terminal_buffer.len() > 1000 {
+        if self.auto_scroll {
+            self.scroll_to_bottom_pending = true;
+        }
+        if self.terminal_buffer.len() > 5000 {
             self.terminal_buffer.pop_front();
         }
-        // Auto-save every 5 lines
-        if self.terminal_buffer.len() % 5 == 0 {
-            self.save_terminal();
-        }
+        self.terminal_dirty = true;
     }
 
     pub fn add_log_entry(&mut self, level: LogLevel, message: &str) {
@@ -1235,16 +1482,13 @@ impl AppState {
             message: message.to_string(),
         };
         self.log_entries.push(entry);
-        if self.log_entries.len() > 500 {
+        if self.log_entries.len() > 2000 {
             self.log_entries.remove(0);
         }
-        // Auto-save every 10 entries
-        if self.log_entries.len() % 10 == 0 {
-            self.save_logs();
-        }
+        self.logs_dirty = true;
     }
 
-    fn save_logs(&self) {
+    pub fn save_logs(&self) {
         if let Some(path) = log_file_path() {
             if let Ok(content) = serde_json::to_string(&self.log_entries) {
                 let _ = std::fs::create_dir_all(path.parent().unwrap_or(std::path::Path::new(".")));
@@ -1320,7 +1564,7 @@ impl AppState {
             timestamp: chrono::Utc::now().timestamp_millis(),
             message: msg.to_string(),
         });
-        if self.warning_history.len() > 200 {
+        if self.warning_history.len() > 1000 {
             self.warning_history.pop_front();
         }
         self.save_warnings();

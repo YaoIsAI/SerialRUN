@@ -10,6 +10,7 @@ pub mod frame_builder;
 pub mod help;
 pub mod i2c_spi;
 pub mod log_viewer;
+pub mod mcp_log;
 pub mod modbus;
 pub mod plc;
 pub mod plugin;

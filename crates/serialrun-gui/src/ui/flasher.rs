@@ -82,7 +82,7 @@ pub fn render_flasher_panel(ui: &mut egui::Ui, state: &mut AppState) {
 
 fn flasher_log(state: &mut AppState, msg: &str) {
     state.flasher_log.push_back(msg.to_string());
-    if state.flasher_log.len() > 100 { state.flasher_log.pop_front(); }
+    if state.flasher_log.len() > 500 { state.flasher_log.pop_front(); }
     state.add_log_entry(crate::state::LogLevel::Info, &format!("Flasher: {}", msg));
 }
 

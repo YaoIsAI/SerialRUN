@@ -1,4 +1,4 @@
-use crate::state::{AppState, LogLevel, T};
+use crate::state::{AppState, Language, LogLevel, T};
 use crate::theme;
 use eframe::egui;
 
@@ -9,7 +9,46 @@ pub fn render_log_panel(ui: &mut egui::Ui, state: &mut AppState) {
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(T::log_viewer(lang)).strong().color(c.text_primary));
         ui.separator();
-        ui.label(egui::RichText::new(format!("Entries: {}", state.log_entries.len())).color(c.text_muted));
+        let total = state.log_entries.len();
+        let filtered = if state.log_search.is_empty() && state.log_level_filter.is_none() {
+            total
+        } else {
+            state.log_entries.iter().filter(|e| log_matches(e, &state.log_search, state.log_level_filter)).count()
+        };
+        ui.label(egui::RichText::new(format!("{}/{}", filtered, total)).color(c.text_muted));
+    });
+
+    // Search and filter bar
+    ui.horizontal(|ui| {
+        let search_label = if lang == Language::Chinese { "搜索" } else { "Search" };
+        ui.label(egui::RichText::new(search_label).color(c.text_muted).small());
+        ui.add(egui::TextEdit::singleline(&mut state.log_search).desired_width(150.0).hint_text(search_label));
+
+        ui.separator();
+
+        let filter_label = if lang == Language::Chinese { "级别" } else { "Level" };
+        ui.label(egui::RichText::new(filter_label).color(c.text_muted).small());
+        egui::ComboBox::from_id_salt("log_level_filter").width(70.0).selected_text(
+            match state.log_level_filter {
+                None => if lang == Language::Chinese { "全部" } else { "All" },
+                Some(LogLevel::Info) => "INFO",
+                Some(LogLevel::Warning) => "WARN",
+                Some(LogLevel::Error) => "ERROR",
+            }
+        ).show_ui(ui, |ui| {
+            ui.selectable_value(&mut state.log_level_filter, None, if lang == Language::Chinese { "全部" } else { "All" });
+            ui.selectable_value(&mut state.log_level_filter, Some(LogLevel::Info), "INFO");
+            ui.selectable_value(&mut state.log_level_filter, Some(LogLevel::Warning), "WARN");
+            ui.selectable_value(&mut state.log_level_filter, Some(LogLevel::Error), "ERROR");
+        });
+
+        if !state.log_search.is_empty() || state.log_level_filter.is_some() {
+            let clear_label = if lang == Language::Chinese { "清除" } else { "Clear" };
+            if ui.small_button(clear_label).clicked() {
+                state.log_search.clear();
+                state.log_level_filter = None;
+            }
+        }
     });
 
     ui.separator();
@@ -22,6 +61,9 @@ pub fn render_log_panel(ui: &mut egui::Ui, state: &mut AppState) {
         .max_height(available_height)
         .show(ui, |ui| {
             for entry in &state.log_entries {
+                if !log_matches(entry, &state.log_search, state.log_level_filter) {
+                    continue;
+                }
                 let (color, level_str) = match entry.level {
                     LogLevel::Info => (c.log_info, "INFO"),
                     LogLevel::Warning => (c.log_warning, "WARN"),
@@ -69,4 +111,19 @@ pub fn render_log_panel(ui: &mut egui::Ui, state: &mut AppState) {
             }
         }
     });
+}
+
+use crate::state::LogEntry;
+
+fn log_matches(entry: &LogEntry, search: &str, level_filter: Option<LogLevel>) -> bool {
+    if let Some(level) = level_filter {
+        if entry.level != level { return false; }
+    }
+    if !search.is_empty() {
+        let search_lower = search.to_lowercase();
+        if !entry.message.to_lowercase().contains(&search_lower) {
+            return false;
+        }
+    }
+    true
 }

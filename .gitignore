@@ -22,3 +22,12 @@ Thumbs.db
 
 # Test output
 tests/output/
+
+# Claude Code
+.claude/
+
+# Python test files
+test_*.py
+
+# Website (deployed separately to Cloudflare Pages)
+website/

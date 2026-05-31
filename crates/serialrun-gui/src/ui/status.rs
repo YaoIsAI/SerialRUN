@@ -5,6 +5,16 @@ use eframe::egui;
 /// Logo green — consistent across status bar, MCP, and other indicators
 pub const LOGO_GREEN: egui::Color32 = egui::Color32::from_rgb(76, 175, 80);
 
+fn format_rate(rate: f64) -> String {
+    if rate >= 1024.0 * 1024.0 {
+        format!("{:.1} M", rate / (1024.0 * 1024.0))
+    } else if rate >= 1024.0 {
+        format!("{:.1} K", rate / 1024.0)
+    } else {
+        format!("{:.0}", rate)
+    }
+}
+
 pub fn render_status_bar(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
     let c = theme::get_colors(state.theme);
@@ -29,12 +39,51 @@ pub fn render_status_bar(ui: &mut egui::Ui, state: &mut AppState) {
 
         ui.separator();
 
-        ui.label(egui::RichText::new(format!("RX: {} {}", state.rx_count, T::bytes(lang))).color(c.text_secondary));
-        ui.label(egui::RichText::new(format!("TX: {} {}", state.tx_count, T::bytes(lang))).color(c.text_secondary));
+        // Calculate data rate every second
+        let now = chrono::Utc::now().timestamp_millis();
+        if now - state.rate_last_check >= 1000 {
+            let dt = (now - state.rate_last_check) as f64 / 1000.0;
+            if dt > 0.0 {
+                state.rx_rate = (state.rx_count - state.rate_last_rx) as f64 / dt;
+                state.tx_rate = (state.tx_count - state.rate_last_tx) as f64 / dt;
+            }
+            state.rate_last_rx = state.rx_count;
+            state.rate_last_tx = state.tx_count;
+            state.rate_last_check = now;
+        }
+
+        let rate_label = if lang == Language::Chinese { "速率" } else { "Rate" };
+        ui.label(egui::RichText::new(format!("RX: {} {} ({} {}/s)", state.rx_count, T::bytes(lang), format_rate(state.rx_rate), rate_label)).color(c.text_secondary));
+        ui.label(egui::RichText::new(format!("TX: {} {} ({} {}/s)", state.tx_count, T::bytes(lang), format_rate(state.tx_rate), rate_label)).color(c.text_secondary));
 
         if state.recording {
             ui.separator();
             ui.label(egui::RichText::new(format!("● {}", T::recording(lang))).color(c.error));
+        }
+
+        // AI connection indicator
+        if state.ai_connected {
+            ui.separator();
+            let ai_text = format!("AI: {} @ {} baud", state.ai_port_name, state.ai_baud_rate);
+            ui.label(egui::RichText::new(ai_text).color(egui::Color32::from_rgb(255, 193, 7)).strong());
+        }
+
+        // Auto-detect baud rate spinner
+        if state.auto_detect_running {
+            ui.ctx().request_repaint();
+            let spinner_chars = ['-', '\\', '|', '/'];
+            let t = ui.ctx().input(|i| i.time);
+            let idx = (t * 6.0) as usize % spinner_chars.len();
+            let spinner = spinner_chars[idx];
+            let progress_text = match state.auto_detect_progress {
+                Some(baud) => format!("{} {}...", spinner, baud),
+                None => {
+                    let base = if lang == Language::Chinese { "检测波特率" } else { "Detecting baud" };
+                    format!("{} {}...", spinner, base)
+                }
+            };
+            ui.separator();
+            ui.label(egui::RichText::new(progress_text).color(egui::Color32::from_rgb(100, 180, 255)).strong());
         }
 
         // Show current error/warning message inline (red for errors)
