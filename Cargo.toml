@@ -6,6 +6,7 @@ members = [
     "crates/serialrun-mcp",
     "crates/serialrun-plugin-api",
     "plugins/serialrun-example-plugin",
+    "plugins/serialrun-stc-isp",
 ]
 
 [workspace.dependencies]
