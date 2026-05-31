@@ -1,0 +1,13 @@
+{
+  "name": "serialrun-stc-isp",
+  "version": "0.1.0",
+  "description": "STC MCU ISP flashing plugin for SerialRUN. Supports STC89, STC12, STC15, STC8, STC8G, STC8H series.",
+  "author": "SerialRUN",
+  "license": "BSL-1.1",
+  "min_serialrun_version": "0.1.0",
+  "platforms": ["windows-x64", "macos-arm64", "macos-x64", "linux-x64", "linux-arm64"],
+  "category": "firmware-flash",
+  "tags": ["stc", "isp", "flash", "mcu", "firmware"],
+  "homepage": "https://github.com/YaoIsAI/SerialRUN",
+  "repository": "https://github.com/YaoIsAI/SerialRUN/tree/master/plugins/serialrun-stc-isp"
+}

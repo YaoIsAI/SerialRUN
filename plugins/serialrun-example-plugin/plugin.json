@@ -1,0 +1,13 @@
+{
+  "name": "serialrun-example-plugin",
+  "version": "0.1.0",
+  "description": "Example plugin for SerialRUN demonstrating the plugin API",
+  "author": "SerialRUN Team",
+  "license": "BSL-1.1",
+  "min_serialrun_version": "0.1.0",
+  "platforms": ["windows-x64", "macos-arm64", "macos-x64", "linux-x64", "linux-arm64"],
+  "category": "example",
+  "tags": ["example", "demo"],
+  "homepage": "https://github.com/YaoIsAI/SerialRUN",
+  "repository": "https://github.com/YaoIsAI/SerialRUN/tree/master/plugins/serialrun-example-plugin"
+}
