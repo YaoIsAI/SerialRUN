@@ -1,5 +1,7 @@
-use serialrun_plugin_api::PluginInfo as ApiPluginInfo;
+use serialrun_plugin_api::{PluginCapability, PluginInfo as ApiPluginInfo, PluginCallbacks};
 use std::ffi::{c_char, CStr, CString};
+
+static mut CALLBACKS: Option<PluginCallbacks> = None;
 
 #[no_mangle]
 pub extern "C" fn plugin_get_info() -> *mut c_char {
@@ -106,6 +108,46 @@ pub extern "C" fn plugin_free_string(s: *mut c_char) {
         unsafe {
             let _ = CString::from_raw(s);
         }
+    }
+}
+
+// ============================================================================
+// Optional: Plugin Capabilities (v0.2.0 API)
+// ============================================================================
+
+/// Declare that this plugin uses the logging capability.
+#[no_mangle]
+pub extern "C" fn plugin_get_capabilities() -> *mut c_char {
+    let caps = vec![PluginCapability::Logging];
+    let json = serialrun_plugin_api::serialize_capabilities(&caps).unwrap();
+    CString::new(json).unwrap().into_raw()
+}
+
+/// Initialize the plugin with host callbacks.
+/// Stores the callbacks for later use in commands.
+#[no_mangle]
+pub extern "C" fn plugin_init(callbacks: *const PluginCallbacks) -> bool {
+    if callbacks.is_null() {
+        return false;
+    }
+    unsafe {
+        CALLBACKS = Some(std::ptr::read(callbacks));
+        // Test logging via callback
+        if let Some(ref cbs) = CALLBACKS {
+            if let Some(log_info) = cbs.log_info {
+                let msg = CString::new("Example Plugin initialized!").unwrap();
+                log_info(msg.as_ptr());
+            }
+        }
+    }
+    true
+}
+
+/// Cleanup the plugin.
+#[no_mangle]
+pub extern "C" fn plugin_cleanup() {
+    unsafe {
+        CALLBACKS = None;
     }
 }
 

@@ -5,6 +5,8 @@ use std::ffi::{CStr, CString};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
+pub use serialrun_plugin_api::{PluginCapability, PluginCallbacks, PluginStatus};
+
 #[derive(Error, Debug)]
 pub enum PluginError {
     #[error("IO error: {0}")]
@@ -55,12 +57,17 @@ pub struct PluginResultData {
     pub error: Option<String>,
 }
 
-// FFI function signatures
+// FFI function signatures (required)
 type FnGetInfo = unsafe extern "C" fn() -> *mut std::os::raw::c_char;
 type FnGetCommands = unsafe extern "C" fn() -> *mut std::os::raw::c_char;
 type FnExecute =
     unsafe extern "C" fn(*const std::os::raw::c_char, *const std::os::raw::c_char) -> *mut std::os::raw::c_char;
 type FnFreeString = unsafe extern "C" fn(*mut std::os::raw::c_char);
+
+// FFI function signatures (optional)
+type FnGetCapabilities = unsafe extern "C" fn() -> *mut std::os::raw::c_char;
+type FnInit = unsafe extern "C" fn(*const PluginCallbacks) -> bool;
+type FnCleanup = unsafe extern "C" fn();
 
 /// A loaded plugin from a dynamic library.
 pub struct LoadedPlugin {
@@ -69,9 +76,13 @@ pub struct LoadedPlugin {
     library: libloading::Library,
     info: PluginInfo,
     commands: Vec<PluginCommand>,
+    capabilities: Vec<PluginCapability>,
     is_enabled: bool,
     fn_execute: FnExecute,
     fn_free_string: FnFreeString,
+    fn_init: Option<FnInit>,
+    fn_cleanup: Option<FnCleanup>,
+    initialized: bool,
 }
 
 unsafe impl Send for LoadedPlugin {}
@@ -125,16 +136,91 @@ impl LoadedPlugin {
 
             let commands: Vec<PluginCommand> = serde_json::from_str(&commands_str)?;
 
+            // Detect optional capabilities
+            let capabilities = match library.get::<FnGetCapabilities>(b"plugin_get_capabilities") {
+                Ok(fn_get_caps) => {
+                    let caps_ptr = (*fn_get_caps)();
+                    if caps_ptr.is_null() {
+                        Vec::new()
+                    } else {
+                        let caps_str = CStr::from_ptr(caps_ptr).to_string_lossy().to_string();
+                        fn_free_string(caps_ptr);
+                        serde_json::from_str(&caps_str).unwrap_or_default()
+                    }
+                }
+                Err(_) => Vec::new(), // No capabilities function = basic plugin
+            };
+
+            // Detect optional init/cleanup functions
+            let fn_init = library.get::<FnInit>(b"plugin_init").ok().map(|f| *f);
+            let fn_cleanup = library.get::<FnCleanup>(b"plugin_cleanup").ok().map(|f| *f);
+
+            log::info!(
+                "Loaded plugin: {} v{} (capabilities: {:?})",
+                info.name,
+                info.version,
+                capabilities
+            );
+
             Ok(Self {
                 path: path.to_path_buf(),
                 library,
                 info,
                 commands,
+                capabilities,
                 is_enabled: true,
                 fn_execute,
                 fn_free_string,
+                fn_init,
+                fn_cleanup,
+                initialized: false,
             })
         }
+    }
+
+    /// Initialize the plugin with host callbacks. Returns true on success.
+    pub fn init(&mut self, callbacks: *const PluginCallbacks) -> bool {
+        if let Some(fn_init) = self.fn_init {
+            unsafe {
+                self.initialized = fn_init(callbacks);
+                if self.initialized {
+                    log::info!("Plugin {} initialized with callbacks", self.info.name);
+                } else {
+                    log::warn!("Plugin {} init returned false", self.info.name);
+                }
+                self.initialized
+            }
+        } else {
+            // No init function = basic plugin, considered initialized
+            self.initialized = true;
+            true
+        }
+    }
+
+    /// Cleanup the plugin before unloading.
+    pub fn cleanup(&mut self) {
+        if let Some(fn_cleanup) = self.fn_cleanup {
+            unsafe {
+                fn_cleanup();
+            }
+            log::info!("Plugin {} cleaned up", self.info.name);
+        }
+        self.initialized = false;
+    }
+
+    /// Get the plugin's declared capabilities.
+    pub fn capabilities(&self) -> &[PluginCapability] {
+        &self.capabilities
+    }
+
+    /// Check if the plugin has a specific capability.
+    pub fn has_capability(&self, cap: &PluginCapability) -> bool {
+        self.capabilities.contains(cap)
+    }
+
+    /// Check if the plugin has been initialized.
+    pub fn is_initialized(&self) -> bool {
+        self.initialized
     }
 
     /// Execute a command on this plugin.

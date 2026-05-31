@@ -1,9 +1,104 @@
 /// SerialRUN Plugin API - shared types for plugin development.
 
 use serde::{Deserialize, Serialize};
+use std::os::raw::{c_char, c_float, c_int};
 
 /// Current plugin API version.
-pub const PLUGIN_API_VERSION: &str = "0.1.0";
+pub const PLUGIN_API_VERSION: &str = "0.2.0";
+
+// ============================================================================
+// Plugin Capabilities
+// ============================================================================
+
+/// Capabilities that a plugin can declare.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PluginCapability {
+    /// Plugin needs serial port access (read/write)
+    SerialPort,
+    /// Plugin provides a custom UI panel
+    UiPanel,
+    /// Plugin needs file open/save dialogs
+   FileDialog,
+    /// Plugin reports progress during operations
+    Progress,
+    /// Plugin uses host logging
+    Logging,
+}
+
+/// Status codes for progress callbacks.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PluginStatus {
+    Idle = 0,
+    Running = 1,
+    Success = 2,
+    Error = 3,
+}
+
+// ============================================================================
+// Host Callbacks (provided to plugins by the host)
+// ============================================================================
+
+/// Callback functions provided by the host to the plugin.
+/// All function pointers are Option - plugins should check before calling.
+#[repr(C)]
+pub struct PluginCallbacks {
+    // Serial port access
+    pub serial_read: Option<fn(buf: *mut u8, len: u32, timeout_ms: u32) -> c_int>,
+    pub serial_write: Option<fn(data: *const u8, len: u32) -> c_int>,
+    pub serial_set_baud: Option<fn(baud: u32) -> bool>,
+    pub serial_is_connected: Option<fn() -> bool>,
+
+    // Progress callbacks
+    pub progress_set: Option<fn(percent: c_float, message: *const c_char)>,
+    pub progress_set_status: Option<fn(status: c_int)>,
+    pub progress_is_cancelled: Option<fn() -> bool>,
+
+    // File operations
+    pub file_open_dialog: Option<fn(filter: *const c_char) -> *mut c_char>,
+    pub file_save_dialog: Option<fn(filter: *const c_char) -> *mut c_char>,
+    pub file_read: Option<fn(path: *const c_char) -> *mut c_char>, // returns base64
+
+    // Logging
+    pub log_info: Option<fn(msg: *const c_char)>,
+    pub log_warn: Option<fn(msg: *const c_char)>,
+    pub log_error: Option<fn(msg: *const c_char)>,
+}
+
+// ============================================================================
+// Optional FFI function signatures (for documentation, not called directly)
+// ============================================================================
+
+/// Optional: Plugin declares its capabilities.
+/// Returns JSON array of capability strings.
+/// Signature: `fn() -> *mut c_char`
+///
+/// Example return value: `["serial_port", "logging"]`
+pub type FnGetCapabilities = extern "C" fn() -> *mut c_char;
+
+/// Optional: Plugin initialization with host callbacks.
+/// Called once after loading. Plugin should store the callbacks pointer.
+/// Signature: `fn(callbacks: *const PluginCallbacks) -> bool`
+pub type FnInit = extern "C" fn(callbacks: *const PluginCallbacks) -> bool;
+
+/// Optional: Plugin cleanup. Called before unloading.
+/// Signature: `fn()`
+pub type FnCleanup = extern "C" fn();
+
+// ============================================================================
+// Capability helpers
+// ============================================================================
+
+/// Parse capabilities from a JSON string.
+pub fn parse_capabilities(json: &str) -> Result<Vec<PluginCapability>, serde_json::Error> {
+    serde_json::from_str(json)
+}
+
+/// Serialize capabilities to a JSON string.
+pub fn serialize_capabilities(caps: &[PluginCapability]) -> Result<String, serde_json::Error> {
+    serde_json::to_string(caps)
+}
 
 /// Information about a plugin.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,7 +175,7 @@ mod tests {
 
     #[test]
     fn test_plugin_api_version() {
-        assert_eq!(PLUGIN_API_VERSION, "0.1.0");
+        assert_eq!(PLUGIN_API_VERSION, "0.2.0");
     }
 
     #[test]
@@ -161,5 +256,25 @@ mod tests {
         let json = r#"{"success":true,"result":null}"#;
         let result = parse_plugin_result(json).unwrap();
         assert!(result.success);
+    }
+
+    #[test]
+    fn test_capabilities_serde() {
+        let caps = vec![PluginCapability::SerialPort, PluginCapability::Logging];
+        let json = serialize_capabilities(&caps).unwrap();
+        assert!(json.contains("serial_port"));
+        assert!(json.contains("logging"));
+
+        let parsed = parse_capabilities(&json).unwrap();
+        assert_eq!(parsed.len(), 2);
+        assert!(parsed.contains(&PluginCapability::SerialPort));
+    }
+
+    #[test]
+    fn test_plugin_status() {
+        assert_eq!(PluginStatus::Idle as i32, 0);
+        assert_eq!(PluginStatus::Running as i32, 1);
+        assert_eq!(PluginStatus::Success as i32, 2);
+        assert_eq!(PluginStatus::Error as i32, 3);
     }
 }
