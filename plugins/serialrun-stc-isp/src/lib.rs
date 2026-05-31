@@ -342,7 +342,7 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
     }
 
     match serial_read(&mut buf, 5000) {
-        Some(n) if n > 0 && buf[0] == 0x46 => {
+        Some(n) if n > 0 && is_ack(&buf[..n]) => {
             log_info("Flash erased successfully");
         }
         _ => {
@@ -372,7 +372,7 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
         }
 
         match serial_read(&mut buf, 2000) {
-            Some(n) if n > 0 && buf[0] == 0x46 => {
+            Some(n) if n > 0 && is_ack(&buf[..n]) => {
                 let percent = 40.0 + (i as f32 / total_blocks as f32) * 40.0;
                 set_progress(percent, &format!("Writing block {}/{}", i + 1, total_blocks));
             }
@@ -394,7 +394,7 @@ fn handle_flash(params: &serde_json::Value) -> PluginResult {
     }
 
     match serial_read(&mut buf, 5000) {
-        Some(n) if n > 0 && buf[0] == 0x46 => {
+        Some(n) if n > 0 && is_ack(&buf[..n]) => {
             log_info("Verification passed");
         }
         _ => {
