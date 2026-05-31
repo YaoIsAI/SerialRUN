@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.2.1 - 2026-05-31
+
+### STC ISP Flashing Plugin (Phase 2)
+
+#### New Features
+- **STC ISP Plugin**: Flash STC series MCUs via ISP protocol
+- **Supported Chips**: STC89, STC12, STC15, STC8, STC8G, STC8H
+- **Firmware Formats**: Intel HEX and raw binary
+- **ISP Protocol**: Handshake, erase, write (128-byte blocks), verify (CRC-16), reset
+- **Plugin Capabilities**: SerialPort, Progress, Logging
+
+#### Bug Fixes (Phase 2 Review)
+- **Critical**: Binary firmware files now load correctly (was always reading as UTF-8)
+- **Critical**: HEX record checksums now validated
+- **High**: HEX parser bounds check prevents panic on malformed byte_count
+- **Medium**: All error paths in handle_flash now set Status::Error
+- **Medium**: Empty firmware rejected before erase/flash sequence
+- **Medium**: Erase range capped to chip flash size
+- **Low**: `assert!` → `debug_assert!` in write_packet (UB fix for cdylib)
+- **Low**: `CString::new().unwrap()` → `if let Ok()` (panic prevention)
+- **Low**: Added `log_error` helper for error logging
+
+#### Files Added
+| File | Description |
+|------|-------------|
+| `plugins/serialrun-stc-isp/Cargo.toml` | Plugin dependencies |
+| `plugins/serialrun-stc-isp/src/lib.rs` | Plugin entry + FFI + command handlers |
+| `plugins/serialrun-stc-isp/src/protocol.rs` | STC ISP protocol implementation |
+| `plugins/serialrun-stc-isp/src/chip.rs` | Chip identification + HEX file parser |
+
+---
+
 ## v0.2.0 - 2026-05-31
 
 ### Plugin System Enhancement (Phase 1)
