@@ -262,6 +262,18 @@ cargo test        # 运行测试
 cargo bench       # 运行性能测试
 ```
 
+## 支持
+
+如果 SerialRUN 对你的工作有帮助，请考虑请作者喝杯咖啡！
+
+<p align="center">
+  <img src="assets/wechat_pay_qr.jpg" alt="微信支付" width="200">
+</p>
+
+<p align="center">
+  <em>微信支付</em>
+</p>
+
 ## 许可证
 
 SerialRUN 采用 [Business Source License 1.1](https://mariadb.com/bsl11/) 和 [MIT 许可证](LICENSE) 双重许可。详见 [LICENSE](LICENSE)。

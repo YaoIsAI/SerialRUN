@@ -260,6 +260,18 @@ cargo test        # Run tests
 cargo bench       # Run benchmarks
 ```
 
+## Support
+
+If SerialRUN helps your work, consider buying me a coffee!
+
+<p align="center">
+  <img src="assets/wechat_pay_qr.jpg" alt="WeChat Pay" width="200">
+</p>
+
+<p align="center">
+  <em>WeChat Pay</em>
+</p>
+
 ## License
 
 SerialRUN is dual-licensed under the [Business Source License 1.1](https://mariadb.com/bsl11/) and the [MIT License](LICENSE). See [LICENSE](LICENSE) for details.
