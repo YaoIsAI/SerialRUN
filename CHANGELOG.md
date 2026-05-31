@@ -11,6 +11,7 @@
 - **Plugin State**: Persisted to `~/.serialrun/plugin_state.json`
 - **Platform Checking**: Auto-detect platform compatibility
 - **Auto-Discover**: Scan plugins directory for installed plugins
+- **GUI Integration**: Import ZIP button, Uninstall button, enable/disable toggle
 
 #### Files Added
 | File | Description |
