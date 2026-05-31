@@ -1,5 +1,7 @@
 /// SerialRUN Plugin API - shared types for plugin development.
 
+pub mod manifest;
+
 use serde::{Deserialize, Serialize};
 use std::os::raw::{c_char, c_float, c_int};
 

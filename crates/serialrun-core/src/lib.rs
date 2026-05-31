@@ -4,6 +4,7 @@ pub mod config;
 pub mod data_logger;
 pub mod file_transfer;
 pub mod plugin;
+pub mod plugin_install;
 pub mod port;
 pub mod protocol;
 pub mod recorder;
