@@ -28,7 +28,7 @@
 
 | Platform | Link |
 |----------|------|
-| Windows (x64) | [SerialRUN-v0.1.0-windows-x64.exe](../../releases/latest) |
+| Windows (x64) | [SerialRUN-v0.1.0-windows-x64.zip](http://192.168.31.85:38633/yao/serialrun/releases/tag/v0.1.0) |
 | macOS | Build from source (see below) |
 | Linux | Build from source (see below) |
 

@@ -28,7 +28,7 @@
 
 | 平台 | 链接 |
 |------|------|
-| Windows (x64) | [SerialRUN-v0.1.0-windows-x64.exe](../../releases/latest) |
+| Windows (x64) | [SerialRUN-v0.1.0-windows-x64.zip](http://192.168.31.85:38633/yao/serialrun/releases/tag/v0.1.0) |
 | macOS | 从源码编译（见下方） |
 | Linux | 从源码编译（见下方） |
 
