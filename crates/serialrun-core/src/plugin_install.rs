@@ -73,7 +73,7 @@ impl PluginManager {
         self.installed.get(name)
     }
 
-    /// Install a plugin from a zip file (requires unzip command)
+    /// Install a plugin from a zip file
     pub fn install_from_zip(&mut self, zip_path: &Path) -> PluginResult<String> {
         // Extract zip to temp directory first to read manifest
         let temp_dir = std::env::temp_dir().join("serialrun_plugin_install");
@@ -81,28 +81,50 @@ impl PluginManager {
         fs::create_dir_all(&temp_dir)
             .map_err(|e| PluginError::IoError(e))?;
 
-        // Use system unzip command
-        let status = std::process::Command::new("unzip")
-            .arg("-o")
-            .arg(zip_path)
-            .arg("-d")
-            .arg(&temp_dir)
-            .status();
+        // Try multiple extraction methods
+        let mut extracted = false;
 
-        match status {
-            Ok(s) if s.success() => {}
-            _ => {
-                // Try tar as fallback
-                let status = std::process::Command::new("tar")
-                    .args(["xf", zip_path.to_str().unwrap(), "-C", temp_dir.to_str().unwrap()])
-                    .status();
-                if status.is_err() || !status.unwrap().success() {
-                    let _ = fs::remove_dir_all(&temp_dir);
-                    return Err(PluginError::PluginError(
-                        "Failed to extract zip. Install unzip or tar.".to_string()
-                    ));
-                }
+        // Method 1: PowerShell Expand-Archive (Windows 10+)
+        if !extracted {
+            let status = std::process::Command::new("powershell")
+                .args(["-Command", &format!(
+                    "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
+                    zip_path.display(), temp_dir.display()
+                )])
+                .status();
+            if let Ok(s) = status {
+                extracted = s.success();
             }
+        }
+
+        // Method 2: tar (available on Windows 10+ and Unix)
+        if !extracted {
+            let status = std::process::Command::new("tar")
+                .args(["xf", zip_path.to_str().unwrap(), "-C", temp_dir.to_str().unwrap()])
+                .status();
+            if let Ok(s) = status {
+                extracted = s.success();
+            }
+        }
+
+        // Method 3: unzip (Unix)
+        if !extracted {
+            let status = std::process::Command::new("unzip")
+                .arg("-o")
+                .arg(zip_path)
+                .arg("-d")
+                .arg(&temp_dir)
+                .status();
+            if let Ok(s) = status {
+                extracted = s.success();
+            }
+        }
+
+        if !extracted {
+            let _ = fs::remove_dir_all(&temp_dir);
+            return Err(PluginError::PluginError(
+                "Failed to extract zip. No supported extraction tool found.".to_string()
+            ));
         }
 
         // Find plugin.json in extracted files
