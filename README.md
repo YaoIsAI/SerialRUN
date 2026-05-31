@@ -53,7 +53,7 @@
 
 ```bash
 git clone https://github.com/YaoIsAI/SerialRUN.git
-cd SerialRUN
+cd serialrun
 cargo build --release
 
 # Windows:  target/release/serialrun.exe
@@ -101,7 +101,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed platform-specific instructions.
 
 ```bash
 git clone https://github.com/YaoIsAI/SerialRUN.git
-cd SerialRUN
+cd serialrun
 cargo build --release
 ```
 
@@ -129,9 +129,7 @@ serialrun replay COM1 script.txt
 
 ### GUI Usage
 
-```bash
-serialrun-gui
-```
+Download the pre-built binary from [Releases](https://github.com/YaoIsAI/SerialRUN/releases) or build from source.
 
 ### GUI Quick Start
 
@@ -147,7 +145,6 @@ SerialRUN/
 ├── crates/
 │   ├── serialrun-core/       # Core library (port, protocol, checksum, data logger)
 │   ├── serialrun-cli/        # CLI application
-│   ├── serialrun-gui/        # GUI application (egui/eframe)
 │   ├── serialrun-mcp/        # MCP server for AI integration
 │   └── serialrun-plugin-api/ # Plugin API definitions
 ├── plugins/
