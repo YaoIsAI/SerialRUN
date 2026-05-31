@@ -85,8 +85,17 @@ pub struct LoadedPlugin {
     initialized: bool,
 }
 
+// SAFETY: libloading::Library is Send on all platforms. FFI function pointers are safe to
+// call from any thread as long as the plugin itself is thread-safe (which is the plugin's
+// responsibility to ensure).
 unsafe impl Send for LoadedPlugin {}
 unsafe impl Sync for LoadedPlugin {}
+
+impl Drop for LoadedPlugin {
+    fn drop(&mut self) {
+        self.cleanup();
+    }
+}
 
 impl LoadedPlugin {
     /// Load a plugin from a dynamic library file.
@@ -145,7 +154,13 @@ impl LoadedPlugin {
                     } else {
                         let caps_str = CStr::from_ptr(caps_ptr).to_string_lossy().to_string();
                         fn_free_string(caps_ptr);
-                        serde_json::from_str(&caps_str).unwrap_or_default()
+                        match serde_json::from_str(&caps_str) {
+                            Ok(caps) => caps,
+                            Err(e) => {
+                                log::warn!("Failed to parse capabilities JSON: {}", e);
+                                Vec::new()
+                            }
+                        }
                     }
                 }
                 Err(_) => Vec::new(), // No capabilities function = basic plugin
@@ -228,6 +243,12 @@ impl LoadedPlugin {
         if !self.is_enabled {
             return Err(PluginError::PluginError(
                 "Plugin is disabled".to_string(),
+            ));
+        }
+
+        if !self.initialized {
+            return Err(PluginError::PluginError(
+                "Plugin is not initialized".to_string(),
             ));
         }
 
@@ -348,6 +369,18 @@ impl PluginManager {
         }
 
         Ok(())
+    }
+
+    /// Initialize all discovered plugins with host callbacks.
+    pub fn init_all(&mut self, callbacks: &PluginCallbacks) {
+        for (name, plugin) in self.plugins.iter_mut() {
+            let callbacks_ptr = callbacks as *const PluginCallbacks;
+            if plugin.init(callbacks_ptr) {
+                log::info!("Plugin '{}' initialized", name);
+            } else {
+                log::warn!("Plugin '{}' failed to initialize", name);
+            }
+        }
     }
 
     /// Get all loaded plugins.

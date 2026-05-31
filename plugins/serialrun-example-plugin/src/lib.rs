@@ -1,7 +1,8 @@
 use serialrun_plugin_api::{PluginCapability, PluginInfo as ApiPluginInfo, PluginCallbacks};
 use std::ffi::{c_char, CStr, CString};
+use std::sync::{Mutex, OnceLock};
 
-static mut CALLBACKS: Option<PluginCallbacks> = None;
+static CALLBACKS: OnceLock<Mutex<Option<PluginCallbacks>>> = OnceLock::new();
 
 #[no_mangle]
 pub extern "C" fn plugin_get_info() -> *mut c_char {
@@ -130,14 +131,14 @@ pub extern "C" fn plugin_init(callbacks: *const PluginCallbacks) -> bool {
     if callbacks.is_null() {
         return false;
     }
-    unsafe {
-        CALLBACKS = Some(std::ptr::read(callbacks));
+    let cbs = unsafe { *callbacks };
+    let store = CALLBACKS.get_or_init(|| Mutex::new(None));
+    if let Ok(mut guard) = store.lock() {
+        *guard = Some(cbs);
         // Test logging via callback
-        if let Some(ref cbs) = CALLBACKS {
-            if let Some(log_info) = cbs.log_info {
-                let msg = CString::new("Example Plugin initialized!").unwrap();
-                log_info(msg.as_ptr());
-            }
+        if let Some(log_info) = cbs.log_info {
+            let msg = CString::new("Example Plugin initialized!").unwrap();
+            log_info(msg.as_ptr());
         }
     }
     true
@@ -146,8 +147,10 @@ pub extern "C" fn plugin_init(callbacks: *const PluginCallbacks) -> bool {
 /// Cleanup the plugin.
 #[no_mangle]
 pub extern "C" fn plugin_cleanup() {
-    unsafe {
-        CALLBACKS = None;
+    if let Some(store) = CALLBACKS.get() {
+        if let Ok(mut guard) = store.lock() {
+            *guard = None;
+        }
     }
 }
 

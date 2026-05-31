@@ -19,11 +19,14 @@ pub enum PluginCapability {
     /// Plugin provides a custom UI panel
     UiPanel,
     /// Plugin needs file open/save dialogs
-   FileDialog,
+    FileDialog,
     /// Plugin reports progress during operations
     Progress,
     /// Plugin uses host logging
     Logging,
+    /// Unknown capability (forward-compatible with newer API versions)
+    #[serde(other)]
+    Unknown,
 }
 
 /// Status codes for progress callbacks.
@@ -42,28 +45,31 @@ pub enum PluginStatus {
 
 /// Callback functions provided by the host to the plugin.
 /// All function pointers are Option - plugins should check before calling.
+/// Uses extern "C" ABI for safe FFI across different compilation units.
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct PluginCallbacks {
     // Serial port access
-    pub serial_read: Option<fn(buf: *mut u8, len: u32, timeout_ms: u32) -> c_int>,
-    pub serial_write: Option<fn(data: *const u8, len: u32) -> c_int>,
-    pub serial_set_baud: Option<fn(baud: u32) -> bool>,
-    pub serial_is_connected: Option<fn() -> bool>,
+    pub serial_read: Option<extern "C" fn(buf: *mut u8, len: u32, timeout_ms: u32) -> c_int>,
+    pub serial_write: Option<extern "C" fn(data: *const u8, len: u32) -> c_int>,
+    pub serial_set_baud: Option<extern "C" fn(baud: u32) -> bool>,
+    pub serial_is_connected: Option<extern "C" fn() -> bool>,
 
     // Progress callbacks
-    pub progress_set: Option<fn(percent: c_float, message: *const c_char)>,
-    pub progress_set_status: Option<fn(status: c_int)>,
-    pub progress_is_cancelled: Option<fn() -> bool>,
+    pub progress_set: Option<extern "C" fn(percent: c_float, message: *const c_char)>,
+    pub progress_set_status: Option<extern "C" fn(status: PluginStatus)>,
+    pub progress_is_cancelled: Option<extern "C" fn() -> bool>,
 
     // File operations
-    pub file_open_dialog: Option<fn(filter: *const c_char) -> *mut c_char>,
-    pub file_save_dialog: Option<fn(filter: *const c_char) -> *mut c_char>,
-    pub file_read: Option<fn(path: *const c_char) -> *mut c_char>, // returns base64
+    pub file_open_dialog: Option<extern "C" fn(filter: *const c_char) -> *mut c_char>,
+    pub file_save_dialog: Option<extern "C" fn(filter: *const c_char) -> *mut c_char>,
+    pub file_read: Option<extern "C" fn(path: *const c_char) -> *mut c_char>, // returns base64
+    pub free_string: Option<extern "C" fn(s: *mut c_char)>, // free strings returned by callbacks
 
     // Logging
-    pub log_info: Option<fn(msg: *const c_char)>,
-    pub log_warn: Option<fn(msg: *const c_char)>,
-    pub log_error: Option<fn(msg: *const c_char)>,
+    pub log_info: Option<extern "C" fn(msg: *const c_char)>,
+    pub log_warn: Option<extern "C" fn(msg: *const c_char)>,
+    pub log_error: Option<extern "C" fn(msg: *const c_char)>,
 }
 
 // ============================================================================
