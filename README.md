@@ -41,15 +41,15 @@
 
 | Platform | Link |
 |----------|------|
-| Windows (x64) | [SerialRUN-v0.1.0-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.1.0/serialrun-0.1.0-windows-x64.zip) |
-| macOS (Apple Silicon / Intel) | Build from source |
+| Windows (x64) | [serialrun-0.1.0-windows-x64.zip](http://192.168.31.85:38633/yao/serialrun/releases/download/v0.1.0/serialrun-0.1.0-windows-x64.zip) |
+| macOS (Apple Silicon) | [serialrun-0.1.0-macos-arm64.zip](http://192.168.31.85:38633/attachments/cec0b88d-7297-4c29-b8d9-bea7e21dfeaa) |
 | Linux (x86_64 / aarch64) | Build from source |
 
 ### Build from Source
 
 ```bash
-git clone https://github.com/YaoIsAI/SerialRUN.git
-cd SerialRUN
+git clone http://192.168.31.85:38633/yao/serialrun.git
+cd serialrun
 cargo build --release
 
 # Windows:  target/release/serialrun.exe
@@ -96,8 +96,8 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed platform-specific instructions.
 ### Install
 
 ```bash
-git clone https://github.com/YaoIsAI/SerialRUN.git
-cd SerialRUN
+git clone http://192.168.31.85:38633/yao/serialrun.git
+cd serialrun
 cargo build --release
 ```
 
