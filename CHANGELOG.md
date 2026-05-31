@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.2.2 - 2026-05-31
+
+### Plugin Management (Phase 3A)
+
+#### New Features
+- **Plugin Manifest**: `plugin.json` format with metadata (name, version, author, platforms, tags)
+- **Plugin Manager**: Install, uninstall, enable, disable plugins
+- **Zip Import**: Install plugins from zip files via system unzip/tar
+- **Plugin State**: Persisted to `~/.serialrun/plugin_state.json`
+- **Platform Checking**: Auto-detect platform compatibility
+- **Auto-Discover**: Scan plugins directory for installed plugins
+
+#### Files Added
+| File | Description |
+|------|-------------|
+| `crates/serialrun-plugin-api/src/manifest.rs` | Plugin manifest format |
+| `crates/serialrun-core/src/plugin_install.rs` | Plugin installation manager |
+
+---
+
 ## v0.2.1 - 2026-05-31
 
 ### STC ISP Flashing Plugin (Phase 2)
