@@ -34,3 +34,6 @@ website/
 
 # GUI (proprietary, not published to public repos)
 crates/serialrun-gui/
+
+# Cloudflare Wrangler cache
+.wrangler/
