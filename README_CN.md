@@ -42,8 +42,12 @@
 | 平台 | 链接 |
 |------|------|
 | Windows (x64) | [SerialRUN-v0.1.0-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.1.0/serialrun-0.1.0-windows-x64.zip) |
-| macOS (Apple Silicon / Intel) | 从源码编译 |
+| macOS (Apple Silicon) | [SerialRUN-v0.1.0-macos-arm64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.1.0/serialrun-0.1.0-macos-arm64.zip) |
 | Linux (x86_64 / aarch64) | 从源码编译 |
+
+> **macOS 安全提示：** 首次运行时，macOS 可能会阻止应用。请前往 **系统设置 → 隐私与安全性 → 安全性**，点击 **仍要打开**，输入密码授权后即可正常使用。
+>
+> **测试环境：** MacBook Air M1（macOS Sequoia）
 
 ### 从源码编译
 
