@@ -14,6 +14,34 @@
 
 ---
 
+<p align="center">
+  <img src="assets/screenshot_en.png" alt="SerialRUN Screenshot" width="800">
+</p>
+
+<p align="center">
+  <em>Modbus RTU debugging — real-time register monitoring with TX/RX terminal display</em>
+</p>
+
+---
+
+## Download
+
+| Platform | Link |
+|----------|------|
+| Windows (x64) | [SerialRUN-v0.1.0-windows-x64.exe](../../releases/latest) |
+| macOS | Build from source (see below) |
+| Linux | Build from source (see below) |
+
+Or build from source:
+
+```bash
+git clone https://github.com/YaoIsAI/SerialRUN.git
+cd SerialRUN
+cargo build --release
+# Binary at: target/release/serialrun.exe (Windows)
+#            target/release/serialrun (macOS/Linux)
+```
+
 ## Features
 
 - **Cross-platform** — Windows, macOS, Linux

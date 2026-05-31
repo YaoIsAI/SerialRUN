@@ -14,6 +14,36 @@
 
 ---
 
+<p align="center">
+  <img src="assets/screenshot_zh.png" alt="SerialRUN 截图" width="800">
+</p>
+
+<p align="center">
+  <em>Modbus RTU 调试 — 实时寄存器监控，TX/RX 终端同步显示</em>
+</p>
+
+---
+
+## 下载
+
+| 平台 | 链接 |
+|------|------|
+| Windows (x64) | [SerialRUN-v0.1.0-windows-x64.exe](../../releases/latest) |
+| macOS | 从源码编译（见下方） |
+| Linux | 从源码编译（见下方） |
+
+或从源码编译：
+
+```bash
+git clone https://github.com/YaoIsAI/SerialRUN.git
+cd SerialRUN
+cargo build --release
+# 二进制文件：target/release/serialrun.exe (Windows)
+#             target/release/serialrun (macOS/Linux)
+```
+
+---
+
 ## 功能特性
 
 - **跨平台** — Windows、macOS、Linux
