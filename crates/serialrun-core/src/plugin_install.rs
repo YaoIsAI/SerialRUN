@@ -75,6 +75,8 @@ impl PluginManager {
 
     /// Install a plugin from a zip file
     pub fn install_from_zip(&mut self, zip_path: &Path) -> PluginResult<String> {
+        log::info!("Installing plugin from: {}", zip_path.display());
+
         // Extract zip to temp directory first to read manifest
         let temp_dir = std::env::temp_dir().join("serialrun_plugin_install");
         let _ = fs::remove_dir_all(&temp_dir);
@@ -86,14 +88,25 @@ impl PluginManager {
 
         // Method 1: PowerShell Expand-Archive (Windows 10+)
         if !extracted {
-            let status = std::process::Command::new("powershell")
-                .args(["-Command", &format!(
-                    "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
-                    zip_path.display(), temp_dir.display()
-                )])
-                .status();
-            if let Ok(s) = status {
-                extracted = s.success();
+            let zip_path_str = zip_path.display().to_string().replace('\'', "''");
+            let temp_dir_str = temp_dir.display().to_string().replace('\'', "''");
+            let cmd = format!(
+                "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
+                zip_path_str, temp_dir_str
+            );
+            log::info!("Running: powershell -Command {}", cmd);
+            let output = std::process::Command::new("powershell")
+                .args(["-Command", &cmd])
+                .output();
+            match output {
+                Ok(o) => {
+                    extracted = o.status.success();
+                    if !extracted {
+                        let stderr = String::from_utf8_lossy(&o.stderr);
+                        log::warn!("PowerShell failed: {}", stderr);
+                    }
+                }
+                Err(e) => log::warn!("PowerShell error: {}", e),
             }
         }
 
@@ -127,12 +140,22 @@ impl PluginManager {
             ));
         }
 
+        log::info!("Extracted to: {}", temp_dir.display());
+
         // Find plugin.json in extracted files
+        log::info!("Searching for plugin.json in: {}", temp_dir.display());
         let manifest_path = Self::find_plugin_json(&temp_dir)
             .ok_or_else(|| {
+                // Debug: list what was extracted
+                if let Ok(entries) = fs::read_dir(&temp_dir) {
+                    for entry in entries.flatten() {
+                        log::warn!("  Extracted: {}", entry.path().display());
+                    }
+                }
                 let _ = fs::remove_dir_all(&temp_dir);
                 PluginError::PluginError("No plugin.json found in zip".to_string())
             })?;
+        log::info!("Found plugin.json at: {}", manifest_path.display());
 
         let manifest_json = fs::read_to_string(&manifest_path)
             .map_err(|e| PluginError::IoError(e))?;
@@ -269,25 +292,45 @@ impl PluginManager {
                 continue;
             }
 
-            let manifest_path = path.join("plugin.json");
-            if !manifest_path.exists() {
-                continue;
-            }
+            // Look for plugin.json directly or in subdirectories
+            let manifest_path = Self::find_plugin_json_in_dir(&path);
+            if let Some(manifest_path) = manifest_path {
+                if let Ok(json) = fs::read_to_string(&manifest_path) {
+                    if let Ok(manifest) = PluginManifest::from_json(&json) {
+                        let plugin_dir = manifest_path.parent().unwrap_or(&path).to_path_buf();
+                        let enabled = self.installed.get(&manifest.name)
+                            .map(|p| p.enabled)
+                            .unwrap_or(true);
 
-            if let Ok(json) = fs::read_to_string(&manifest_path) {
-                if let Ok(manifest) = PluginManifest::from_json(&json) {
-                    let enabled = self.installed.get(&manifest.name)
-                        .map(|p| p.enabled)
-                        .unwrap_or(true);
-
-                    self.installed.insert(manifest.name.clone(), InstalledPlugin {
-                        manifest,
-                        enabled,
-                        install_path: path,
-                    });
+                        self.installed.insert(manifest.name.clone(), InstalledPlugin {
+                            manifest,
+                            enabled,
+                            install_path: plugin_dir,
+                        });
+                    }
                 }
             }
         }
+    }
+
+    /// Find plugin.json in a directory or its immediate subdirectory
+    fn find_plugin_json_in_dir(dir: &Path) -> Option<PathBuf> {
+        // Check direct
+        if dir.join("plugin.json").exists() {
+            return Some(dir.join("plugin.json"));
+        }
+        // Check one level deep (handles zip with top-level directory)
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                if entry.path().is_dir() {
+                    let p = entry.path().join("plugin.json");
+                    if p.exists() {
+                        return Some(p);
+                    }
+                }
+            }
+        }
+        None
     }
 
     /// Load plugin state from disk
