@@ -1,5 +1,79 @@
 # Changelog
 
+## v0.2.4 - 2026-06-01
+
+### CAN Bus Analyzer & Plugin System Overhaul
+
+#### CAN Bus Panel
+- **Independent Connection**: CAN analyzer uses its own serial port (separate from terminal)
+- **Port/Baud Selection**: Independent CAN port and baud rate (100K-1000K)
+- **Connect/Disconnect**: Clear connection lifecycle with status indicators
+- **Periodic Send**: Configurable count + period with ID/data auto-increment
+- **Frame Table**: USB-CAN Tool style table with index, time, channel, direction, ID, type, DLC, data
+- **TX/RX Direction**: Color-coded direction dots (green=RX, yellow=TX, red=ERR)
+- **Port Conflict Warning**: Alerts when CAN port is shared with terminal
+- **Tooltip System**: Hover labels on Frame ID and Data fields for guidance
+- **Bus Load Fix**: Corrected bus load calculation formula
+- **Line Parsing**: Supports both `\r` and `\n` line terminators
+- **Async Import**: Plugin import runs in background thread with ASCII spinner
+
+#### Plugin Panel
+- **Auto-Discover**: Plugins discovered on startup (no manual refresh needed)
+- **ZIP Import (Rust Native)**: Replaced PowerShell/tar/unzip with Rust `zip` crate (cross-platform)
+- **Help Icon (?)**: Per-card usage documentation on hover
+- **Expand/Collapse**: Toggle card to show/hide commands panel
+- **i18n Support**: All buttons and labels follow language switching
+- **Usage Documentation**: Moved to plugin.json `usage` field
+
+#### STC ISP Flasher
+- **Left-Right Layout**: Config on left, info/actions/log on right
+- **Full i18n**: All labels and buttons support Chinese/English
+
+#### Sub-Windows
+- **Always Visible**: Sub-windows never hide when main window gains focus
+- **Always On Top**: Sub-windows stay above main window
+- **Position Stable**: Sub-windows don't reset position on re-render
+
+#### Bug Fixes
+- Fixed periodic send never starting (`can_tx_periodic` never set to true)
+- Fixed `can_connected` set before actual connection confirmed
+- Fixed bus load calculation overcounting by factor of N
+- Fixed disconnect not always resetting periodic send
+- Fixed phantom TX frames added when channel dead
+- Fixed CAN port/baud rate not persisted across sessions
+- Fixed help file not found (now reads from docs/ directory)
+- Fixed cross-filesystem rename failure in plugin install
+
+#### Files Changed
+| File | Description |
+|------|-------------|
+| `crates/serialrun-core/Cargo.toml` | Added `zip` crate dependency |
+| `crates/serialrun-core/src/plugin_install.rs` | Rust native zip extraction, cross-filesystem copy fallback |
+| `docs/PLUGIN_DEVELOPMENT.md` | Plugin development guide |
+| `docs/PLUGIN_VISUAL_SPEC.md` | Plugin panel visual specification |
+
+---
+
+## v0.2.3 - 2026-06-01
+
+### Plugin System Enhancement
+
+#### New Features
+- **Plugin Development Specification**: Complete spec document for plugin authors
+- **STC ISP Dedicated Panel**: Professional UI with chip detection, firmware selection, flash/erase buttons
+- **Plugin Commands Cached**: Commands stored in state at load time (no re-loading)
+- **Import Animation**: ASCII spinner during plugin import
+- **Plugin Card UI**: Each plugin displayed as a card with capabilities, enable/disable, Open/Uninstall buttons
+- **Command Execution UI**: Generic command panel for plugins without dedicated UI
+
+#### Files Added
+| File | Description |
+|------|-------------|
+| `docs/PLUGIN_SPEC.md` | Plugin development specification |
+| `crates/serialrun-gui/src/ui/stc_panel.rs` | STC ISP Flasher dedicated panel |
+
+---
+
 ## v0.2.2 - 2026-05-31
 
 ### Plugin Management (Phase 3A)

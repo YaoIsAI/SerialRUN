@@ -73,85 +73,49 @@ impl PluginManager {
         self.installed.get(name)
     }
 
-    /// Install a plugin from a zip file
+    /// Install a plugin from a zip file using Rust native zip extraction
     pub fn install_from_zip(&mut self, zip_path: &Path) -> PluginResult<String> {
         log::info!("Installing plugin from: {}", zip_path.display());
 
-        // Extract zip to temp directory first to read manifest
-        let temp_dir = std::env::temp_dir().join("serialrun_plugin_install");
+        // Create unique temp directory per install
+        let temp_dir = std::env::temp_dir().join(format!(
+            "serialrun_plugin_{}_{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_millis()
+        ));
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir)
             .map_err(|e| PluginError::IoError(e))?;
 
-        // Try multiple extraction methods
-        let mut extracted = false;
+        // Extract using Rust zip crate (no external tools needed)
+        let zip_file = fs::File::open(zip_path)
+            .map_err(|e| PluginError::IoError(e))?;
+        let mut archive = zip::ZipArchive::new(zip_file)
+            .map_err(|e| PluginError::PluginError(format!("Invalid zip file: {}", e)))?;
 
-        // Method 1: PowerShell Expand-Archive (Windows 10+)
-        if !extracted {
-            let zip_path_str = zip_path.display().to_string().replace('\'', "''");
-            let temp_dir_str = temp_dir.display().to_string().replace('\'', "''");
-            let cmd = format!(
-                "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
-                zip_path_str, temp_dir_str
-            );
-            log::info!("Running: powershell -Command {}", cmd);
-            let output = std::process::Command::new("powershell")
-                .args(["-Command", &cmd])
-                .output();
-            match output {
-                Ok(o) => {
-                    extracted = o.status.success();
-                    if !extracted {
-                        let stderr = String::from_utf8_lossy(&o.stderr);
-                        log::warn!("PowerShell failed: {}", stderr);
-                    }
+        for i in 0..archive.len() {
+            let mut entry = archive.by_index(i)
+                .map_err(|e| PluginError::PluginError(format!("Zip read error: {}", e)))?;
+            let out_path = temp_dir.join(entry.mangled_name());
+
+            if entry.is_dir() {
+                fs::create_dir_all(&out_path).map_err(|e| PluginError::IoError(e))?;
+            } else {
+                if let Some(parent) = out_path.parent() {
+                    fs::create_dir_all(parent).map_err(|e| PluginError::IoError(e))?;
                 }
-                Err(e) => log::warn!("PowerShell error: {}", e),
+                let mut out_file = fs::File::create(&out_path)
+                    .map_err(|e| PluginError::IoError(e))?;
+                std::io::copy(&mut entry, &mut out_file)
+                    .map_err(|e| PluginError::IoError(e))?;
             }
-        }
-
-        // Method 2: tar (available on Windows 10+ and Unix)
-        if !extracted {
-            let status = std::process::Command::new("tar")
-                .args(["xf", zip_path.to_str().unwrap(), "-C", temp_dir.to_str().unwrap()])
-                .status();
-            if let Ok(s) = status {
-                extracted = s.success();
-            }
-        }
-
-        // Method 3: unzip (Unix)
-        if !extracted {
-            let status = std::process::Command::new("unzip")
-                .arg("-o")
-                .arg(zip_path)
-                .arg("-d")
-                .arg(&temp_dir)
-                .status();
-            if let Ok(s) = status {
-                extracted = s.success();
-            }
-        }
-
-        if !extracted {
-            let _ = fs::remove_dir_all(&temp_dir);
-            return Err(PluginError::PluginError(
-                "Failed to extract zip. No supported extraction tool found.".to_string()
-            ));
         }
 
         log::info!("Extracted to: {}", temp_dir.display());
 
         // Find plugin.json in extracted files
-        log::info!("Searching for plugin.json in: {}", temp_dir.display());
         let manifest_path = Self::find_plugin_json(&temp_dir)
             .ok_or_else(|| {
-                // Debug: list what was extracted
-                if let Ok(entries) = fs::read_dir(&temp_dir) {
-                    for entry in entries.flatten() {
-                        log::warn!("  Extracted: {}", entry.path().display());
-                    }
-                }
                 let _ = fs::remove_dir_all(&temp_dir);
                 PluginError::PluginError("No plugin.json found in zip".to_string())
             })?;
@@ -172,14 +136,18 @@ impl PluginManager {
             )));
         }
 
-        // Move to final location
+        // Move to final location (with copy fallback for cross-filesystem)
         let plugin_dir = self.plugins_dir.join(&manifest.name);
         if plugin_dir.exists() {
             fs::remove_dir_all(&plugin_dir)
                 .map_err(|e| PluginError::IoError(e))?;
         }
-        fs::rename(&temp_dir, &plugin_dir)
-            .map_err(|e| PluginError::IoError(e))?;
+        if fs::rename(&temp_dir, &plugin_dir).is_err() {
+            // Cross-filesystem: copy then delete
+            copy_dir_all(&temp_dir, &plugin_dir)
+                .map_err(|e| PluginError::IoError(e))?;
+            let _ = fs::remove_dir_all(&temp_dir);
+        }
 
         // Record installation
         let installed = InstalledPlugin {
@@ -313,24 +281,9 @@ impl PluginManager {
         }
     }
 
-    /// Find plugin.json in a directory or its immediate subdirectory
+    /// Find plugin.json in a directory recursively
     fn find_plugin_json_in_dir(dir: &Path) -> Option<PathBuf> {
-        // Check direct
-        if dir.join("plugin.json").exists() {
-            return Some(dir.join("plugin.json"));
-        }
-        // Check one level deep (handles zip with top-level directory)
-        if let Ok(entries) = fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                if entry.path().is_dir() {
-                    let p = entry.path().join("plugin.json");
-                    if p.exists() {
-                        return Some(p);
-                    }
-                }
-            }
-        }
-        None
+        Self::find_plugin_json(dir)
     }
 
     /// Load plugin state from disk
@@ -345,12 +298,31 @@ impl PluginManager {
     /// Save plugin state to disk
     fn save_state(&self) {
         if let Some(parent) = self.state_file.parent() {
-            let _ = fs::create_dir_all(parent);
+            if let Err(e) = fs::create_dir_all(parent) {
+                log::error!("Failed to create plugin state directory: {}", e);
+            }
         }
         if let Ok(json) = serde_json::to_string_pretty(&self.installed) {
-            let _ = fs::write(&self.state_file, json);
+            if let Err(e) = fs::write(&self.state_file, json) {
+                log::error!("Failed to save plugin state: {}", e);
+            }
         }
     }
+}
+
+/// Recursively copy a directory (fallback for cross-filesystem rename)
+fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
+    fs::create_dir_all(dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(&entry.path(), &dst.join(entry.file_name()))?;
+        } else {
+            fs::copy(entry.path(), dst.join(entry.file_name()))?;
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]

@@ -9,5 +9,6 @@
   "category": "firmware-flash",
   "tags": ["stc", "isp", "flash", "mcu", "firmware"],
   "homepage": "https://github.com/YaoIsAI/SerialRUN",
-  "repository": "https://github.com/YaoIsAI/SerialRUN/tree/master/plugins/serialrun-stc-isp"
+  "repository": "https://github.com/YaoIsAI/SerialRUN/tree/master/plugins/serialrun-stc-isp",
+  "usage": "## STC ISP Flasher\n\nFlash STC series MCU via ISP protocol.\n\n### Quick Start\n1. Connect STC MCU via USB-to-Serial adapter\n2. Select the serial port in the panel\n3. Click **Detect MCU** to identify the chip\n4. Click **Browse** to select firmware file (.hex or .bin)\n5. Click **Flash** to start programming\n\n### Supported Chips\n- STC89 (classic 51)\n- STC12, STC15\n- STC8, STC8G, STC8H\n\n### Notes\n- MCU must be power-cycled while sending ISP trigger\n- Baud rate: 9600 for detection, 115200 for flashing\n- Firmware format: Intel HEX (.hex) or raw binary (.bin)"
 }

@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/serialrun-core",
     "crates/serialrun-cli",
+    "crates/serialrun-gui",
     "crates/serialrun-mcp",
     "crates/serialrun-plugin-api",
     "plugins/serialrun-example-plugin",

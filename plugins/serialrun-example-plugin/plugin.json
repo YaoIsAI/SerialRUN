@@ -9,5 +9,6 @@
   "category": "example",
   "tags": ["example", "demo"],
   "homepage": "https://github.com/YaoIsAI/SerialRUN",
-  "repository": "https://github.com/YaoIsAI/SerialRUN/tree/master/plugins/serialrun-example-plugin"
+  "repository": "https://github.com/YaoIsAI/SerialRUN/tree/master/plugins/serialrun-example-plugin",
+  "usage": "## Example Plugin\n\nA reference plugin demonstrating the SerialRUN plugin API.\n\n### Commands\n\n- **echo** — Echoes input text back. Parameter: `{\"text\": \"hello\"}`\n- **timestamp** — Returns the current UTC timestamp.\n- **add** — Adds two numbers. Parameter: `{\"a\": 5, \"b\": 3}`\n\n### Usage\n\n1. Open the Plugins panel in SerialRUN\n2. Find \"Example Plugin\" in the list and click **Open**\n3. Select a command from the dropdown\n4. Enter JSON parameters if required\n5. Click **Run Command** to execute\n\n### For Developers\n\nThis plugin serves as a template for building your own plugins. It demonstrates:\n- All required FFI functions (`plugin_get_info`, `plugin_get_commands`, `plugin_execute`, `plugin_free_string`)\n- Optional FFI functions (`plugin_get_capabilities`, `plugin_init`, `plugin_cleanup`)\n- Thread-safe callback storage with `OnceLock<Mutex>`\n- Proper memory management with `CString` and `plugin_free_string`"
 }

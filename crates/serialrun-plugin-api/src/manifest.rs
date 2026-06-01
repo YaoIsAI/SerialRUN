@@ -37,6 +37,9 @@ pub struct PluginManifest {
     /// Repository URL
     #[serde(default)]
     pub repository: String,
+    /// Usage instructions (markdown)
+    #[serde(default)]
+    pub usage: String,
 }
 
 fn default_license() -> String {
@@ -75,6 +78,7 @@ impl PluginManifest {
             tags: Vec::new(),
             homepage: String::new(),
             repository: String::new(),
+            usage: String::new(),
         }
     }
 

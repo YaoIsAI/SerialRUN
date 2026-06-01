@@ -217,21 +217,46 @@ fn handle_detect(params: &serde_json::Value) -> PluginResult {
     let baud_rate = params["baud_rate"].as_u64().unwrap_or(9600) as u32;
 
     log_info(&format!("Detecting STC MCU at {} baud...", baud_rate));
+    log_info("Please power cycle the MCU (disconnect then reconnect power) during detection.");
     set_progress(0.0, "Detecting MCU...");
     set_status(PluginStatus::Running);
 
-    // Send ISP trigger
+    // STC ISP protocol: continuously send 0x7F at 9600 baud.
+    // MCU bootloader listens for 0x7F after power-on and responds with chip info.
+    // Send 0x7F every ~10ms for up to 15 seconds (user must power cycle MCU).
     let trigger = isp_trigger_packet();
-    if !serial_write(&trigger) {
-        set_status(PluginStatus::Error);
-        return PluginResult::error("Failed to send ISP trigger. Check serial connection.");
-    }
+    let total_duration = std::time::Duration::from_secs(15);
+    let send_interval = std::time::Duration::from_millis(10);
+    let start = std::time::Instant::now();
+    let mut response_buf = [0u8; 128];
 
-    // Wait for handshake response
-    let mut buf = [0u8; 64];
-    match serial_read(&mut buf, 2000) {
-        Some(n) => {
-            if let Some(info) = parse_handshake_response(&buf[..n]) {
+    loop {
+        if is_cancelled() {
+            set_status(PluginStatus::Idle);
+            return PluginResult::error("Cancelled by user");
+        }
+
+        let elapsed = start.elapsed();
+        if elapsed >= total_duration {
+            break;
+        }
+
+        let percent = (elapsed.as_secs_f32() / total_duration.as_secs_f32()) * 100.0;
+        if elapsed.as_secs() % 2 == 0 && elapsed.as_millis() % 500 < 10 {
+            set_progress(percent, &format!("Sending ISP trigger... ({:.0}s / 15s) - Power cycle MCU NOW!", elapsed.as_secs_f32()));
+        }
+
+        // Send trigger byte
+        if !serial_write(&trigger) {
+            set_status(PluginStatus::Error);
+            return PluginResult::error("Failed to send ISP trigger. Check serial connection.");
+        }
+
+        // Check for response (long enough to receive full handshake at 9600 baud)
+        if let Some(n) = serial_read(&mut response_buf, 2000) {
+            let hex: String = response_buf[..n].iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ");
+            log_info(&format!("Received {} bytes: {}", n, hex));
+            if let Some(info) = parse_handshake_response(&response_buf[..n]) {
                 let chip = ChipInfo::from_handshake(
                     info.family_code, info.header_version,
                     info.mcu_id, info.flash_size_kb, info.eeprom_size_kb,
@@ -240,23 +265,21 @@ fn handle_detect(params: &serde_json::Value) -> PluginResult {
                 set_status(PluginStatus::Success);
                 log_info(&format!("Detected: {}", chip.info_message));
 
-                PluginResult::success(serde_json::json!({
+                return PluginResult::success(serde_json::json!({
                     "family": chip.family.name(),
                     "family_code": format!("0x{:02X}", chip.family_code),
                     "flash_size": chip.flash_size,
                     "eeprom_size": chip.eeprom_size,
                     "info": chip.info_message,
-                }))
-            } else {
-                set_status(PluginStatus::Error);
-                PluginResult::error("Invalid handshake response. Is this an STC MCU?")
+                }));
             }
         }
-        None => {
-            set_status(PluginStatus::Error);
-            PluginResult::error("No response from MCU. Power cycle the MCU while sending ISP trigger.")
-        }
+
+        std::thread::sleep(send_interval);
     }
+
+    set_status(PluginStatus::Error);
+    PluginResult::error("No response after 15 seconds. Ensure: 1) MCU is STC series, 2) Power cycle the MCU during detection, 3) Correct serial port selected.")
 }
 
 fn handle_flash(params: &serde_json::Value) -> PluginResult {
