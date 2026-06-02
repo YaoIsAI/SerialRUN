@@ -7,7 +7,7 @@
 #### Plugin System (Complete)
 - **Plugin API v0.2**: Capabilities, lifecycle, host callbacks (SerialPort, FileDialog, Progress, Logging)
 - **Plugin Manager**: Install, uninstall, enable, disable, ZIP import
-- **Plugin Community**: Online search on GitHub, one-click install from Releases
+- **Plugin Community**: Online search on GitHub, one-click install from Releases (local import ready, community search coming soon)
 - **Plugin Manifest**: `plugin.json` format with metadata, platform checking, version compatibility
 - **STC ISP Plugin**: Flash STC series MCUs (STC89/12/15/8/8G/8H) via ISP protocol
 - **12 Bug Fixes**: Memory leaks, race conditions, dead code, cross-filesystem issues
