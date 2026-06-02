@@ -1,6 +1,5 @@
 /// Plugin loader using libloading for dynamic library loading.
 
-use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -273,13 +272,15 @@ impl LoadedPlugin {
             let result_str = CStr::from_ptr(result_ptr).to_string_lossy().to_string();
             (self.fn_free_string)(result_ptr);
 
-            let value: serde_json::Value = serde_json::from_str(&result_str)?;
-
-            Ok(PluginResultData {
-                success: value.get("success").and_then(|v| v.as_bool()).unwrap_or(false),
-                result: value.get("result").cloned(),
-                error: value.get("error").and_then(|v| v.as_str()).map(String::from),
-            })
+            // BUG 10 FIX: Deserialize directly into PluginResultData
+            match serde_json::from_str::<PluginResultData>(&result_str) {
+                Ok(data) => Ok(data),
+                Err(e) => Ok(PluginResultData {
+                    success: false,
+                    result: None,
+                    error: Some(format!("Failed to parse plugin result: {}", e)),
+                }),
+            }
         }
     }
 
@@ -309,175 +310,9 @@ impl LoadedPlugin {
     }
 }
 
-/// Manages discovery, loading, and execution of plugins.
-pub struct PluginManager {
-    plugin_dirs: Vec<PathBuf>,
-    plugins: HashMap<String, LoadedPlugin>,
-}
-
-impl Default for PluginManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl PluginManager {
-    pub fn new() -> Self {
-        Self {
-            plugin_dirs: Vec::new(),
-            plugins: HashMap::new(),
-        }
-    }
-
-    /// Add a directory to search for plugins.
-    pub fn add_plugin_dir(&mut self, dir: PathBuf) {
-        if !self.plugin_dirs.contains(&dir) {
-            self.plugin_dirs.push(dir);
-        }
-    }
-
-    /// Discover and load all plugins from registered directories.
-    pub fn discover(&mut self) -> PluginResult<()> {
-        let dirs: Vec<PathBuf> = self.plugin_dirs.clone();
-
-        for dir in &dirs {
-            if !dir.exists() {
-                continue;
-            }
-
-            let entries = std::fs::read_dir(dir)?;
-
-            for entry in entries.flatten() {
-                let path = entry.path();
-
-                let is_plugin = path.extension().map_or(false, |ext| {
-                    ext == "dylib" || ext == "so" || ext == "dll"
-                });
-
-                if is_plugin {
-                    match LoadedPlugin::load(&path) {
-                        Ok(plugin) => {
-                            let name = plugin.info().name.clone();
-                            self.plugins.insert(name, plugin);
-                        }
-                        Err(e) => {
-                            log::warn!("Failed to load plugin {}: {}", path.display(), e);
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Initialize all discovered plugins with host callbacks.
-    pub fn init_all(&mut self, callbacks: &PluginCallbacks) {
-        for (name, plugin) in self.plugins.iter_mut() {
-            let callbacks_ptr = callbacks as *const PluginCallbacks;
-            if plugin.init(callbacks_ptr) {
-                log::info!("Plugin '{}' initialized", name);
-            } else {
-                log::warn!("Plugin '{}' failed to initialize", name);
-            }
-        }
-    }
-
-    /// Get all loaded plugins.
-    pub fn plugins(&self) -> &HashMap<String, LoadedPlugin> {
-        &self.plugins
-    }
-
-    /// Get a plugin by name.
-    pub fn get_plugin(&self, name: &str) -> Option<&LoadedPlugin> {
-        self.plugins.get(name)
-    }
-
-    /// Execute a command on a specific plugin.
-    pub fn execute(
-        &self,
-        plugin_name: &str,
-        command: &str,
-        params: &str,
-    ) -> PluginResult<PluginResultData> {
-        let plugin = self
-            .plugins
-            .get(plugin_name)
-            .ok_or_else(|| PluginError::PluginError(format!("Plugin '{}' not found", plugin_name)))?;
-
-        plugin.execute_command(command, params)
-    }
-
-    /// Get all commands across all enabled plugins.
-    pub fn all_commands(&self) -> Vec<(&str, &PluginCommand)> {
-        let mut commands = Vec::new();
-        for (name, plugin) in &self.plugins {
-            if plugin.is_enabled() {
-                for cmd in plugin.commands() {
-                    commands.push((name.as_str(), cmd));
-                }
-            }
-        }
-        commands
-    }
-
-    /// Remove a plugin by name.
-    pub fn remove_plugin(&mut self, name: &str) -> Option<LoadedPlugin> {
-        self.plugins.remove(name)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_plugin_manager_new() {
-        let manager = PluginManager::new();
-        assert!(manager.plugins().is_empty());
-    }
-
-    #[test]
-    fn test_plugin_manager_default() {
-        let manager = PluginManager::default();
-        assert!(manager.plugins().is_empty());
-    }
-
-    #[test]
-    fn test_add_plugin_dir() {
-        let mut manager = PluginManager::new();
-        manager.add_plugin_dir(PathBuf::from("/tmp/plugins"));
-        manager.add_plugin_dir(PathBuf::from("/tmp/plugins")); // duplicate
-        assert_eq!(manager.plugin_dirs.len(), 1);
-    }
-
-    #[test]
-    fn test_discover_nonexistent_dir() {
-        let mut manager = PluginManager::new();
-        manager.add_plugin_dir(PathBuf::from("/nonexistent/dir"));
-        // Should not error
-        manager.discover().unwrap();
-        assert!(manager.plugins().is_empty());
-    }
-
-    #[test]
-    fn test_get_plugin_not_found() {
-        let manager = PluginManager::new();
-        assert!(manager.get_plugin("nonexistent").is_none());
-    }
-
-    #[test]
-    fn test_execute_not_found() {
-        let manager = PluginManager::new();
-        let result = manager.execute("nonexistent", "cmd", "{}");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_remove_plugin() {
-        let mut manager = PluginManager::new();
-        assert!(manager.remove_plugin("nonexistent").is_none());
-    }
 
     #[test]
     fn test_plugin_info_serde() {

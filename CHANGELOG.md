@@ -1,5 +1,52 @@
 # Changelog
 
+## v0.2.5 - 2026-06-01
+
+### Plugin Community & Bug Fixes
+
+#### Plugin Community (GitHub-Driven)
+- **Online Search**: Search plugins on GitHub by name/description/tags
+- **One-Click Install**: Download and install from GitHub Releases directly
+- **Community Tab**: New [Installed] [Community] tab layout in plugin panel
+- **Async Operations**: Search and download run in background threads with spinner
+- **Update Detection**: Check installed plugins against GitHub releases for newer versions
+- **GitHub Topic Discovery**: Plugins discovered via `serialrun-plugin` topic tag
+
+#### Plugin System Bug Fixes (12 bugs)
+- **Memory leak**: Replaced `Box::leak` with proper `Vec<Box<PluginCallbacks>>` storage
+- **Dead code removed**: Removed unused `PluginManager` struct from `core/plugin.rs` (116 lines)
+- **Stale state cleanup**: `discover()` now removes entries for deleted plugin directories
+- **Race condition fix**: Verify plugin directory exists before re-discovery after import
+- **Cancellation support**: `progress_is_cancelled` wired to `AtomicBool` token
+- **Version compatibility**: Check `min_serialrun_version` during install
+- **Platform check**: `install_from_dir()` now validates platform compatibility
+- **JSON parsing**: Direct deserialization into `PluginResultData` (no double-parse)
+- **Uninstall order**: Uninstall state file first, then remove from memory
+- **File dialog filter**: Plugin callbacks now parse and apply filter parameter
+
+#### Documentation
+- **Plugin Development Guide**: Complete rewrite with community publishing instructions
+- **Plugin Spec**: Updated to match actual implementation
+- **Community Publishing Guide**: GitHub topic, Release ZIP, naming conventions
+- **Help Files**: Updated with plugin community feature
+
+#### Files Changed
+| File | Description |
+|------|-------------|
+| `crates/serialrun-core/src/plugin_registry.rs` | GitHub API client for plugin community |
+| `crates/serialrun-core/src/plugin.rs` | Bug fixes, removed dead code |
+| `crates/serialrun-core/src/plugin_install.rs` | Stale cleanup, platform/version checks |
+| `crates/serialrun-core/Cargo.toml` | Added `reqwest`, `base64` dependencies |
+| `crates/serialrun-gui/src/ui/plugin.rs` | Community tab UI, search/install flow |
+| `crates/serialrun-gui/src/state.rs` | Community tab state fields, i18n strings |
+| `crates/serialrun-gui/src/plugin_callbacks.rs` | Cancellation token, file dialog filter fix |
+| `docs/PLUGIN_DEVELOPMENT.md` | Rewritten with publishing guide |
+| `docs/PLUGIN_SPEC.md` | Updated to match implementation |
+| `docs/PLUGIN_VISUAL_SPEC.md` | Added community tab visual spec |
+| `Cargo.toml` | Added `reqwest` workspace dependency |
+
+---
+
 ## v0.2.4 - 2026-06-01
 
 ### CAN Bus Analyzer & Plugin System Overhaul

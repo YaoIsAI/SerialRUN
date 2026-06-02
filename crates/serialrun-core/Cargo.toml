@@ -21,6 +21,8 @@ tracing = { workspace = true }
 serialrun-plugin-api = { path = "../serialrun-plugin-api" }
 libloading = { workspace = true }
 zip = "2"
+reqwest = { workspace = true }
+base64 = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }

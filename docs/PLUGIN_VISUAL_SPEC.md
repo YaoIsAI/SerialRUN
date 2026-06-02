@@ -1,6 +1,17 @@
 # SerialRUN Plugin Panel Visual Specification
 
-## Plugin Card Layout
+## Tab Layout
+
+```
+[Installed] [Community]           [Import ZIP]
+─────────────────────────────────────────────
+```
+
+- Tab bar at top with selectable labels
+- "Import ZIP" button only visible on Installed tab
+- Community tab auto-loads popular plugins on first visit
+
+## Installed Plugin Card
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -9,7 +20,6 @@
 │   ☐ Enabled                          [Uninstall]│
 ├─────────────────────────────────────────────────┤
 │ (expanded content when ▼ is clicked)            │
-│ Usage documentation...                          │
 │ Command panel...                                │
 └─────────────────────────────────────────────────┘
 ```
@@ -42,9 +52,8 @@
 
 When the expand button (▼) is clicked:
 
-1. **Usage Documentation** - Full text from plugin.json `usage` field, scrollable (max 120px)
-2. **Separator line**
-3. **Commands Panel** (if plugin has commands):
+1. **Separator line**
+2. **Commands Panel** (if plugin has commands):
    - Command selector (ComboBox)
    - Command description
    - JSON parameter editor
@@ -55,6 +64,43 @@ When the expand button (▼) is clicked:
 
 Some plugins have custom panels instead of the generic command panel:
 - `serialrun-stc-isp` → Dedicated STC ISP Flasher panel
+
+## Community Plugin Card
+
+```
+┌─────────────────────────────────────────────────┐
+│ 📦 owner/repo            v1.0.0  by Author      │
+│ Plugin description text here                     │
+│ ★ 12  Serial  Progress  File                    │
+│                              [Install]           │
+└─────────────────────────────────────────────────┘
+```
+
+### Community Card Components
+
+| Element | Position | Style | Description |
+|---------|----------|-------|-------------|
+| Package icon | Left | 📦 | Indicates community plugin |
+| Repo name | Left | Bold | GitHub owner/repo |
+| Version | Left | Weak, small | From plugin.json |
+| Author | Left | Weak, small | By Author format |
+| Description | Below header | Weak, small | Plugin description |
+| Stars | Below | Amber | ★ count |
+| Capabilities | Below | Colored tags | Same colors as installed |
+| Install button | Bottom right | Button | One-click install |
+| Installed label | Bottom right | Green text | Shown if already installed |
+| Downloading | Bottom right | Weak text | Shown during download |
+
+### Community Search Bar
+
+```
+Search: [________________] [Search]
+```
+
+- Text input with placeholder "Search plugins..."
+- Search button triggers GitHub API query
+- Enter key also triggers search
+- Loading spinner shown during search
 
 ## Import Flow
 
@@ -68,23 +114,39 @@ Some plugins have custom panels instead of the generic command panel:
   → On error: error message in log
 ```
 
+## Community Install Flow
+
+```
+[Install] clicked
+  → Download spinner: ⠋ Downloading: owner/repo
+  → Background thread downloads release ZIP
+  → Installs via PluginManager
+  → On success: plugin list refreshes automatically
+  → On error: error message in log
+```
+
 ### ASCII Spinner Animation
 
-Characters: ⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏
-Color: #FFC800 (amber)
-Speed: 8 frames/second
+Characters: ⠋ ⠙ ⠹ ⠸ ⠼ ⠦ ⠧ ⠇ ⠏
+- Import color: #FFC800 (amber)
+- Community color: #3B82F6 (blue)
+- Speed: 8 frames/second
 
-## Panel Header
+## Empty States
 
+### Installed tab (no plugins)
 ```
-Plugins              [Import ZIP]
-─────────────────────────────────
+No plugins installed. Import a ZIP or browse the Community tab.
 ```
 
-## Empty State
-
+### Community tab (no search yet)
 ```
-No plugins installed. Click Import ZIP to install.
+Search for plugins or browse popular extensions.
+```
+
+### Community tab (no results)
+```
+No plugins found. Try a different search.
 ```
 
 ## Plugin List Scroll
@@ -95,8 +157,7 @@ No plugins installed. Click Import ZIP to install.
 
 ## Sub-Window Behavior
 
-- All sub-windows are in-app `egui::Window` (not OS-level viewports)
+- All sub-windows are OS-level viewports (`show_viewport_immediate`)
 - Sub-windows never hide when main window gains focus
-- Sub-windows have close button (X) in title bar
-- Sub-windows are resizable and collapsible
-- Sub-windows open at center of main window
+- Sub-windows stay above main window (`WindowLevel::AlwaysOnTop`)
+- Position stable: only set on first open (no position reset on re-render)

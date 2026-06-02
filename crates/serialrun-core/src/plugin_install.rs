@@ -190,6 +190,15 @@ impl PluginManager {
         let manifest: PluginManifest = PluginManifest::from_json(&manifest_json)
             .map_err(|e| PluginError::PluginError(format!("Invalid plugin.json: {}", e)))?;
 
+        // BUG 9 FIX: Check platform compatibility
+        if !supports_current_platform(&manifest) {
+            return Err(PluginError::PluginError(format!(
+                "Plugin '{}' does not support platform {}",
+                manifest.name,
+                current_platform()
+            )));
+        }
+
         let installed = InstalledPlugin {
             manifest: manifest.clone(),
             enabled: true,
@@ -254,6 +263,9 @@ impl PluginManager {
             Err(_) => return,
         };
 
+        // Collect names found on disk
+        let mut found = std::collections::HashSet::new();
+
         for entry in entries {
             let path = entry.path();
             if !path.is_dir() {
@@ -269,16 +281,28 @@ impl PluginManager {
                         let enabled = self.installed.get(&manifest.name)
                             .map(|p| p.enabled)
                             .unwrap_or(true);
+                        let name = manifest.name.clone();
 
-                        self.installed.insert(manifest.name.clone(), InstalledPlugin {
+                        self.installed.insert(name.clone(), InstalledPlugin {
                             manifest,
                             enabled,
                             install_path: plugin_dir,
                         });
+                        found.insert(name);
                     }
                 }
             }
         }
+
+        // BUG 3 FIX: Remove stale entries whose directories no longer exist
+        self.installed.retain(|name, plugin| {
+            if !found.contains(name) && !plugin.install_path.exists() {
+                log::info!("Removing stale plugin entry: {}", name);
+                false
+            } else {
+                true
+            }
+        });
     }
 
     /// Find plugin.json in a directory recursively

@@ -41,8 +41,8 @@
 
 | Platform | Link |
 |----------|------|
-| Windows (x64) | [SerialRUN-v0.1.0-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.1.0/serialrun-0.1.0-windows-x64.zip) |
-| macOS (Apple Silicon) | [SerialRUN-v0.1.0-macos-arm64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.1.0/serialrun-0.1.0-macos-arm64.zip) |
+| Windows (x64) | [SerialRUN-v0.2.5-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.2.5/serialrun-0.2.5-windows-x64.zip) |
+| macOS (Apple Silicon) | [SerialRUN-v0.2.5-macos-arm64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.2.5/serialrun-0.2.5-macos-arm64.zip) |
 | Linux (x86_64 / aarch64) | Build from source |
 
 > **macOS Security Note:** On first launch, macOS may block the app. Go to **System Settings → Privacy & Security → Security** and click **Open Anyway**. Enter your password to authorize, then the app will launch normally.
@@ -85,7 +85,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed platform-specific instructions.
 - **PLC Control** — Modbus register polling with brand presets (Siemens, Mitsubishi, Delta, Omron)
 - **TCP/RTU Bridge** — Bridge Modbus TCP clients to serial RTU devices
 - **HMI Simulator** — Virtual Modbus slave simulator (TCP/RTU)
-- **Plugin System** — Extensible architecture with dynamic plugin loading
+- **Plugin System** — Extensible architecture with dynamic plugin loading, online community search/install
 - **MCP Server** — Built-in TCP server with 15 tools for AI assistant integration
 - **Access Logging** — All MCP operations logged with client IP for traceability
 - **HEX Mode** — Send and receive data in hexadecimal format
@@ -143,12 +143,14 @@ Download the pre-built binary from [Releases](https://github.com/YaoIsAI/SerialR
 ```
 SerialRUN/
 ├── crates/
-│   ├── serialrun-core/       # Core library (port, protocol, checksum, data logger)
+│   ├── serialrun-core/       # Core library (port, protocol, checksum, plugin registry)
 │   ├── serialrun-cli/        # CLI application
+│   ├── serialrun-gui/        # GUI application (egui-based)
 │   ├── serialrun-mcp/        # MCP server for AI integration
 │   └── serialrun-plugin-api/ # Plugin API definitions
 ├── plugins/
-│   └── serialrun-example-plugin/  # Plugin example (C FFI)
+│   ├── serialrun-example-plugin/  # Example plugin
+│   └── serialrun-stc-isp/         # STC ISP flasher plugin
 ├── assets/                   # Embedded images and icons
 ├── docs/                     # Documentation
 ├── tests/                    # Integration tests
@@ -175,7 +177,7 @@ All panels run as independent OS windows — drag, resize, and arrange freely. C
 | Data Logger | Continuous CSV recording with timestamp |
 | Register Editor | CSV/JSON import/export, alarm threshold monitoring |
 | Chart | Multi-series real-time data visualization |
-| Plugin Manager | Dynamic plugin discovery and loading |
+| Plugin Manager | Dynamic plugin discovery, online community search/install |
 | Log Viewer | Application log with filter, export, and persistence |
 
 ## Build for Different Platforms
@@ -245,6 +247,8 @@ SerialRUN automatically saves data to `~/.serialrun/` directory:
 
 ## Plugin Development
 
+SerialRUN supports plugins via C-ABI dynamic libraries (.dll/.so/.dylib). Plugins can access serial ports, show progress, and more.
+
 ```rust
 #[no_mangle]
 pub extern "C" fn plugin_get_info() -> *mut c_char { /* ... */ }
@@ -252,6 +256,12 @@ pub extern "C" fn plugin_get_info() -> *mut c_char { /* ... */ }
 #[no_mangle]
 pub extern "C" fn plugin_execute(command: *const c_char, params: *const c_char) -> *mut c_char { /* ... */ }
 ```
+
+### Plugin Community
+
+Plugins are discoverable via GitHub. Plugin authors add the `serialrun-plugin` topic to their repo, upload Release ZIPs, and users can search/install directly from SerialRUN's Community tab.
+
+See [docs/PLUGIN_DEVELOPMENT.md](docs/PLUGIN_DEVELOPMENT.md) for the complete guide including publishing to the community.
 
 See [plugins/serialrun-example-plugin/](plugins/serialrun-example-plugin/) for a complete example.
 
@@ -264,6 +274,9 @@ See [plugins/serialrun-example-plugin/](plugins/serialrun-example-plugin/) for a
 | [docs/MANUAL.md](docs/MANUAL.md) | User manual |
 | [docs/MCP_API.md](docs/MCP_API.md) | MCP API reference |
 | [docs/BUILD.md](docs/BUILD.md) | Build guide |
+| [docs/PLUGIN_DEVELOPMENT.md](docs/PLUGIN_DEVELOPMENT.md) | Plugin development & publishing guide |
+| [docs/PLUGIN_SPEC.md](docs/PLUGIN_SPEC.md) | Plugin API specification |
+| [docs/PLUGIN_VISUAL_SPEC.md](docs/PLUGIN_VISUAL_SPEC.md) | Plugin panel visual spec |
 | [CLAUDE.md](CLAUDE.md) | Agent operation guide |
 
 ## Development

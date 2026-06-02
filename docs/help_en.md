@@ -246,10 +246,20 @@ Custom device register map table:
 
 ### Plugin Manager
 
-Scans `plugins/` directory for extension plugins:
+Manages extension plugins with two tabs:
+
+**Installed Tab**
 - Displays plugin name, version, author, and load status
-- Supports Windows (.dll), Linux (.so), macOS (.dylib) platforms
-- Click refresh button to re-scan
+- Enable/disable plugins with checkbox
+- Expand/collapse to show plugin commands panel
+- Help icon (?) shows usage documentation on hover
+- Import ZIP button for local plugin installation
+
+**Community Tab**
+- Search plugins on GitHub (tagged with `serialrun-plugin`)
+- One-click install from GitHub Releases
+- Shows plugin description, stars, and capabilities
+- Auto-discovers popular plugins on first visit
 
 ---
 

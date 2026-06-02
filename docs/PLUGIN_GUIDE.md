@@ -106,21 +106,31 @@ cargo build --release
 - macOS: `libmy_plugin.dylib`
 - Linux: `libmy_plugin.so`
 
-### 5. 安装插件
+### 5. 打包插件
 
-将编译好的文件复制到 SerialRUN 的 `plugins/` 目录：
+```bash
+# Windows
+7z a my-plugin-1.0.0-windows-x64.zip target/release/my_plugin.dll plugin.json
 
+# Linux
+zip my-plugin-1.0.0-linux-x64.zip target/release/libmy_plugin.so plugin.json
+
+# macOS
+zip my-plugin-1.0.0-macos-arm64.zip target/release/libmy_plugin.dylib plugin.json
 ```
-SerialRUN/
-├── serialrun.exe
-├── plugins/
-│   ├── my_plugin.dll        ← 放这里
-│   └── serialrun-example-plugin.dll
-```
 
-### 6. 加载插件
+### 6. 安装插件
 
-启动 SerialRUN，点击工具栏的 **Plug** 按钮，点击 **刷新**，即可看到新插件。
+**方式一：ZIP 导入**
+1. 在 SerialRUN 中点击 **导入 ZIP**
+2. 选择打包好的 .zip 文件
+3. 插件自动安装并加载
+
+**方式二：社区安装（推荐发布方式）**
+1. 将代码推送到 GitHub 仓库
+2. 给仓库添加 `serialrun-plugin` topic 标签
+3. 创建 Release，上传 ZIP 文件
+4. 用户在 SerialRUN 的 **社区** 标签页搜索并安装
 
 ---
 
@@ -388,7 +398,7 @@ A: 检查：
 A: 可以。在 `plugin_get_capabilities` 中声明 `SerialPort`，然后通过 `PluginCallbacks` 的 `serial_read`/`serial_write` 回调访问。
 
 **Q: 插件能显示 UI 吗？**
-A: 当前版本还不支持自定义 UI 面板。Phase 2 将添加 `UiPanel` 能力支持。
+A: 当前版本支持专用 UI 面板（如 STC ISP 插件）。其他插件通过命令面板交互。自定义 UI 面板支持在后续版本中扩展。
 
 **Q: 插件是线程安全的吗？**
 A: 插件的 FFI 函数可能从不同线程调用。如果插件有共享状态，需要自己加锁。
