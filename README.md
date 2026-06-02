@@ -41,8 +41,8 @@
 
 | Platform | Link |
 |----------|------|
-| Windows (x64) | [SerialRUN-v0.2.5-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.2.5/serialrun-0.2.5-windows-x64.zip) |
-| macOS (Apple Silicon) | [SerialRUN-v0.2.5-macos-arm64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.2.5/serialrun-0.2.5-macos-arm64.zip) |
+| Windows (x64) | [SerialRUN-v0.2.0-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.2.0/serialrun-0.2.0-windows-x64.zip) |
+| macOS (Apple Silicon) | Build from source (macOS release coming soon) |
 | Linux (x86_64 / aarch64) | Build from source |
 
 > **macOS Security Note:** On first launch, macOS may block the app. Go to **System Settings → Privacy & Security → Security** and click **Open Anyway**. Enter your password to authorize, then the app will launch normally.
