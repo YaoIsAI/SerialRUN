@@ -161,7 +161,6 @@ cargo build --release -p serialrun-gui
 
 ### Git Remotes
 - **GitHub:** `https://github.com/YaoIsAI/SerialRUN.git`
-- **Gitea (local):** `http://192.168.31.85:38633/yao/serialrun.git`
 - **Plugins repo:** `https://github.com/YaoIsAI/serialrun-plugins.git`
 
 ### Key Files
@@ -200,6 +199,5 @@ cargo build --release -p serialrun-gui
 
 ### Push Preferences
 - **GitHub:** Public code, releases, community plugins repo
-- **Gitea (192.168.31.85:38633):** Private backup, safe for all code including proprietary
-- **Always push to both** when committing
-- **Sync script:** `./scripts/sync-remotes.sh` handles all branches and URL swapping
+- **Private backup:** Separate internal repo (not on GitHub)
+- **Sync script:** `./scripts/sync-remotes.sh` handles multi-remote sync
