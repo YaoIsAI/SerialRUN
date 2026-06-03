@@ -27,6 +27,9 @@ pub struct ThemeColors {
     pub rx_color: egui::Color32,     // RX direction
     pub sys_color: egui::Color32,    // SYS direction
     pub timestamp_color: egui::Color32,
+    pub tx_badge_bg: egui::Color32,  // TX badge background
+    pub rx_badge_bg: egui::Color32,  // RX badge background
+    pub sys_badge_bg: egui::Color32, // SYS badge background
 
     // ── Buttons ──
     pub btn_send: egui::Color32,
@@ -79,6 +82,9 @@ impl ThemeColors {
             rx_color: egui::Color32::from_rgb(80, 220, 140),
             sys_color: egui::Color32::from_rgb(200, 180, 80),
             timestamp_color: egui::Color32::from_rgb(150, 150, 150),
+            tx_badge_bg: egui::Color32::from_rgb(20, 50, 80),
+            rx_badge_bg: egui::Color32::from_rgb(20, 60, 30),
+            sys_badge_bg: egui::Color32::from_rgb(55, 55, 55),
 
             btn_send: egui::Color32::from_rgb(40, 160, 80),
             btn_send_text: egui::Color32::WHITE,
@@ -127,6 +133,9 @@ impl ThemeColors {
             rx_color: egui::Color32::from_rgb(0, 140, 60),
             sys_color: egui::Color32::from_rgb(160, 120, 0),
             timestamp_color: egui::Color32::from_rgb(100, 100, 100),
+            tx_badge_bg: egui::Color32::from_rgb(200, 220, 255),
+            rx_badge_bg: egui::Color32::from_rgb(200, 240, 210),
+            sys_badge_bg: egui::Color32::from_rgb(230, 230, 220),
 
             btn_send: egui::Color32::from_rgb(30, 140, 60),
             btn_send_text: egui::Color32::WHITE,

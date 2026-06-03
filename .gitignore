@@ -25,9 +25,23 @@ tests/output/
 
 # Claude Code
 .claude/
+.claude-phases/
 
 # Python test files
 test_*.py
+
+# Website (deployed separately to Cloudflare Pages)
+website/
+
+# Non-core files
+wechat_article.html
+assets/screenshot_website.png
+
+# GUI (proprietary, not published to public repos)
+crates/serialrun-gui/
+
+# Internal scripts (contain private URLs, only on Gitea)
+scripts/sync-remotes.sh
 
 # Cloudflare Wrangler cache
 .wrangler/

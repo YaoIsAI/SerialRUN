@@ -7,19 +7,19 @@ use eframe::egui;
 pub fn render_connection_panel(ui: &mut egui::Ui, state: &mut AppState, ctx: &egui::Context) {
     let lang = state.language;
     ui.horizontal(|ui| {
-        let icon_texture_id = {
+        // Cache the icon texture — load once, reuse every frame
+        if state.icon_texture.is_none() {
             let icon_bytes = include_bytes!("../../icon_embedded.png");
-            image::load_from_memory(icon_bytes).ok().map(|img| {
+            if let Some(img) = image::load_from_memory(icon_bytes).ok() {
                 let rgba = img.to_rgba8();
                 let size = [rgba.width() as usize, rgba.height() as usize];
                 let pixels = rgba.into_raw();
                 let color_image = egui::ColorImage::from_rgba_unmultiplied(size, &pixels);
-                let texture = ctx.load_texture("app_icon", color_image, egui::TextureOptions::default());
-                texture.id()
-            })
-        };
-        if let Some(texture_id) = icon_texture_id {
-            ui.image(egui::ImageSource::Texture(egui::load::SizedTexture::new(texture_id, egui::vec2(20.0, 20.0))));
+                state.icon_texture = Some(ctx.load_texture("app_icon", color_image, egui::TextureOptions::default()));
+            }
+        }
+        if let Some(ref tex) = state.icon_texture {
+            ui.image(egui::ImageSource::Texture(egui::load::SizedTexture::new(tex.id(), egui::vec2(20.0, 20.0))));
         }
         ui.label(egui::RichText::new("SerialRUN").size(16.0).strong());
         ui.add_space(8.0);

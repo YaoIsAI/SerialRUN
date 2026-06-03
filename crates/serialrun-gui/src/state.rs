@@ -952,6 +952,12 @@ impl T {
     pub fn statistics(l: Language) -> &'static str { match l { Language::English => "Statistics", Language::Chinese => "统计" } }
     pub fn frames_label(l: Language) -> &'static str { match l { Language::English => "Frames", Language::Chinese => "帧" } }
     pub fn filter_label(l: Language) -> &'static str { match l { Language::English => "Filter:", Language::Chinese => "过滤:" } }
+    pub fn all_label(l: Language) -> &'static str { match l { Language::English => "All", Language::Chinese => "全部" } }
+    pub fn cancel_label(l: Language) -> &'static str { match l { Language::English => "Cancel", Language::Chinese => "取消" } }
+    pub fn refresh_label(l: Language) -> &'static str { match l { Language::English => "Refresh", Language::Chinese => "刷新" } }
+    pub fn port_terminal(l: Language) -> &'static str { match l { Language::English => "Terminal", Language::Chinese => "终端" } }
+    pub fn port_plc(l: Language) -> &'static str { match l { Language::English => "PLC", Language::Chinese => "PLC" } }
+    pub fn port_both(l: Language) -> &'static str { match l { Language::English => "Terminal+PLC", Language::Chinese => "终端+PLC" } }
     pub fn tx_id(l: Language) -> &'static str { match l { Language::English => "TX ID:", Language::Chinese => "发送 ID:" } }
     pub fn data_label(l: Language) -> &'static str { match l { Language::English => "Data:", Language::Chinese => "数据:" } }
     pub fn bus_load(l: Language) -> &'static str { match l { Language::English => "Bus Load:", Language::Chinese => "总线负载:" } }
@@ -1088,7 +1094,6 @@ impl PlcBrand {
 pub enum PlcDataType { Bool, U16, I16, U32, Float32 }
 impl PlcDataType { pub fn label(&self) -> &'static str { match self { Self::Bool=>"BOOL", Self::U16=>"UINT16", Self::I16=>"INT16", Self::U32=>"UINT32", Self::Float32=>"FLOAT" } } }
 
-#[derive(Clone)]
 pub struct PlcState {
     pub selected_brand: PlcBrand,
     pub selected_model: Option<usize>,
@@ -1110,6 +1115,7 @@ pub struct PlcState {
     pub new_reg_unit: String,
     pub plc_last_tx: String,
     pub plc_last_rx: String,
+    pub plc_raw_response_rx: Option<std::sync::mpsc::Receiver<Vec<u8>>>,
 }
 
 #[derive(Clone)]
@@ -1229,6 +1235,7 @@ pub struct AppState {
     pub baud_rate_text: String,
     pub is_connected: bool,
     pub terminal_buffer: VecDeque<TerminalLine>,
+    pub terminal_filter: String, // "", "PLC", "MCP" — empty = show all
     pub input_buffer: String,
     pub hex_mode: bool,
     pub auto_scroll: bool,
@@ -1421,7 +1428,7 @@ pub struct AppState {
     pub terminal_async_receiver: Option<std::sync::mpsc::Receiver<Result<Vec<u8>, String>>>,
     // Async write operations
     pub can_tx_async: Option<std::sync::mpsc::Receiver<Result<(), String>>>,
-    pub plc_write_async: Option<std::sync::mpsc::Receiver<Result<(), String>>>,
+    pub plc_write_async: Option<std::sync::mpsc::Receiver<Result<Vec<u8>, String>>>,
     pub modbus_monitor_async: Option<std::sync::mpsc::Receiver<Result<Vec<u8>, String>>>,
     pub auto_reply_async: Option<std::sync::mpsc::Receiver<Result<(), String>>>,
     pub fb_write_async: Option<std::sync::mpsc::Receiver<Result<(), String>>>,
@@ -1471,6 +1478,14 @@ pub struct AppState {
     // Device identification for traceability
     pub device_id: String,
     pub device_model: String,
+    // Cached icon texture (loaded once, not every frame)
+    pub icon_texture: Option<egui::TextureHandle>,
+    // PLC independent serial port connection
+    pub plc_port_owner: Option<crate::port_owner::PortOwnerHandle>,
+    pub plc_port_connected: bool,
+    pub plc_selected_port: Option<String>,
+    pub plc_port_list: Vec<SerialPortInfo>,
+    pub plc_baud_rate: u32,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -1482,6 +1497,9 @@ pub struct TerminalLine {
     /// Source of the data: empty for manual UI, "MCP" for AI-initiated
     #[serde(default)]
     pub source: String,
+    /// Tag for filtering: "PLC", "MCP", etc.
+    #[serde(default)]
+    pub tag: String,
 }
 
 #[derive(Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -1605,6 +1623,7 @@ impl AppState {
             baud_rate_text: "115200".into(),
             is_connected: false,
             terminal_buffer: VecDeque::new(),
+            terminal_filter: String::new(),
             input_buffer: String::new(),
             hex_mode: false,
             auto_scroll: true,
@@ -1658,6 +1677,7 @@ impl AppState {
                 adding_custom_register: false, new_reg_addr: String::new(), new_reg_name: String::new(),
                 new_reg_type: PlcDataType::U16, new_reg_scale: "1.0".into(), new_reg_unit: String::new(),
                 plc_last_tx: String::new(), plc_last_rx: String::new(),
+                plc_raw_response_rx: None,
             },
             show_checksum_window: false,
             show_file_transfer_window: false,
@@ -1766,6 +1786,12 @@ impl AppState {
             mcp_config_dirty: false,
             device_id: String::new(),
             device_model: String::new(),
+            icon_texture: None,
+            plc_port_owner: None,
+            plc_port_connected: false,
+            plc_selected_port: None,
+            plc_port_list: Vec::new(),
+            plc_baud_rate: 9600,
         };
         // Load persisted data from previous session
         state.load_logs();
@@ -1780,7 +1806,7 @@ impl AppState {
     }
 
     pub fn add_terminal_line(&mut self, direction: Direction, content: String, is_hex: bool) {
-        self.add_terminal_line_source(direction, content, is_hex, "");
+        self.add_terminal_line_tagged(direction, content, is_hex, "");
     }
 
     pub fn add_terminal_line_source(&mut self, direction: Direction, content: String, is_hex: bool, source: &str) {
@@ -1790,6 +1816,26 @@ impl AppState {
             content,
             is_hex,
             source: source.to_string(),
+            tag: String::new(),
+        };
+        self.terminal_buffer.push_back(line);
+        if self.auto_scroll {
+            self.scroll_to_bottom_pending = true;
+        }
+        if self.terminal_buffer.len() > 5000 {
+            self.terminal_buffer.pop_front();
+        }
+        self.terminal_dirty = true;
+    }
+
+    pub fn add_terminal_line_tagged(&mut self, direction: Direction, content: String, is_hex: bool, tag: &str) {
+        let line = TerminalLine {
+            timestamp: chrono::Utc::now().timestamp_millis(),
+            direction,
+            content,
+            is_hex,
+            source: String::new(),
+            tag: tag.to_string(),
         };
         self.terminal_buffer.push_back(line);
         if self.auto_scroll {

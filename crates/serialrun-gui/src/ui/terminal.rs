@@ -3,6 +3,17 @@ use crate::state::{AppState, ChecksumMode, Direction, Language, LineEnding, Scri
 use crate::theme;
 use eframe::egui;
 
+/// Extract tag from terminal line: checks `tag` field first, then content "[xxx]" prefix
+fn extract_line_tag(line: &crate::state::TerminalLine) -> String {
+    if !line.tag.is_empty() { return line.tag.clone(); }
+    if let Some(end) = line.content.find(']') {
+        if line.content.starts_with('[') && end > 1 {
+            return line.content[1..end].to_string();
+        }
+    }
+    String::new()
+}
+
 pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
     let c = theme::get_colors(state.theme);
@@ -78,6 +89,43 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
 
     ui.separator();
 
+    // Filter bar — discover tags from both `tag` field AND content "[xxx]" prefixes
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new(T::filter_label(lang)).strong());
+
+        // Collect unique tags from buffer
+        let mut tags: Vec<String> = state.terminal_buffer.iter()
+            .filter_map(|l| {
+                let t = extract_line_tag(l);
+                if t.is_empty() { None } else { Some(t) }
+            })
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+        tags.sort();
+
+        // "All" button
+        let is_all_active = state.terminal_filter.is_empty();
+        if ui.selectable_label(is_all_active, egui::RichText::new(T::all_label(lang))).clicked() {
+            state.terminal_filter.clear();
+        }
+        // Dynamic tag buttons
+        for tag in &tags {
+            let is_active = state.terminal_filter == *tag;
+            if ui.selectable_label(is_active, egui::RichText::new(tag)).clicked() {
+                state.terminal_filter = tag.clone();
+            }
+        }
+        let filtered_count = if state.terminal_filter.is_empty() {
+            state.terminal_buffer.len()
+        } else {
+            state.terminal_buffer.iter().filter(|l| extract_line_tag(l) == state.terminal_filter).count()
+        };
+        ui.label(egui::RichText::new(format!("({})", filtered_count)).weak());
+    });
+
+    ui.separator();
+
     // Terminal display area
     let available_height = ui.available_height() - 50.0;
 
@@ -88,7 +136,13 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
         .show(ui, |ui| {
             ui.add_space(2.0);
             let line_count = state.terminal_buffer.len();
+            let mut seq = 0u32;
             for (idx, line) in state.terminal_buffer.iter().enumerate() {
+                // Apply filter — match both tag field and content "[xxx]" prefix
+                if !state.terminal_filter.is_empty() && extract_line_tag(line) != state.terminal_filter {
+                    continue;
+                }
+                seq += 1;
                 let (color, content_color, prefix) = match line.direction {
                     Direction::Rx => (c.rx_color, c.rx_color, "\u{2193} RX"),
                     Direction::Tx => (c.tx_color, c.tx_color, "\u{2191} TX"),
@@ -102,12 +156,13 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
 
                 let timestamp = if state.show_timestamp {
                     let time = chrono::DateTime::from_timestamp_millis(line.timestamp)
-                        .map(|t| t.with_timezone(&chrono::Local).format("%Y-%m-%d %H:%M:%S%.3f").to_string())
+                        .map(|t| t.with_timezone(&chrono::Local).format("%H:%M:%S%.3f").to_string())
                         .unwrap_or_default();
                     format!("[{}] ", time)
                 } else {
                     String::new()
                 };
+                let seq_tag = format!("#{:04} ", seq);
 
                 let content = if line.is_hex {
                     line.content.clone()
@@ -137,19 +192,20 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
                 ui.horizontal_wrapped(|ui| {
                     // Left padding to prevent text clipping at scroll area edge
                     ui.add_space(4.0);
-                    // Line number badge (shown when timestamps are off)
-                    if !state.show_timestamp {
-                        let line_num = format!("{}", idx + 1);
-                        let badge_color = egui::Color32::from_rgb(55, 65, 80);
-                        egui::Frame::none()
-                            .fill(badge_color)
-                            .rounding(egui::Rounding::same(3.0))
-                            .inner_margin(egui::Margin::symmetric(4.0, 1.0))
-                            .show(ui, |ui| {
-                                ui.label(egui::RichText::new(&line_num).color(egui::Color32::from_rgb(180, 190, 200)).size(11.0).monospace());
-                            });
-                        ui.add_space(2.0);
-                    }
+                    // Sequence number badge — theme-aware colors
+                    let badge_bg = match line.direction {
+                        Direction::Tx => c.tx_badge_bg,
+                        Direction::Rx => c.rx_badge_bg,
+                        Direction::System => c.sys_badge_bg,
+                    };
+                    egui::Frame::none()
+                        .fill(badge_bg)
+                        .rounding(egui::Rounding::same(3.0))
+                        .inner_margin(egui::Margin::symmetric(4.0, 1.0))
+                        .show(ui, |ui| {
+                            ui.label(egui::RichText::new(format!("{}", seq)).color(color).size(11.0).monospace());
+                        });
+                    ui.add_space(2.0);
                     if !timestamp.is_empty() {
                         ui.label(egui::RichText::new(&timestamp).color(ts_color).size(13.0).monospace());
                     }
@@ -233,7 +289,9 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
                             ui.separator();
                             let resend_label = if lang == Language::Chinese { "重发" } else { "Resend" };
                             if ui.button(resend_label).clicked() {
-                                state.input_buffer = line_content.clone();
+                                // Strip [PLC] prefix before resend
+                                let clean = line_content.strip_prefix("[PLC] ").unwrap_or(line_content.as_str());
+                                state.input_buffer = clean.to_string();
                                 state.hex_mode = line_is_hex;
                                 ui.close_menu();
                             }

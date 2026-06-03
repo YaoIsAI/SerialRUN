@@ -321,15 +321,25 @@ impl PortOwnerHandle {
                                 let mut buf = [0u8; 4096];
                                 let result = match p.read(&mut buf) {
                                     Ok(n) if n > 0 => {
-                                        // Try to accumulate more data
+                                        // Try to accumulate more data with Modbus frame detection
                                         let mut all = buf[..n].to_vec();
-                                        let _ = p.set_timeout(Duration::from_millis(10));
+                                        let _ = p.set_timeout(Duration::from_millis(50));
                                         loop {
+                                            // Check if we have a complete Modbus frame
+                                            // FC03/04 response: [slave_id(1)] [func(1)] [byte_count(1)] [data(N)] [crc(2)]
+                                            // Total = 3 + byte_count + 2 = 5 + byte_count
+                                            if all.len() >= 5 {
+                                                let byte_count = all[2] as usize;
+                                                let expected_len = 5 + byte_count;
+                                                if all.len() >= expected_len {
+                                                    break; // Complete frame received
+                                                }
+                                            }
                                             let mut tmp = [0u8; 4096];
                                             match p.read(&mut tmp) {
                                                 Ok(m) if m > 0 => {
                                                     all.extend_from_slice(&tmp[..m]);
-                                                    let _ = p.set_timeout(Duration::from_millis(5));
+                                                    let _ = p.set_timeout(Duration::from_millis(20));
                                                 }
                                                 _ => break,
                                             }

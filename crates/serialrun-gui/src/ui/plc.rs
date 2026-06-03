@@ -7,11 +7,62 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
 
     poll_async_results(state);
+    poll_plc_port_events(state);
 
-    // ── Header: Brand | Model | ID | Interval | Timeout | Poll/Stop | Once | ? ──
+    // Force repaint when polling — egui only repaints on user input by default
+    if state.plc.polling || state.plc_async_receiver.is_some() {
+        ui.ctx().request_repaint();
+    }
+
+    // ── Row 1: Connection (Port | Baud | Connect/Disconnect) ──
+    ui.add_space(2.0);
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new("\u{25CF}").size(10.0).color(if state.is_connected { egui::Color32::from_rgb(0, 200, 0) } else { egui::Color32::from_rgb(180, 60, 60) }));
+        let plc_color = if state.plc_port_connected { egui::Color32::from_rgb(0, 200, 0) } else { egui::Color32::from_rgb(180, 60, 60) };
+        ui.label(egui::RichText::new("\u{25CF}").size(10.0).color(plc_color));
 
+        let port_text = state.plc_selected_port.as_deref().unwrap_or("—");
+        egui::ComboBox::from_id_salt("plc_port").width(110.0).selected_text(port_text).show_ui(ui, |ui| {
+            // Auto-refresh ports when dropdown is opened
+            refresh_plc_ports(state);
+            for port in &state.plc_port_list {
+                let name = port.name.clone();
+                let is_terminal = name == state.selected_port.as_deref().unwrap_or("") && state.is_connected;
+                let is_plc = name == state.plc_selected_port.as_deref().unwrap_or("") && state.plc_port_connected;
+                let label = if is_terminal && is_plc {
+                    format!("{} ({})", name, T::port_both(lang))
+                } else if is_terminal {
+                    format!("{} ({})", name, T::port_terminal(lang))
+                } else if is_plc {
+                    format!("{} ({})", name, T::port_plc(lang))
+                } else {
+                    name.clone()
+                };
+                ui.selectable_value(&mut state.plc_selected_port, Some(name), label);
+            }
+        });
+
+        let baud_text = format!("{}", state.plc_baud_rate);
+        egui::ComboBox::from_id_salt("plc_baud").width(75.0).selected_text(&baud_text).show_ui(ui, |ui| {
+            for &rate in &[9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600] {
+                ui.selectable_value(&mut state.plc_baud_rate, rate, format!("{}", rate));
+            }
+        });
+
+        if state.plc_port_connected {
+            if ui.button(egui::RichText::new(T::disconnect(lang)).strong().color(egui::Color32::from_rgb(239, 68, 68))).clicked() {
+                do_plc_disconnect(state);
+            }
+        } else {
+            let can_connect = state.plc_selected_port.is_some();
+            if ui.add_enabled(can_connect, egui::Button::new(egui::RichText::new(T::connect(lang)).strong())).clicked() {
+                do_plc_connect(state);
+            }
+        }
+    });
+
+    // ── Row 2: PLC Protocol (Brand | Model | SlaveID | Interval | Timeout | Poll/Once | ?) ──
+    ui.add_space(4.0);
+    ui.horizontal(|ui| {
         let b = state.plc.selected_brand;
         egui::ComboBox::from_id_salt("plc_b").width(85.0).selected_text(b.label(lang)).show_ui(ui, |ui| {
             for &b in PlcBrand::all() {
@@ -42,11 +93,11 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
         ui.separator();
 
         let read_label = if state.plc.polling { format!("\u{25A0} {}", T::stop_btn(lang)) } else { format!("\u{25B6} {}", T::poll_btn(lang)) };
-        if ui.button(egui::RichText::new(read_label).strong()).clicked() && state.is_connected {
+        if ui.button(egui::RichText::new(read_label).strong()).clicked() && state.plc_port_connected {
             state.plc.polling = !state.plc.polling;
             if state.plc.polling { state.plc.last_poll_time = 0; }
         }
-        if ui.button(format!("\u{21BB} {}", T::once_btn(lang))).clicked() && state.is_connected {
+        if ui.button(format!("\u{21BB} {}", T::once_btn(lang))).clicked() && state.plc_port_connected {
             do_read_all(state);
         }
 
@@ -106,7 +157,7 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
 
                     // Value — click to toggle edit mode
                     if is_selected {
-                        // Inline write row
+                        // Inline write row with cancel
                         ui.horizontal(|ui| {
                             match reg.data_type {
                                 PlcDataType::Bool => {
@@ -114,6 +165,7 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
                                     let on_text = if on { T::plc_on(lang) } else { T::plc_off(lang) };
                                     if ui.small_button(on_text).clicked() {
                                         write_coil(state, reg, !on);
+                                        state.plc.selected_register = None;
                                     }
                                 }
                                 _ => {
@@ -124,10 +176,14 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
                                         _ => "value",
                                     };
                                     ui.add(egui::TextEdit::singleline(&mut state.plc.write_value).desired_width(80.0).hint_text(hint));
-                                    if ui.small_button(T::plc_write(lang)).on_hover_text(T::plc_tip_register(lang)).clicked() && state.is_connected {
+                                    if ui.small_button(T::plc_write(lang)).on_hover_text(T::plc_tip_register(lang)).clicked() && state.plc_port_connected {
                                         do_write_register(state);
+                                        state.plc.selected_register = None;
                                     }
                                 }
+                            }
+                            if ui.small_button(T::cancel_label(lang)).clicked() {
+                                state.plc.selected_register = None;
                             }
                         });
                     } else {
@@ -147,8 +203,13 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
                             format!("Raw: {}\nLast: {:.1}s ago", raw_hex, age_s)
                         }).unwrap_or_default();
                         if ui.selectable_label(false, rt).on_hover_text(tooltip).clicked() {
-                            state.plc.selected_register = Some(i);
-                            state.plc.write_value.clear();
+                            // Toggle: clicking same register deselects it
+                            if state.plc.selected_register == Some(i) {
+                                state.plc.selected_register = None;
+                            } else {
+                                state.plc.selected_register = Some(i);
+                                state.plc.write_value.clear();
+                            }
                         }
                     }
 
@@ -161,18 +222,19 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
         });
     }
 
-    // ── TX/RX Display ──
+    // ── TX/RX Display (copyable) ──
     if !state.plc.plc_last_tx.is_empty() || !state.plc.plc_last_rx.is_empty() {
-        ui.add_space(2.0);
+        ui.add_space(4.0);
         ui.separator();
         ui.label(egui::RichText::new("TX/RX").strong().small());
         if !state.plc.plc_last_tx.is_empty() {
-            ui.label(egui::RichText::new(format!("TX: {}", state.plc.plc_last_tx)).small().monospace());
+            let tx_text = format!("TX: {}", state.plc.plc_last_tx);
+            ui.add(egui::TextEdit::singleline(&mut tx_text.as_str()).font(egui::FontId::monospace(11.0)).interactive(false));
         }
         if !state.plc.plc_last_rx.is_empty() {
-            let color = if state.plc.plc_last_rx.contains("ERR") { egui::Color32::from_rgb(239, 68, 68) } else { egui::Color32::from_rgb(34, 197, 94) };
             let byte_count = state.plc.plc_last_rx.split_whitespace().count();
-            ui.label(egui::RichText::new(format!("RX ({} bytes): {}", byte_count, state.plc.plc_last_rx)).small().monospace().color(color));
+            let rx_text = format!("RX ({} bytes): {}", byte_count, state.plc.plc_last_rx);
+            ui.add(egui::TextEdit::singleline(&mut rx_text.as_str()).font(egui::FontId::monospace(11.0)).interactive(false));
         }
     }
 
@@ -201,7 +263,7 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
     }
 
     // Auto-poll
-    if state.plc.polling && state.is_connected {
+    if state.plc.polling && state.plc_port_connected {
         let now = chrono::Utc::now().timestamp_millis();
         if now - state.plc.last_poll_time >= state.plc.poll_interval_ms as i64 {
             do_read_all(state);
@@ -318,7 +380,7 @@ fn poll_async_results(state: &mut AppState) {
             state.plc_async_receiver = None;
             match result {
                 Ok(results) => {
-                    // Capture first response as RX display
+                    // Capture first response for PLC panel RX display
                     for (_, resp_result) in &results {
                         match resp_result {
                             Ok(resp) => {
@@ -335,22 +397,31 @@ fn poll_async_results(state: &mut AppState) {
                     let regs = get_register_defs(state);
                     for (addr, resp_result) in results {
                         match resp_result {
-                            Ok(resp) => {
-                                if let Ok(f) = ModbusFrame::parse(&resp) {
-                                    let data = &f.data;
-                                    if let Some(reg) = regs.iter().find(|r| r.addr == addr) {
-                                        let formatted = format_value(reg, data);
-                                        let raw_bytes = data.get(1..).unwrap_or(&[]).to_vec();
-                                        state.plc.register_values.insert(addr, PlcRegisterValue {
-                                            raw_u16: data.get(1..3).map(|d| u16::from_be_bytes([d[0], d[1]])).unwrap_or(0),
-                                            formatted,
-                                            last_update: chrono::Utc::now().timestamp_millis(),
-                                            raw_bytes,
-                                        });
-                                    }
+                            Ok(data) => {
+                                // `data` is already extracted by do_read_all: [byte_count, reg_bytes...]
+                                // Do NOT call ModbusFrame::parse() again — it's not a full Modbus frame
+                                state.add_log_entry(crate::state::LogLevel::Info,
+                                    &format!("[PLC] Reg 0x{:04X}: data {} bytes: {}", addr, data.len(),
+                                        data.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ")));
+                                if let Some(reg) = regs.iter().find(|r| r.addr == addr) {
+                                    let formatted = format_value(reg, &data);
+                                    let raw_bytes = data.get(1..).unwrap_or(&[]).to_vec();
+                                    let raw_u16 = data.get(1..3).map(|d| u16::from_be_bytes([d[0], d[1]])).unwrap_or(0);
+                                    state.add_log_entry(crate::state::LogLevel::Info,
+                                        &format!("[PLC] Reg 0x{:04X} ({}): value='{}', raw={}", addr, reg.name, formatted, raw_u16));
+                                    state.plc.register_values.insert(addr, PlcRegisterValue {
+                                        raw_u16, formatted,
+                                        last_update: chrono::Utc::now().timestamp_millis(),
+                                        raw_bytes,
+                                    });
+                                } else {
+                                    state.add_log_entry(crate::state::LogLevel::Warning,
+                                        &format!("[PLC] Reg 0x{:04X}: no matching register definition", addr));
                                 }
                             }
                             Err(e) => {
+                                state.add_log_entry(crate::state::LogLevel::Error,
+                                    &format!("[PLC] Reg 0x{:04X}: read error: {}", addr, e));
                                 if let Some(_reg) = regs.iter().find(|r| r.addr == addr) {
                                     state.plc.register_values.insert(addr, PlcRegisterValue {
                                         raw_u16: 0,
@@ -374,9 +445,28 @@ fn poll_async_results(state: &mut AppState) {
     if let Some(ref rx) = state.plc_write_async {
         if let Ok(result) = rx.try_recv() {
             state.plc_write_async = None;
-            if let Err(e) = result {
-                plc_log(state, &format!("{}: {}", T::plc_write_error(lang), e));
+            match result {
+                Ok(resp) => {
+                    // Display write response as RX
+                    let rx_hex = resp.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ");
+                    state.plc.plc_last_rx = rx_hex.clone();
+                    state.add_terminal_line_tagged(crate::state::Direction::Rx, rx_hex.clone(), true, "PLC");
+                    plc_log(state, &format!("Write response: {} bytes", resp.len()));
+                }
+                Err(e) => {
+                    state.plc.plc_last_rx = format!("ERR: {}", e);
+                    plc_log(state, &format!("{}: {}", T::plc_write_error(lang), e));
+                }
             }
+        }
+    }
+
+    // Poll raw Modbus responses for terminal display
+    if let Some(ref rx) = state.plc.plc_raw_response_rx {
+        let raw_resps: Vec<_> = std::iter::from_fn(|| rx.try_recv().ok()).collect();
+        for resp in raw_resps {
+            let rx_hex = resp.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ");
+            state.add_terminal_line_tagged(crate::state::Direction::Rx, rx_hex.clone(), true, "PLC");
         }
     }
 }
@@ -453,7 +543,7 @@ fn do_read_all(state: &mut AppState) {
 
     let slave_id = state.plc.slave_id;
     let timeout_ms = state.plc.plc_response_timeout_ms;
-    let po = state.port_owner.as_ref().map(|p| p.cmd_tx());
+    let po = state.plc_port_owner.as_ref().map(|p| p.cmd_tx());
 
     let batches = build_read_batches(&regs);
 
@@ -464,13 +554,15 @@ fn do_read_all(state: &mut AppState) {
         state.plc.plc_last_tx = if batches.len() > 1 {
             format!("{} (+{} more)", tx_hex, batches.len() - 1)
         } else {
-            tx_hex
+            tx_hex.clone()
         };
+        state.add_terminal_line_tagged(crate::state::Direction::Tx, tx_hex, true, "PLC");
     }
-    state.plc.plc_last_rx.clear();
 
     let (tx, rx) = std::sync::mpsc::channel();
+    let (raw_tx, raw_rx) = std::sync::mpsc::channel::<Vec<u8>>();
     state.plc_async_receiver = Some(rx);
+    state.plc.plc_raw_response_rx = Some(raw_rx);
 
     std::thread::spawn(move || {
         let po = match po {
@@ -488,18 +580,31 @@ fn do_read_all(state: &mut AppState) {
                 batch.quantity,
             );
             let req = frame.to_bytes();
+            log::info!("[PLC] Batch: addr=0x{:04X}, qty={}, regs={}, TX: {}",
+                batch.start_addr, batch.quantity, batch.regs.len(),
+                req.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" "));
             let (resp_tx, resp_rx) = std::sync::mpsc::channel();
             let _ = po.send(crate::port_owner::PortCommand::ReadExclusive { data: req, timeout_ms, resp_tx });
             let result = resp_rx.recv().unwrap_or_else(|e| Err(format!("Channel closed: {}", e)));
             match result {
-                Ok(resp) if resp.len() >= 4 => {
-                    if let Ok(f) = ModbusFrame::parse(&resp) {
+                Ok(resp) => {
+                    // Send full response to terminal
+                    let _ = raw_tx.send(resp.clone());
+                    log::info!("[PLC] Batch 0x{:04X}: RX {} bytes: {}",
+                        batch.start_addr, resp.len(),
+                        resp.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" "));
+                    if resp.len() < 4 {
+                        log::error!("[PLC] Batch 0x{:04X}: response too short ({} bytes)", batch.start_addr, resp.len());
+                        for reg in &batch.regs {
+                            all_results.push((reg.addr, Err(format!("Response too short: {} bytes", resp.len()))));
+                        }
+                    } else if let Ok(f) = ModbusFrame::parse(&resp) {
+                        log::info!("[PLC] Batch 0x{:04X}: parse OK, data={} bytes", batch.start_addr, f.data.len());
                         for reg in &batch.regs {
                             let offset = (reg.addr - batch.start_addr) as usize;
                             let bytes_per_reg = 2;
                             let byte_offset = 1 + offset * bytes_per_reg;
-                            // BUG 3 FIX: Bound the slice to prevent panic
-                            let needed = match reg.data_type {
+                            let needed: Vec<u8> = match reg.data_type {
                                 PlcDataType::U32 | PlcDataType::Float32 => {
                                     let end = (byte_offset + 4).min(f.data.len());
                                     std::iter::once(f.data[0])
@@ -513,9 +618,13 @@ fn do_read_all(state: &mut AppState) {
                                         .collect()
                                 }
                             };
+                            log::info!("[PLC] Reg 0x{:04X}: offset={}, byte_offset={}, needed={} bytes: {}",
+                                reg.addr, offset, byte_offset, needed.len(),
+                                needed.iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" "));
                             all_results.push((reg.addr, Ok(needed)));
                         }
                     } else {
+                        log::error!("[PLC] Batch 0x{:04X}: ModbusFrame::parse FAILED", batch.start_addr);
                         for reg in &batch.regs {
                             all_results.push((reg.addr, Err("Parse error".into())));
                         }
@@ -619,9 +728,12 @@ fn do_write_register(state: &mut AppState) {
             };
             let raw = if reg.scale_factor != 1.0 { (user_val / reg.scale_factor).round() as u32 } else { user_val as u32 };
             let bytes = raw.to_be_bytes();
+            // FC16: [start_addr(2)] [quantity(2)] [byte_count(1)] [data(N)]
             let data = vec![
-                (reg.addr >> 8) as u8, reg.addr as u8, bytes[0], bytes[1],
-                ((reg.addr + 1) >> 8) as u8, (reg.addr + 1) as u8, bytes[2], bytes[3],
+                (reg.addr >> 8) as u8, reg.addr as u8,
+                0x00, 0x02,  // quantity = 2 registers
+                0x04,        // byte_count = 4 bytes
+                bytes[0], bytes[1], bytes[2], bytes[3],
             ];
             ModbusFrame::new(state.plc.slave_id, serialrun_core::protocol::ModbusFunction::WriteMultipleRegisters, data).to_bytes()
         }
@@ -633,17 +745,25 @@ fn do_write_register(state: &mut AppState) {
             let raw_f = if reg.scale_factor != 1.0 { user_val / reg.scale_factor } else { user_val };
             let bits = (raw_f as f32).to_bits();
             let bytes = bits.to_be_bytes();
+            // FC16: [start_addr(2)] [quantity(2)] [byte_count(1)] [data(N)]
             let data = vec![
-                (reg.addr >> 8) as u8, reg.addr as u8, bytes[0], bytes[1],
-                ((reg.addr + 1) >> 8) as u8, (reg.addr + 1) as u8, bytes[2], bytes[3],
+                (reg.addr >> 8) as u8, reg.addr as u8,
+                0x00, 0x02,  // quantity = 2 registers
+                0x04,        // byte_count = 4 bytes
+                bytes[0], bytes[1], bytes[2], bytes[3],
             ];
             ModbusFrame::new(state.plc.slave_id, serialrun_core::protocol::ModbusFunction::WriteMultipleRegisters, data).to_bytes()
         }
     };
 
-    state.add_terminal_line(crate::state::Direction::Tx, crate::ui::terminal::format_hex_bytes(&frame_bytes), true);
-    if let Some(ref po) = state.port_owner {
-        po.send(crate::port_owner::PortCommand::Write(frame_bytes));
+    state.add_terminal_line_tagged(crate::state::Direction::Tx, crate::ui::terminal::format_hex_bytes(&frame_bytes), true, "PLC");
+    if let Some(po) = state.plc_port_owner.as_ref().map(|p| p.cmd_tx()) {
+        let timeout_ms = state.plc.plc_response_timeout_ms;
+        let (resp_tx, resp_rx): (std::sync::mpsc::Sender<Result<Vec<u8>, String>>, _) = std::sync::mpsc::channel();
+        state.plc_write_async = Some(resp_rx);
+        std::thread::spawn(move || {
+            let _ = po.send(crate::port_owner::PortCommand::ReadExclusive { data: frame_bytes, timeout_ms, resp_tx });
+        });
     }
     plc_log(state, &format!("W {} (0x{:04X})", reg.name, reg.addr));
 }
@@ -660,10 +780,84 @@ fn write_coil(state: &mut AppState, reg: &PlcRegisterDef, on: bool) {
     };
     let frame = ModbusFrame::new(state.plc.slave_id, serialrun_core::protocol::ModbusFunction::WriteSingleCoil, data);
     let frame_bytes = frame.to_bytes();
-    state.add_terminal_line(crate::state::Direction::Tx, crate::ui::terminal::format_hex_bytes(&frame_bytes), true);
-    if let Some(ref po) = state.port_owner {
-        po.send(crate::port_owner::PortCommand::Write(frame_bytes));
+    state.add_terminal_line_tagged(crate::state::Direction::Tx, crate::ui::terminal::format_hex_bytes(&frame_bytes), true, "PLC");
+    if let Some(po) = state.plc_port_owner.as_ref().map(|p| p.cmd_tx()) {
+        let timeout_ms = state.plc.plc_response_timeout_ms;
+        let (resp_tx, resp_rx): (std::sync::mpsc::Sender<Result<Vec<u8>, String>>, _) = std::sync::mpsc::channel();
+        state.plc_write_async = Some(resp_rx);
+        std::thread::spawn(move || {
+            let _ = po.send(crate::port_owner::PortCommand::ReadExclusive { data: frame_bytes, timeout_ms, resp_tx });
+        });
     }
     let lang = state.language;
     plc_log(state, &format!("{} => {}", reg.name, if on { T::plc_on(lang) } else { T::plc_off(lang) }));
+}
+
+// ============================================================================
+// PLC Independent Port Connection
+// ============================================================================
+
+fn refresh_plc_ports(state: &mut AppState) {
+    state.plc_port_list = serialrun_core::SerialPort::list_ports().unwrap_or_default();
+}
+
+fn do_plc_connect(state: &mut AppState) {
+    let Some(port_name) = state.plc_selected_port.clone() else { return };
+    let lang = state.language;
+
+    let po = crate::port_owner::PortOwnerHandle::start();
+    let config = serialrun_core::config::SerialConfig {
+        port_name: port_name.clone(),
+        baud_rate: state.plc_baud_rate,
+        ..Default::default()
+    };
+    po.send(crate::port_owner::PortCommand::Open(config));
+    state.plc_port_owner = Some(po);
+    state.plc_port_connected = true;
+    state.add_log_entry(crate::state::LogLevel::Info,
+        &format!("[PLC] Connected to {} @ {} baud", port_name, state.plc_baud_rate));
+    plc_log(state, &format!("{} {} @ {}", T::connected(lang), port_name, state.plc_baud_rate));
+}
+
+fn do_plc_disconnect(state: &mut AppState) {
+    state.plc.polling = false;
+    if let Some(po) = state.plc_port_owner.take() {
+        po.send(crate::port_owner::PortCommand::Close);
+        drop(po);
+    }
+    state.plc_port_connected = false;
+    state.add_log_entry(crate::state::LogLevel::Info, "[PLC] Disconnected");
+    let lang = state.language;
+    plc_log(state, &format!("{}", T::disconnected(lang)));
+}
+
+fn poll_plc_port_events(state: &mut AppState) {
+    // Collect events first to avoid borrow conflict
+    let events: Vec<_> = if let Some(ref po) = state.plc_port_owner {
+        std::iter::from_fn(|| po.poll()).collect()
+    } else {
+        return;
+    };
+    for evt in events {
+        match evt {
+            crate::port_owner::PortEvent::Opened(ok, msg) => {
+                if ok {
+                    state.plc_port_connected = true;
+                    state.add_log_entry(crate::state::LogLevel::Info, &format!("[PLC] Port opened: {}", msg));
+                } else {
+                    state.plc_port_connected = false;
+                    state.add_log_entry(crate::state::LogLevel::Error, &format!("[PLC] Port open failed: {}", msg));
+                }
+            }
+            crate::port_owner::PortEvent::Closed => {
+                state.plc_port_connected = false;
+                state.plc.polling = false;
+                state.add_log_entry(crate::state::LogLevel::Info, "[PLC] Port closed");
+            }
+            crate::port_owner::PortEvent::Error(e) => {
+                state.add_log_entry(crate::state::LogLevel::Error, &format!("[PLC] Port error: {}", e));
+            }
+            _ => {}
+        }
+    }
 }
