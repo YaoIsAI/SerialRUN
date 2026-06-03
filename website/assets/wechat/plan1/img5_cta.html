@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1080px;
+  height: 1440px;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(160deg, #0a0e27 0%, #0f172a 30%, #1e1040 60%, #0f172a 100%);
+  color: white;
+  overflow: hidden;
+  position: relative;
+}
+
+.bg-pattern {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+.orb {
+  position: absolute;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+  top: 100px; left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+}
+
+.content {
+  position: relative;
+  z-index: 10;
+  padding: 100px 80px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.logo-area {
+  margin-bottom: 60px;
+}
+.logo-text {
+  font-size: 96px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  margin-bottom: 16px;
+}
+.logo-text .serial { color: #ffffff; }
+.logo-text .run {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.version-badge {
+  display: inline-block;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 100px;
+  padding: 8px 24px;
+  font-size: 20px;
+  color: #60a5fa;
+}
+
+.main-text {
+  margin-bottom: 60px;
+}
+.main-text h2 {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 20px;
+}
+.main-text h2 span {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.main-text p {
+  font-size: 24px;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+/* Stats */
+.stats {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 60px;
+}
+.stat {
+  text-align: center;
+}
+.stat .num {
+  font-size: 48px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.stat .label {
+  font-size: 18px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Action buttons */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 50px;
+}
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 24px 32px;
+  text-decoration: none;
+  color: white;
+}
+.action-btn.primary {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border: none;
+}
+.action-btn .icon { font-size: 32px; }
+.action-btn .text {
+  flex: 1;
+  text-align: left;
+}
+.action-btn .text .title {
+  font-size: 24px;
+  font-weight: 600;
+}
+.action-btn .text .url {
+  font-size: 16px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+/* Footer quote */
+.quote {
+  margin-top: auto;
+  font-size: 20px;
+  color: #475569;
+  font-style: italic;
+  line-height: 1.6;
+  max-width: 600px;
+}
+.quote strong {
+  color: #3b82f6;
+  font-style: normal;
+}
+</style>
+</head>
+<body>
+  <div class="bg-pattern"></div>
+  <div class="orb"></div>
+
+  <div class="content">
+    <div class="logo-area">
+      <div class="logo-text">
+        <span class="serial">Serial</span><span class="run">RUN</span>
+      </div>
+      <div class="version-badge">v0.2.0 &middot; BSL 1.1</div>
+    </div>
+
+    <div class="main-text">
+      <h2>开源 &middot; 免费<br><span>专业串口调试</span></h2>
+      <p>告别收费工具，拥抱开源生态<br>SerialRUN 让串口调试更简单、更智能</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">8</div>
+        <div class="label">核心功能</div>
+      </div>
+      <div class="stat">
+        <div class="num">15</div>
+        <div class="label">MCP 工具</div>
+      </div>
+      <div class="stat">
+        <div class="num">3</div>
+        <div class="label">平台支持</div>
+      </div>
+      <div class="stat">
+        <div class="num">&infin;</div>
+        <div class="label">插件扩展</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <div class="action-btn primary">
+        <div class="icon">&#x1F310;</div>
+        <div class="text">
+          <div class="title">访问官网</div>
+          <div class="url">www.serialrun.com</div>
+        </div>
+      </div>
+      <div class="action-btn">
+        <div class="icon">&#x1F4E5;</div>
+        <div class="text">
+          <div class="title">立即下载</div>
+          <div class="url">github.com/YaoIsAI/SerialRUN/releases</div>
+        </div>
+      </div>
+      <div class="action-btn">
+        <div class="icon">&#x1F4BB;</div>
+        <div class="text">
+          <div class="title">查看源码</div>
+          <div class="url">github.com/YaoIsAI/SerialRUN</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="quote">
+      "All-in-one tool for serial communication, Modbus debugging, PLC control, CAN bus analysis, I2C/SPI, firmware flashing — with built-in MCP server for AI integration."
+    </div>
+  </div>
+</body>
+</html>

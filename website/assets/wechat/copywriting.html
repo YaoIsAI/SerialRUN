@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SerialRUN 公众号文案</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #f5f5f5;
+  padding: 40px 20px;
+  color: #333;
+}
+.container { max-width: 680px; margin: 0 auto; }
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.card-title .char-count {
+  font-size: 13px;
+  color: #999;
+  font-weight: 400;
+  margin-left: 8px;
+}
+.copy-btn {
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.copy-btn:hover { background: #16a34a; }
+.copy-btn.copied { background: #0d2818; }
+
+.content { line-height: 1.8; font-size: 16px; }
+.content p { margin-bottom: 16px; }
+.content strong { color: #0d2818; }
+.content ul { margin: 12px 0 16px 20px; }
+.content li { margin-bottom: 8px; line-height: 1.7; }
+
+.toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #0d2818;
+  color: white;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 100;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- 标题 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">标题 <span class="char-count">（19字）</span></div>
+      <button class="copy-btn" onclick="copyRich('title')">复制</button>
+    </div>
+    <div class="content" id="title" data-text="🔧 开源串口调试助手，AI加持免费用">🔧 开源串口调试助手，AI加持免费用</div>
+  </div>
+
+  <!-- 副标题/摘要 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">摘要 <span class="char-count">（28字）</span></div>
+      <button class="copy-btn" onclick="copyRich('subtitle')">复制</button>
+    </div>
+    <div class="content" id="subtitle" data-text="从串口通信到Modbus/PLC调试，从固件烧录到MCP AI服务器，一个工具全搞定。">从串口通信到Modbus/PLC调试，从固件烧录到MCP AI服务器，一个工具全搞定。</div>
+  </div>
+
+  <!-- 正文 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">正文</div>
+      <button class="copy-btn" onclick="copyRich('body')">复制</button>
+    </div>
+    <div class="content" id="body">
+<p>🔧 还在用收费的串口调试工具？</p>
+
+<p>试试 <strong>SerialRUN</strong> —— 一款开源、免费、功能完整的专业串口调试助手！</p>
+
+<p>🦀 Rust 编写，跨平台运行，内置 MCP 服务器支持 AI 助手集成。从简单的 AT 命令测试到复杂的 Modbus/PLC 协议分析，<strong>一个工具全搞定</strong>。</p>
+
+<p>━━━━━━━━━━━━━━</p>
+
+<p>🔥 <strong>8 大核心功能：</strong></p>
+<ul>
+<li>📡 <strong>串口通信</strong> — HEX/TEXT 双模，时间戳、CRC 校验、自动发送</li>
+<li>🏭 <strong>Modbus 调试</strong> — 8 种功能码，寄存器监控，自动轮询</li>
+<li>🔧 <strong>PLC 控制</strong> — 西门子/三菱/台达/欧姆龙预设，批量读写</li>
+<li>🌐 <strong>TCP/RTU 桥接</strong> — SCADA/HMI 通过网络连接串口设备</li>
+<li>🤖 <strong>MCP AI 服务器</strong> — 15 个内置工具，AI 助手远程控制串口</li>
+<li>🔌 <strong>I2C/SPI & CAN</strong> — 设备扫描、帧捕获与解析</li>
+<li>📊 <strong>数据可视化</strong> — 实时速率图表、示波器波形、CSV 记录</li>
+<li>💾 <strong>固件烧录</strong> — STM32 ISP、ESP32 串口烧录、XMODEM 传输</li>
+</ul>
+
+<p>━━━━━━━━━━━━━━</p>
+
+<p>🧠 <strong>AI 加持，效率翻倍：</strong></p>
+<p>内置 MCP 协议服务器，Claude、ChatGPT 等 AI 助手可以直接控制你的串口设备。读写 Modbus 寄存器、监控 TX/RX 数据、自动化测试——只需一句话。</p>
+
+<p>💻 <strong>全平台 + 插件扩展：</strong></p>
+<p>Windows 已发布，macOS 即将上线，Linux 源码编译。插件系统支持本地导入，自定义面板和协议扩展，打造你自己的调试工具。</p>
+
+<p>🖥️ <strong>所见即所得的界面：</strong></p>
+<p>多窗口独立运行，自由拖拽排列。终端实时显示数据，寄存器表格自动刷新，协议分析一目了然。</p>
+
+<p>━━━━━━━━━━━━━━</p>
+
+<p>🌐 官网：www.serialrun.com<br>💻 源码：github.com/YaoIsAI/SerialRUN</p>
+
+<p>📜 BSL 1.1 许可证，4 年后转为 MIT。欢迎 Star、Fork、提交 Issue！</p>
+</div>
+  </div>
+
+  <!-- 标签 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">标签</div>
+      <button class="copy-btn" onclick="copyRich('tags')">复制</button>
+    </div>
+    <div class="content" id="tags" data-text="#串口调试 #Modbus #PLC #嵌入式开发 #开源工具 #Rust #MCP #AI #CAN总线 #固件烧录">#串口调试 #Modbus #PLC #嵌入式开发 #开源工具 #Rust #MCP #AI #CAN总线 #固件烧录</div>
+  </div>
+
+  <!-- 一键复制全部 -->
+  <div class="card" style="text-align: center; padding: 24px;">
+    <button class="copy-btn" style="font-size: 16px; padding: 12px 40px;" onclick="copyAllRich()">
+      📋 一键复制全部文案
+    </button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">✅ 已复制到剪贴板</div>
+
+<script>
+function getHTML(id) {
+  return document.getElementById(id).innerHTML.trim();
+}
+
+function getText(id) {
+  return document.getElementById(id).getAttribute('data-text') || document.getElementById(id).innerText.trim();
+}
+
+function copyRich(id) {
+  const html = getHTML(id);
+  const text = getText(id);
+  const blob = new Blob([html], { type: 'text/html' });
+  const item = new ClipboardItem({ 'text/html': blob, 'text/plain': new Blob([text], { type: 'text/plain' }) });
+  navigator.clipboard.write([item]).then(() => {
+    showToast();
+    const btn = event.target;
+    btn.textContent = '✅ 已复制';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function copyAllRich() {
+  const title = getText('title');
+  const subtitle = getText('subtitle');
+  const body = getHTML('body');
+  const tags = getText('tags');
+
+  const html = `<h2>${title}</h2><p><em>${subtitle}</em></p><hr>${body}<hr><p>${tags}</p>`;
+  const text = `【标题】\n${title}\n\n【摘要】\n${subtitle}\n\n【正文】\n${document.getElementById('body').innerText.trim()}\n\n【标签】\n${tags}`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const item = new ClipboardItem({ 'text/html': blob, 'text/plain': new Blob([text], { type: 'text/plain' }) });
+  navigator.clipboard.write([item]).then(() => {
+    showToast();
+    const btn = event.target;
+    btn.textContent = '✅ 已复制全部';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 一键复制全部文案'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function showToast() {
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1500);
+}
+</script>
+
+</body>
+</html>

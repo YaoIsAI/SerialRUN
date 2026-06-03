@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1080px;
+  height: 1440px;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(160deg, #0a0e27 0%, #0f172a 40%, #0c1a1a 70%, #0f172a 100%);
+  color: white;
+  overflow: hidden;
+  position: relative;
+}
+
+.bg-glow {
+  position: absolute;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%);
+  top: 300px; left: -100px;
+  border-radius: 50%;
+}
+.bg-glow2 {
+  position: absolute;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%);
+  bottom: 200px; right: -100px;
+  border-radius: 50%;
+}
+
+.content {
+  position: relative;
+  z-index: 10;
+  padding: 100px 80px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(6,182,212,0.15);
+  border: 1px solid rgba(6,182,212,0.3);
+  border-radius: 100px;
+  padding: 10px 24px;
+  font-size: 18px;
+  color: #22d3ee;
+  width: fit-content;
+  margin-bottom: 40px;
+  letter-spacing: 1px;
+}
+
+.title-area {
+  margin-bottom: 50px;
+}
+.title-area h1 {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+.title-area h1 span {
+  background: linear-gradient(135deg, #06b6d4, #22c55e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.title-area p {
+  font-size: 26px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* Platform cards */
+.platforms {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+  justify-content: center;
+}
+
+.platform-card {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 32px 36px;
+}
+.platform-card .icon {
+  font-size: 52px;
+  flex-shrink: 0;
+  width: 70px;
+  text-align: center;
+}
+.platform-card .info {
+  flex: 1;
+}
+.platform-card .name {
+  font-size: 28px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 4px;
+}
+.platform-card .desc {
+  font-size: 18px;
+  color: #94a3b8;
+}
+.platform-card .status {
+  font-size: 16px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.platform-card .status.ready {
+  background: rgba(34,197,94,0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34,197,94,0.3);
+}
+.platform-card .status.soon {
+  background: rgba(251,191,36,0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,0.3);
+}
+.platform-card .status.build {
+  background: rgba(148,163,184,0.1);
+  color: #94a3b8;
+  border: 1px solid rgba(148,163,184,0.2);
+}
+
+/* Plugin section */
+.plugin-section {
+  margin-top: 40px;
+  background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(59,130,246,0.1));
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 20px;
+  padding: 36px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.plugin-section .icon { font-size: 52px; }
+.plugin-section .info h3 {
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.plugin-section .info p {
+  font-size: 18px;
+  color: #94a3b8;
+}
+
+.footer-bar {
+  margin-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.footer-bar .brand { font-size: 28px; font-weight: 700; color: #475569; }
+.footer-bar .brand span { color: #3b82f6; }
+.footer-bar .url { font-size: 18px; color: #475569; text-align: right; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="bg-glow2"></div>
+
+  <div class="content">
+    <div class="badge">CROSS-PLATFORM</div>
+
+    <div class="title-area">
+      <h1>全平台覆盖<br><span>插件可扩展</span></h1>
+      <p>一个工具，所有平台，无限可能</p>
+    </div>
+
+    <div class="platforms">
+      <div class="platform-card">
+        <div class="icon">&#x1F5A5;&#xFE0F;</div>
+        <div class="info">
+          <div class="name">Windows 10/11</div>
+          <div class="desc">x64 &middot; 完整功能支持</div>
+        </div>
+        <div class="status ready">已发布</div>
+      </div>
+      <div class="platform-card">
+        <div class="icon">&#x1F34E;</div>
+        <div class="info">
+          <div class="name">macOS 12+</div>
+          <div class="desc">Apple Silicon &middot; 原生体验</div>
+        </div>
+        <div class="status soon">即将发布</div>
+      </div>
+      <div class="platform-card">
+        <div class="icon">&#x1F427;</div>
+        <div class="info">
+          <div class="name">Linux</div>
+          <div class="desc">x86_64 / aarch64 &middot; 源码编译</div>
+        </div>
+        <div class="status build">源码编译</div>
+      </div>
+    </div>
+
+    <div class="plugin-section">
+      <div class="icon">&#x1F9E9;</div>
+      <div class="info">
+        <h3>插件系统</h3>
+        <p>本地导入 &middot; 自定义面板 &middot; 协议扩展 &middot; 社区共享</p>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <div class="brand">Serial<span>RUN</span></div>
+      <div class="url">www.serialrun.com<br>github.com/YaoIsAI/SerialRUN</div>
+    </div>
+  </div>
+</body>
+</html>
