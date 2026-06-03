@@ -202,3 +202,4 @@ cargo build --release -p serialrun-gui
 - **GitHub:** Public code, releases, community plugins repo
 - **Gitea (192.168.31.85:38633):** Private backup, safe for all code including proprietary
 - **Always push to both** when committing
+- **Sync script:** `./scripts/sync-remotes.sh` handles all branches and URL swapping
