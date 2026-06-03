@@ -187,3 +187,18 @@ cargo build --release -p serialrun-gui
 3. Install Rust toolchain: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 4. Build: `cargo build --release -p serialrun-gui`
 5. Plugin install dir: `~/.serialrun/plugins/`
+
+### Website Deployment
+- **Location:** `website/` directory (in `.gitignore`, not in git)
+- **Platform:** Cloudflare Pages
+- **Deploy:** `npx wrangler pages deploy website --project-name=serialrun`
+- **URLs:** `https://serialrun.com` (custom domain), `https://serialrun.pages.dev`
+- **Production branch:** must be set to `master`
+- **Structure:** index.html (landing), guide.html, license.html, plugins.html, downloads.html
+- **i18n:** `i18n.js` for Chinese/English translations
+- **WeChat images:** `website/assets/wechat/` (2 plans with 6 images each)
+
+### Push Preferences
+- **GitHub:** Public code, releases, community plugins repo
+- **Gitea (192.168.31.85:38633):** Private backup, safe for all code including proprietary
+- **Always push to both** when committing
