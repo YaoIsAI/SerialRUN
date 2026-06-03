@@ -1,0 +1,14 @@
+[package]
+name = "serialrun-mpy-ide"
+version = "0.1.0"
+edition = "2021"
+description = "MicroPython IDE plugin for SerialRUN - REPL, file management, code editing"
+license = "BSL-1.1"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serialrun-plugin-api = { path = "../../crates/serialrun-plugin-api" }

@@ -1,0 +1,28 @@
+{
+  "name": "serialrun-mpy-ide",
+  "version": "0.1.0",
+  "description": "MicroPython IDE - REPL terminal, file management, code editor for ESP32/ESP8266/RP2040 devices",
+  "author": "YaoIsAI",
+  "license": "BSL-1.1",
+  "min_serialrun_version": "0.2.0",
+  "platforms": ["windows-x64", "macos-arm64", "linux-x64"],
+  "category": "ide",
+  "tags": ["micropython", "mpy", "ide", "repl", "esp32", "rp2040"],
+  "homepage": "https://www.serialrun.com",
+  "repository": "https://github.com/YaoIsAI/SerialRUN",
+  "usage": "## MicroPython IDE\n\nConnect to a MicroPython device and use the REPL, file browser, and code editor.",
+  "toolbar": {
+    "icon": "🔌",
+    "label": "MicroPython",
+    "tooltip": "MicroPython IDE - REPL, file browser, code editor",
+    "position": "plugins"
+  },
+  "window": {
+    "title": "MicroPython IDE",
+    "default_width": 800,
+    "default_height": 600,
+    "resizable": true,
+    "min_width": 600,
+    "min_height": 400
+  }
+}

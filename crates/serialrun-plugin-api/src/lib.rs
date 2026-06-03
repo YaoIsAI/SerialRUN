@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::os::raw::{c_char, c_float, c_int};
 
 /// Current plugin API version.
-pub const PLUGIN_API_VERSION: &str = "0.2.0";
+pub const PLUGIN_API_VERSION: &str = "0.3.0";
 
 // ============================================================================
 // Plugin Capabilities
@@ -26,6 +26,16 @@ pub enum PluginCapability {
     Progress,
     /// Plugin uses host logging
     Logging,
+    /// Plugin needs file system access (list/read/write/delete on device)
+    FileSystem,
+    /// Plugin subscribes to serial port events (data received, connection changes)
+    EventSubscription,
+    /// Plugin stores persistent configuration
+    ConfigStorage,
+    /// Plugin uses async command execution
+    AsyncExecution,
+    /// Plugin declares a UI layout (JSON-based)
+    UiLayout,
     /// Unknown capability (forward-compatible with newer API versions)
     #[serde(other)]
     Unknown,
@@ -72,6 +82,36 @@ pub struct PluginCallbacks {
     pub log_info: Option<extern "C" fn(msg: *const c_char)>,
     pub log_warn: Option<extern "C" fn(msg: *const c_char)>,
     pub log_error: Option<extern "C" fn(msg: *const c_char)>,
+
+    // File system (device-side, for plugins like MicroPython IDE)
+    /// List directory contents on device. Returns JSON array of {name, is_dir, size}.
+    pub fs_list_dir: Option<extern "C" fn(path: *const c_char) -> *mut c_char>,
+    /// Read file from device. Returns base64-encoded data.
+    pub fs_read_file: Option<extern "C" fn(path: *const c_char) -> *mut c_char>,
+    /// Write file to device. data is base64-encoded.
+    pub fs_write_file: Option<extern "C" fn(path: *const c_char, data: *const c_char) -> bool>,
+    /// Delete file on device.
+    pub fs_delete_file: Option<extern "C" fn(path: *const c_char) -> bool>,
+    /// Create directory on device.
+    pub fs_mkdir: Option<extern "C" fn(path: *const c_char) -> bool>,
+    /// Check if file exists on device.
+    pub fs_exists: Option<extern "C" fn(path: *const c_char) -> bool>,
+
+    // Event system
+    /// Register a callback for serial data events. data_callback is called when data is received.
+    pub on_serial_data: Option<extern "C" fn(data_callback: extern "C" fn(*const u8, u32))>,
+    /// Register a callback for connection state changes.
+    pub on_connection_changed: Option<extern "C" fn(conn_callback: extern "C" fn(bool))>,
+
+    // Config storage
+    /// Get a config value for this plugin. Returns JSON string or null.
+    pub config_get: Option<extern "C" fn(key: *const c_char) -> *mut c_char>,
+    /// Set a config value for this plugin.
+    pub config_set: Option<extern "C" fn(key: *const c_char, value: *const c_char) -> bool>,
+
+    // Async execution
+    /// Execute a command asynchronously. callback is called with the result JSON when done.
+    pub execute_async: Option<extern "C" fn(command: *const c_char, params: *const c_char, callback: extern "C" fn(*const c_char))>,
 }
 
 // ============================================================================
@@ -93,6 +133,19 @@ pub type FnInit = extern "C" fn(callbacks: *const PluginCallbacks) -> bool;
 /// Optional: Plugin cleanup. Called before unloading.
 /// Signature: `fn()`
 pub type FnCleanup = extern "C" fn();
+
+/// Optional: Plugin returns its UI layout as JSON.
+/// The host renders this layout as egui components.
+/// Signature: `fn() -> *mut c_char`
+pub type FnGetUiLayout = extern "C" fn() -> *mut c_char;
+
+/// Optional: Plugin receives an event from the host.
+/// Signature: `fn(event_type: *const c_char, data: *const c_char)`
+pub type FnOnEvent = extern "C" fn(event_type: *const c_char, data: *const c_char);
+
+/// Optional: Plugin returns its config schema as JSON.
+/// Signature: `fn() -> *mut c_char`
+pub type FnGetConfigSchema = extern "C" fn() -> *mut c_char;
 
 // ============================================================================
 // Capability helpers
@@ -177,13 +230,102 @@ pub fn parse_plugin_result(json: &str) -> Result<PluginResult, serde_json::Error
     serde_json::from_str(json)
 }
 
+// ============================================================================
+// UI Layout Types (for dynamic plugin UI)
+// ============================================================================
+
+/// A node in the plugin UI layout tree.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UiLayoutNode {
+    /// Horizontal split with draggable divider
+    #[serde(rename = "split_horizontal")]
+    SplitHorizontal {
+        children: Vec<UiLayoutNode>,
+        #[serde(default = "default_ratio")]
+        ratio: f32,
+    },
+    /// Vertical split with draggable divider
+    #[serde(rename = "split_vertical")]
+    SplitVertical {
+        children: Vec<UiLayoutNode>,
+        #[serde(default = "default_ratio")]
+        ratio: f32,
+    },
+    /// A panel with title and content
+    #[serde(rename = "panel")]
+    Panel {
+        id: String,
+        title: String,
+        content: UiContent,
+        #[serde(default)]
+        width: Option<f32>,
+        #[serde(default)]
+        height: Option<f32>,
+    },
+}
+
+fn default_ratio() -> f32 {
+    0.5
+}
+
+/// Content types for UI panels.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UiContent {
+    /// Tree view (file browser, etc.)
+    #[serde(rename = "tree_view")]
+    TreeView,
+    /// Code editor with syntax highlighting
+    #[serde(rename = "code_editor")]
+    CodeEditor {
+        #[serde(default = "default_language")]
+        language: String,
+    },
+    /// Terminal/console component
+    #[serde(rename = "terminal")]
+    Terminal,
+    /// Plain text display
+    #[serde(rename = "text")]
+    Text,
+    /// Custom HTML content
+    #[serde(rename = "html")]
+    Html,
+}
+
+fn default_language() -> String {
+    "python".to_string()
+}
+
+/// Parse a UI layout from JSON.
+pub fn parse_ui_layout(json: &str) -> Result<UiLayoutNode, serde_json::Error> {
+    serde_json::from_str(json)
+}
+
+/// Serialize a UI layout to JSON.
+pub fn serialize_ui_layout(layout: &UiLayoutNode) -> Result<String, serde_json::Error> {
+    serde_json::to_string(layout)
+}
+
+impl UiLayoutNode {
+    /// Serialize to JSON string.
+    pub fn to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string(self)
+    }
+
+    /// Parse from JSON string.
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(json)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_plugin_api_version() {
-        assert_eq!(PLUGIN_API_VERSION, "0.2.0");
+        assert_eq!(PLUGIN_API_VERSION, "0.3.0");
     }
 
     #[test]
@@ -284,5 +426,47 @@ mod tests {
         assert_eq!(PluginStatus::Running as i32, 1);
         assert_eq!(PluginStatus::Success as i32, 2);
         assert_eq!(PluginStatus::Error as i32, 3);
+    }
+
+    #[test]
+    fn test_ui_layout_serde() {
+        let layout = UiLayoutNode::SplitHorizontal {
+            children: vec![
+                UiLayoutNode::Panel {
+                    id: "files".to_string(),
+                    title: "Files".to_string(),
+                    content: UiContent::TreeView,
+                    width: Some(250.0),
+                    height: None,
+                },
+                UiLayoutNode::SplitVertical {
+                    children: vec![
+                        UiLayoutNode::Panel {
+                            id: "editor".to_string(),
+                            title: "Editor".to_string(),
+                            content: UiContent::CodeEditor { language: "python".to_string() },
+                            width: None,
+                            height: None,
+                        },
+                        UiLayoutNode::Panel {
+                            id: "repl".to_string(),
+                            title: "REPL".to_string(),
+                            content: UiContent::Terminal,
+                            width: None,
+                            height: None,
+                        },
+                    ],
+                    ratio: 0.6,
+                },
+            ],
+            ratio: 0.3,
+        };
+
+        let json = serialize_ui_layout(&layout).unwrap();
+        assert!(json.contains("split_horizontal"));
+        assert!(json.contains("code_editor"));
+
+        let parsed = parse_ui_layout(&json).unwrap();
+        assert!(parsed.to_json().unwrap().contains("split_horizontal"));
     }
 }

@@ -67,12 +67,12 @@ type FnFreeString = unsafe extern "C" fn(*mut std::os::raw::c_char);
 type FnGetCapabilities = unsafe extern "C" fn() -> *mut std::os::raw::c_char;
 type FnInit = unsafe extern "C" fn(*const PluginCallbacks) -> bool;
 type FnCleanup = unsafe extern "C" fn();
+type FnGetUiLayout = unsafe extern "C" fn() -> *mut std::os::raw::c_char;
 
 /// A loaded plugin from a dynamic library.
 pub struct LoadedPlugin {
     path: PathBuf,
-    #[allow(dead_code)]
-    library: libloading::Library,
+    library: Option<libloading::Library>,
     info: PluginInfo,
     commands: Vec<PluginCommand>,
     capabilities: Vec<PluginCapability>,
@@ -81,6 +81,7 @@ pub struct LoadedPlugin {
     fn_free_string: FnFreeString,
     fn_init: Option<FnInit>,
     fn_cleanup: Option<FnCleanup>,
+    fn_get_ui_layout: Option<FnGetUiLayout>,
     initialized: bool,
 }
 
@@ -93,6 +94,7 @@ unsafe impl Sync for LoadedPlugin {}
 impl Drop for LoadedPlugin {
     fn drop(&mut self) {
         self.cleanup();
+        // Library is automatically dropped here (Option<Library>)
     }
 }
 
@@ -169,6 +171,9 @@ impl LoadedPlugin {
             let fn_init = library.get::<FnInit>(b"plugin_init").ok().map(|f| *f);
             let fn_cleanup = library.get::<FnCleanup>(b"plugin_cleanup").ok().map(|f| *f);
 
+            // Detect optional UI layout function
+            let fn_get_ui_layout = library.get::<FnGetUiLayout>(b"plugin_get_ui_layout").ok().map(|f| *f);
+
             log::info!(
                 "Loaded plugin: {} v{} (capabilities: {:?})",
                 info.name,
@@ -178,7 +183,7 @@ impl LoadedPlugin {
 
             Ok(Self {
                 path: path.to_path_buf(),
-                library,
+                library: Some(library),
                 info,
                 commands,
                 capabilities,
@@ -187,6 +192,7 @@ impl LoadedPlugin {
                 fn_free_string,
                 fn_init,
                 fn_cleanup,
+                fn_get_ui_layout,
                 initialized: false,
             })
         }
@@ -212,14 +218,31 @@ impl LoadedPlugin {
     }
 
     /// Cleanup the plugin before unloading.
+    /// Safe to call multiple times — only executes cleanup once.
     pub fn cleanup(&mut self) {
-        if let Some(fn_cleanup) = self.fn_cleanup {
+        if let Some(fn_cleanup) = self.fn_cleanup.take() {
             unsafe {
                 fn_cleanup();
             }
             log::info!("Plugin {} cleaned up", self.info.name);
         }
         self.initialized = false;
+    }
+
+    /// Explicitly unload the plugin library (drops the DLL handle).
+    /// This must be called BEFORE trying to delete the plugin directory on Windows,
+    /// because Windows locks loaded DLL files.
+    pub fn unload(&mut self) {
+        // Call cleanup BEFORE dropping the library (cleanup code is in the DLL)
+        if let Some(fn_cleanup) = self.fn_cleanup.take() {
+            unsafe { fn_cleanup(); }
+            log::info!("Plugin {} cleaned up", self.info.name);
+        }
+        self.initialized = false;
+        // Drop the library to release the DLL file lock
+        if self.library.take().is_some() {
+            log::info!("Plugin {} library unloaded", self.info.name);
+        }
     }
 
     /// Get the plugin's declared capabilities.
@@ -230,6 +253,23 @@ impl LoadedPlugin {
     /// Check if the plugin has a specific capability.
     pub fn has_capability(&self, cap: &PluginCapability) -> bool {
         self.capabilities.contains(cap)
+    }
+
+    /// Get the plugin's UI layout as JSON string, if it declares one.
+    pub fn get_ui_layout(&self) -> Option<String> {
+        let fn_get_layout = self.fn_get_ui_layout?;
+        if !self.initialized {
+            return None;
+        }
+        unsafe {
+            let ptr = fn_get_layout();
+            if ptr.is_null() {
+                return None;
+            }
+            let json = CStr::from_ptr(ptr).to_string_lossy().to_string();
+            (self.fn_free_string)(ptr);
+            Some(json)
+        }
     }
 
     /// Check if the plugin has been initialized.

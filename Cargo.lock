@@ -4257,6 +4257,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serialrun-mpy-ide"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "serialrun-plugin-api",
+]
+
+[[package]]
 name = "serialrun-plugin-api"
 version = "0.1.0"
 dependencies = [

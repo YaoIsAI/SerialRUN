@@ -215,10 +215,26 @@ impl PluginManager {
         let plugin = self.installed.remove(name)
             .ok_or_else(|| PluginError::PluginError(format!("Plugin '{}' not found", name)))?;
 
-        // Remove plugin directory
+        // Remove plugin directory (with retry on Windows due to DLL file locks)
         if plugin.install_path.exists() {
-            fs::remove_dir_all(&plugin.install_path)
-                .map_err(|e| PluginError::IoError(e))?;
+            let mut retries = 3;
+            loop {
+                match fs::remove_dir_all(&plugin.install_path) {
+                    Ok(()) => {
+                        log::info!("Removed plugin directory: {}", plugin.install_path.display());
+                        break;
+                    }
+                    Err(e) if retries > 0 && e.kind() == std::io::ErrorKind::PermissionDenied => {
+                        log::warn!("Directory locked, retrying removal... ({} left)", retries);
+                        retries -= 1;
+                        std::thread::sleep(std::time::Duration::from_millis(200));
+                    }
+                    Err(e) => {
+                        log::error!("Failed to remove plugin directory: {}", e);
+                        return Err(PluginError::IoError(e));
+                    }
+                }
+            }
         }
 
         self.save_state();
@@ -353,16 +369,163 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
 mod tests {
     use super::*;
 
+    fn test_plugin_dir(suffix: &str) -> PathBuf {
+        std::env::temp_dir().join(format!("serialrun_test_{}_{}", std::process::id(), suffix))
+    }
+
+    fn create_test_plugin(dir: &Path) {
+        fs::create_dir_all(dir).unwrap();
+        let manifest = PluginManifest::from_info(
+            "test-plugin".to_string(),
+            "1.0.0".to_string(),
+            "Test plugin".to_string(),
+            "Test Author".to_string(),
+        );
+        let json = manifest.to_json().unwrap();
+        fs::write(dir.join("plugin.json"), json).unwrap();
+        // Create a dummy DLL file (empty, won't load but tests file operations)
+        fs::write(dir.join("test_plugin.dll"), b"dummy").unwrap();
+    }
+
     #[test]
     fn test_plugin_manager_new() {
-        let manager = PluginManager::new();
+        // Use a temp dir to avoid interference with real installed plugins
+        let dir = std::env::temp_dir().join(format!("test_pm_new_{}", std::process::id()));
+        let manager = PluginManager::with_dir(dir);
         assert!(manager.installed().is_empty());
+        let _ = fs::remove_dir_all(manager.plugins_dir());
     }
 
     #[test]
     fn test_plugin_manager_custom_dir() {
-        let dir = std::env::temp_dir().join("test_plugins");
+        let dir = std::env::temp_dir().join("test_plugins_empty");
         let manager = PluginManager::with_dir(dir);
         assert!(manager.installed().is_empty());
+    }
+
+    #[test]
+    fn test_install_and_uninstall() {
+        let test_dir = test_plugin_dir("install_uninstall");
+        let plugins_dir = test_dir.join("plugins");
+        let mut mgr = PluginManager::with_dir(plugins_dir.clone());
+
+        // Create test plugin in a source directory
+        let plugin_src = test_dir.join("src");
+        create_test_plugin(&plugin_src);
+
+        // install_from_dir references the source dir directly (dev mode)
+        let result = mgr.install_from_dir(&plugin_src);
+        assert!(result.is_ok(), "Install failed: {:?}", result);
+
+        // Verify installed in manager
+        assert!(mgr.installed().contains_key("test-plugin"));
+        assert!(mgr.get("test-plugin").is_some());
+
+        // Uninstall
+        let result = mgr.uninstall("test-plugin");
+        assert!(result.is_ok(), "Uninstall failed: {:?}", result);
+
+        // Verify removed from manager
+        assert!(!mgr.installed().contains_key("test-plugin"));
+
+        // Cleanup
+        let _ = fs::remove_dir_all(&test_dir);
+    }
+
+    #[test]
+    fn test_uninstall_nonexistent() {
+        let dir = test_plugin_dir("nonexist");
+        let mut mgr = PluginManager::with_dir(dir.clone());
+        let result = mgr.uninstall("nonexistent-plugin");
+        assert!(result.is_err());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_enable_disable() {
+        let test_dir = test_plugin_dir("enable_disable");
+        let plugins_dir = test_dir.join("plugins");
+        let mut mgr = PluginManager::with_dir(plugins_dir.clone());
+
+        let plugin_src = test_dir.join("src");
+        create_test_plugin(&plugin_src);
+        let _ = mgr.install_from_dir(&plugin_src);
+
+        // Initially enabled
+        assert!(mgr.get("test-plugin").unwrap().enabled);
+
+        // Disable
+        let result = mgr.disable("test-plugin");
+        assert!(result);
+        assert!(!mgr.get("test-plugin").unwrap().enabled);
+
+        // Enable
+        let result = mgr.enable("test-plugin");
+        assert!(result);
+        assert!(mgr.get("test-plugin").unwrap().enabled);
+
+        // Cleanup
+        let _ = mgr.uninstall("test-plugin");
+        let _ = fs::remove_dir_all(&test_dir);
+    }
+
+    #[test]
+    fn test_uninstall_removes_from_manager() {
+        let test_dir = test_plugin_dir("uninstall_removes");
+        let plugins_dir = test_dir.join("plugins");
+        let plugin_dest = plugins_dir.join("test-plugin");
+        create_test_plugin(&plugin_dest);
+
+        // Discover and uninstall
+        let mut mgr = PluginManager::with_dir(plugins_dir.clone());
+        mgr.discover();
+        assert!(mgr.installed().contains_key("test-plugin"));
+
+        let result = mgr.uninstall("test-plugin");
+        assert!(result.is_ok(), "Uninstall failed: {:?}", result);
+
+        // Verify removed from manager AND directory deleted
+        assert!(!mgr.installed().contains_key("test-plugin"));
+        assert!(!plugin_dest.exists(), "Plugin directory should be deleted");
+
+        let _ = fs::remove_dir_all(&test_dir);
+    }
+
+    #[test]
+    fn test_discover_after_uninstall() {
+        let test_dir = test_plugin_dir("discover_after");
+        let plugins_dir = test_dir.join("plugins");
+
+        // Install and create the plugin directory
+        let plugin_dest = plugins_dir.join("test-plugin");
+        create_test_plugin(&plugin_dest);
+
+        // Now install via discover (which reads from disk)
+        {
+            let mut mgr = PluginManager::with_dir(plugins_dir.clone());
+            mgr.discover();
+            assert!(mgr.installed().contains_key("test-plugin"),
+                "Plugin should be discovered on disk");
+        }
+
+        // Uninstall
+        {
+            let mut mgr = PluginManager::with_dir(plugins_dir.clone());
+            mgr.discover();
+            let _ = mgr.uninstall("test-plugin");
+        }
+
+        // Create a NEW manager (simulates app restart)
+        let mut mgr2 = PluginManager::with_dir(plugins_dir.clone());
+        mgr2.discover();
+
+        // Should NOT find the uninstalled plugin
+        assert!(!mgr2.installed().contains_key("test-plugin"),
+            "Plugin should not be found after uninstall, but was discovered");
+        assert!(!plugin_dest.exists(),
+            "Plugin directory should be deleted after uninstall");
+
+        // Cleanup
+        let _ = fs::remove_dir_all(&test_dir);
     }
 }

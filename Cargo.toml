@@ -8,6 +8,7 @@ members = [
     "crates/serialrun-plugin-api",
     "plugins/serialrun-example-plugin",
     "plugins/serialrun-stc-isp",
+    "plugins/serialrun-mpy-ide",
 ]
 
 [workspace.dependencies]

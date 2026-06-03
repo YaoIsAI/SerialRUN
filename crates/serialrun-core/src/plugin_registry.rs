@@ -1,7 +1,8 @@
 /// Plugin community registry — GitHub-driven online plugin discovery and installation.
 ///
-/// Uses GitHub Search API to find plugins tagged with `serialrun-plugin` topic,
-/// and GitHub Releases to download pre-built binaries.
+/// Plugins are distributed as ZIP files in the main SerialRUN repo's Releases.
+/// Each ZIP contains `plugin.json` + platform-specific DLLs.
+/// Community search fetches Releases from `YaoIsAI/SerialRUN` and extracts plugin info.
 
 use std::path::PathBuf;
 use serde::Deserialize;
@@ -9,7 +10,7 @@ use crate::plugin_install::{PluginManager, InstalledPlugin};
 use serialrun_plugin_api::manifest::PluginManifest;
 
 const GITHUB_API: &str = "https://api.github.com";
-const SEARCH_TOPIC: &str = "serialrun-plugin";
+const PLUGINS_REPO: &str = "YaoIsAI/serialrun-plugins";
 
 /// A plugin entry from GitHub search results.
 #[derive(Debug, Clone)]
@@ -42,25 +43,16 @@ pub struct ReleaseAsset {
 // --- GitHub API response types ---
 
 #[derive(Deserialize)]
-struct GhSearchResponse {
-    items: Vec<GhRepo>,
-    total_count: u32,
-}
-
-#[derive(Deserialize)]
-struct GhRepo {
-    full_name: String,
-    html_url: String,
-    description: Option<String>,
-    stargazers_count: u32,
-    topics: Option<Vec<String>>,
-    default_branch: Option<String>,
-}
-
-#[derive(Deserialize)]
 struct GhContent {
     content: Option<String>,
     encoding: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct GhDirEntry {
+    name: String,
+    #[serde(rename = "type")]
+    type_field: String,
 }
 
 #[derive(Deserialize)]
@@ -91,34 +83,142 @@ impl PluginRegistry {
         Self { client }
     }
 
-    /// Search for plugins on GitHub by query string.
-    /// Returns plugins tagged with `serialrun-plugin` topic, sorted by stars.
-    pub async fn search(&self, query: &str) -> anyhow::Result<Vec<RegistryPlugin>> {
-        let q = if query.is_empty() {
-            format!("topic:{}", SEARCH_TOPIC)
-        } else {
-            format!("topic:{}+{}", SEARCH_TOPIC, query)
-        };
-
-        let url = format!("{}/search/repositories?q={}&sort=stars&per_page=20", GITHUB_API, q);
-        let resp = self.client.get(&url).send().await?;
-        let search: GhSearchResponse = resp.json().await?;
-
+    /// Search for local plugins in the source plugins directory.
+    /// Returns plugins that exist in the source tree but aren't installed yet.
+    pub fn search_local(&self, query: &str) -> Vec<RegistryPlugin> {
         let mut plugins = Vec::new();
-        for repo in search.items {
-            let plugin = self.enrich_repo(repo).await;
-            plugins.push(plugin);
+        let mut seen_names = std::collections::HashSet::new();
+
+        // Search in the source plugins directory
+        let source_dirs = [
+            std::path::PathBuf::from("plugins"),
+            std::env::current_dir().unwrap_or_default().join("plugins"),
+        ];
+
+        for source_dir in &source_dirs {
+            if !source_dir.exists() {
+                continue;
+            }
+
+            if let Ok(entries) = std::fs::read_dir(source_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if !path.is_dir() {
+                        continue;
+                    }
+
+                    let manifest_path = path.join("plugin.json");
+                    if !manifest_path.exists() {
+                        continue;
+                    }
+
+                    if let Ok(json) = std::fs::read_to_string(&manifest_path) {
+                        if let Ok(manifest) = PluginManifest::from_json(&json) {
+                            // Deduplicate by name
+                            if !seen_names.insert(manifest.name.clone()) {
+                                continue;
+                            }
+
+                            // Filter by query
+                            if !query.is_empty() {
+                                let q = query.to_lowercase();
+                                if !manifest.name.to_lowercase().contains(&q)
+                                    && !manifest.description.to_lowercase().contains(&q)
+                                    && !manifest.tags.iter().any(|t| t.to_lowercase().contains(&q)) {
+                                    continue;
+                                }
+                            }
+
+                            plugins.push(RegistryPlugin {
+                                repo_name: format!("local/{}", manifest.name),
+                                repo_url: path.to_string_lossy().to_string(),
+                                description: manifest.description.clone(),
+                                stars: 0,
+                                topics: manifest.tags.clone(),
+                                manifest: Some(manifest.clone()),
+                                latest_release: None,
+                                installed_version: None,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        plugins
+    }
+
+    /// Search for plugins from the main SerialRUN repo's releases.
+    /// Fetches plugin manifests from the `plugins/` directory on GitHub,
+    /// then matches them with release assets for download.
+    pub async fn search(&self, query: &str) -> anyhow::Result<Vec<RegistryPlugin>> {
+        // 1. List plugin directories in the main repo's plugins/ folder
+        let plugins_dir_url = format!("{}/repos/{}/contents/plugins", GITHUB_API, PLUGINS_REPO);
+        let dir_resp = self.client.get(&plugins_dir_url).send().await?;
+
+        if !dir_resp.status().is_success() {
+            return Ok(Vec::new());
+        }
+
+        let entries: Vec<GhDirEntry> = dir_resp.json().await?;
+
+        // 2. For each plugin dir, fetch its plugin.json
+        let mut plugins = Vec::new();
+        for entry in &entries {
+            if entry.type_field != "dir" {
+                continue;
+            }
+
+            let manifest = self.fetch_manifest(PLUGINS_REPO, &entry.name).await;
+            if let Some(manifest) = manifest {
+                // Filter by query
+                if !query.is_empty() {
+                    let q = query.to_lowercase();
+                    if !manifest.name.to_lowercase().contains(&q)
+                        && !manifest.description.to_lowercase().contains(&q)
+                        && !manifest.tags.iter().any(|t| t.to_lowercase().contains(&q))
+                    {
+                        continue;
+                    }
+                }
+
+                // Find matching release asset
+                let latest_release = self.get_release_with_plugin(&manifest.name).await.ok();
+
+                plugins.push(RegistryPlugin {
+                    repo_name: entry.name.clone(),
+                    repo_url: format!("https://github.com/{}", PLUGINS_REPO),
+                    description: manifest.description.clone(),
+                    stars: 0,
+                    topics: manifest.tags.clone(),
+                    manifest: Some(manifest),
+                    latest_release,
+                    installed_version: None,
+                });
+            }
         }
 
         Ok(plugins)
     }
 
-    /// Get details for a specific plugin by repo name (owner/repo).
-    pub async fn get_plugin(&self, repo: &str) -> anyhow::Result<RegistryPlugin> {
-        let url = format!("{}/repos/{}", GITHUB_API, repo);
-        let resp = self.client.get(&url).send().await?;
-        let repo_data: GhRepo = resp.json().await?;
-        Ok(self.enrich_repo(repo_data).await)
+    /// Get details for a specific plugin by name.
+    pub async fn get_plugin(&self, plugin_name: &str) -> anyhow::Result<RegistryPlugin> {
+        // Fetch the specific plugin's manifest from the plugins repo
+        if let Some(manifest) = self.fetch_manifest(PLUGINS_REPO, plugin_name).await {
+            let latest_release = self.get_release_with_plugin(&manifest.name).await.ok();
+            return Ok(RegistryPlugin {
+                repo_name: plugin_name.to_string(),
+                repo_url: format!("https://github.com/{}", PLUGINS_REPO),
+                description: manifest.description.clone(),
+                stars: 0,
+                topics: manifest.tags.clone(),
+                manifest: Some(manifest),
+                latest_release,
+                installed_version: None,
+            });
+        }
+
+        Err(anyhow::anyhow!("Plugin '{}' not found", plugin_name))
     }
 
     /// Download and install a plugin from a GitHub release.
@@ -199,27 +299,10 @@ impl PluginRegistry {
         })
     }
 
-    /// Enrich a repo with manifest and release info.
-    async fn enrich_repo(&self, repo: GhRepo) -> RegistryPlugin {
-        let manifest = self.fetch_manifest(&repo.full_name, repo.default_branch.as_deref().unwrap_or("main")).await;
-        let latest_release = self.get_latest_release(&repo.full_name).await.ok();
-
-        RegistryPlugin {
-            repo_name: repo.full_name,
-            repo_url: repo.html_url,
-            description: repo.description.unwrap_or_default(),
-            stars: repo.stargazers_count,
-            topics: repo.topics.unwrap_or_default(),
-            manifest,
-            latest_release,
-            installed_version: None,
-        }
-    }
-
-    /// Fetch plugin.json from a repo's default branch.
-    async fn fetch_manifest(&self, repo: &str, branch: &str) -> Option<PluginManifest> {
-        // Try root first
-        let url = format!("{}/repos/{}/contents/plugin.json?ref={}", GITHUB_API, repo, branch);
+    /// Fetch plugin.json from a repo's plugins/ subdirectory.
+    /// `plugin_dir` is the directory name under `plugins/` (e.g., "serialrun-mpy-ide").
+    async fn fetch_manifest(&self, repo: &str, plugin_dir: &str) -> Option<PluginManifest> {
+        let url = format!("{}/repos/{}/contents/plugins/{}/plugin.json", GITHUB_API, repo, plugin_dir);
         if let Ok(resp) = self.client.get(&url).send().await {
             if resp.status().is_success() {
                 if let Ok(content) = resp.json::<GhContent>().await {
@@ -237,6 +320,53 @@ impl PluginRegistry {
             }
         }
         None
+    }
+
+    /// Find a release that contains a ZIP asset matching the plugin name.
+    async fn get_release_with_plugin(&self, plugin_name: &str) -> anyhow::Result<Release> {
+        let url = format!("{}/repos/{}/releases?per_page=10", GITHUB_API, PLUGINS_REPO);
+        let resp = self.client.get(&url).send().await?;
+
+        if !resp.status().is_success() {
+            return Err(anyhow::anyhow!("No releases found"));
+        }
+
+        let releases: Vec<GhRelease> = resp.json().await?;
+
+        // Find a release whose assets contain a ZIP matching the plugin name
+        for release in &releases {
+            let has_plugin = release.assets.iter().any(|a| {
+                let name_lower = a.name.to_lowercase();
+                name_lower.contains(&plugin_name.to_lowercase()) && name_lower.ends_with(".zip")
+            });
+            if has_plugin {
+                return Ok(Release {
+                    tag: release.tag_name.clone(),
+                    assets: release.assets.iter().map(|a| ReleaseAsset {
+                        name: a.name.clone(),
+                        download_url: a.browser_download_url.clone(),
+                        size: a.size,
+                    }).collect(),
+                });
+            }
+        }
+
+        // Fallback: return latest release if it has any ZIP
+        if let Some(release) = releases.first() {
+            let has_zip = release.assets.iter().any(|a| a.name.ends_with(".zip"));
+            if has_zip {
+                return Ok(Release {
+                    tag: release.tag_name.clone(),
+                    assets: release.assets.iter().map(|a| ReleaseAsset {
+                        name: a.name.clone(),
+                        download_url: a.browser_download_url.clone(),
+                        size: a.size,
+                    }).collect(),
+                });
+            }
+        }
+
+        Err(anyhow::anyhow!("No release with plugin ZIP found"))
     }
 }
 

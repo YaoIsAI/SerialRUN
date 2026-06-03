@@ -40,7 +40,58 @@ pub struct PluginManifest {
     /// Usage instructions (markdown)
     #[serde(default)]
     pub usage: String,
+    /// Toolbar integration config — if present, plugin appears in the main toolbar
+    #[serde(default)]
+    pub toolbar: Option<ToolbarConfig>,
+    /// Window config — if present, plugin opens as a standalone floating window
+    #[serde(default)]
+    pub window: Option<WindowConfig>,
 }
+
+/// Toolbar button configuration — declares how the plugin appears in the main toolbar
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolbarConfig {
+    /// Icon emoji or text for the toolbar button
+    pub icon: String,
+    /// Label text next to the icon
+    pub label: String,
+    /// Tooltip text on hover
+    #[serde(default)]
+    pub tooltip: String,
+    /// Position in toolbar: "left", "center", "right", "plugins"
+    #[serde(default = "default_toolbar_position")]
+    pub position: String,
+}
+
+fn default_toolbar_position() -> String {
+    "plugins".to_string()
+}
+
+/// Standalone window configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WindowConfig {
+    /// Window title
+    pub title: String,
+    /// Default width in pixels
+    #[serde(default = "default_window_width")]
+    pub default_width: f32,
+    /// Default height in pixels
+    #[serde(default = "default_window_height")]
+    pub default_height: f32,
+    /// Whether the window is resizable
+    #[serde(default = "default_true")]
+    pub resizable: bool,
+    /// Minimum width
+    #[serde(default)]
+    pub min_width: Option<f32>,
+    /// Minimum height
+    #[serde(default)]
+    pub min_height: Option<f32>,
+}
+
+fn default_window_width() -> f32 { 800.0 }
+fn default_window_height() -> f32 { 600.0 }
+fn default_true() -> bool { true }
 
 fn default_license() -> String {
     "BSL-1.1".to_string()
@@ -79,6 +130,8 @@ impl PluginManifest {
             homepage: String::new(),
             repository: String::new(),
             usage: String::new(),
+            toolbar: None,
+            window: None,
         }
     }
 
