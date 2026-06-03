@@ -45,3 +45,5 @@ scripts/sync-remotes.sh
 
 # Cloudflare Wrangler cache
 .wrangler/
+.auto-task.md
+scripts/auto-implement.sh
