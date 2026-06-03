@@ -47,3 +47,4 @@ scripts/sync-remotes.sh
 .wrangler/
 .auto-task.md
 scripts/auto-implement.sh
+docs/AUTO_IMPLEMENT.md
