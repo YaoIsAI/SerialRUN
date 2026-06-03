@@ -29,9 +29,5 @@ tests/output/
 # Python test files
 test_*.py
 
-# Non-core files
-wechat_article.html
-assets/screenshot_website.png
-
 # Cloudflare Wrangler cache
 .wrangler/
