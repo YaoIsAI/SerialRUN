@@ -135,3 +135,55 @@ serialrun replay COM1 test.txt
 | Permission denied | `sudo usermod -a -G dialout $USER` (Linux) |
 | Connection failed | Verify baud rate matches device |
 | No data received | Check cable and flow control |
+
+---
+
+## Project Context (for cross-machine continuity)
+
+### Architecture
+- **Core crates** (`serialrun-core`, `serialrun-plugin-api`) — open source, in git
+- **GUI crate** (`serialrun-gui`) — **proprietary, NOT in git**, must be copied separately
+- **Plugins** (`plugins/`) — in git, each is independent cdylib crate
+
+### Plugin System (v0.3.0)
+- Plugins only depend on `serialrun-plugin-api`, never on gui/core
+- Community plugins hosted in `YaoIsAI/serialrun-plugins` GitHub repo
+- Community search reads `plugins/*/plugin.json` from that repo via GitHub Contents API
+- Install downloads ZIP from Releases → extracts to `~/.serialrun/plugins/`
+- Key constant in `plugin_registry.rs`: `PLUGINS_REPO = "YaoIsAI/serialrun-plugins"`
+
+### Build & Test Flow
+```bash
+taskkill //F //IM serialrun.exe  # Windows: close running app
+cargo build --release -p serialrun-gui
+./target/release/serialrun.exe   # Launch for testing
+```
+
+### Git Remotes
+- **GitHub:** `https://github.com/YaoIsAI/SerialRUN.git`
+- **Gitea (local):** `http://192.168.31.85:38633/yao/serialrun.git`
+- **Plugins repo:** `https://github.com/YaoIsAI/serialrun-plugins.git`
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `crates/serialrun-plugin-api/src/lib.rs` | Plugin FFI types, callbacks, capabilities |
+| `crates/serialrun-plugin-api/src/manifest.rs` | plugin.json parser, ToolbarConfig, WindowConfig |
+| `crates/serialrun-core/src/plugin.rs` | LoadedPlugin, DLL loading via libloading |
+| `crates/serialrun-core/src/plugin_install.rs` | PluginManager, install/uninstall/enable/disable |
+| `crates/serialrun-core/src/plugin_registry.rs` | GitHub community search and download |
+| `plugins/serialrun-mpy-ide/` | MicroPython IDE plugin (REPL, editor, file browser) |
+| `docs/PLUGIN_DEVELOPMENT.md` | Plugin development handbook |
+
+### Known Bug Patterns
+- `repo_name` in RegistryPlugin must be plugin name (not repo name)
+- Local plugins have `"local/"` prefix — strip before matching
+- After community install, add to `community_installed` HashSet for immediate UI update
+- Installed tab: check for duplicate rendering of capabilities/actions blocks
+
+### Mac Migration
+1. Clone from GitHub: `git clone https://github.com/YaoIsAI/SerialRUN.git`
+2. Copy GUI crate separately (proprietary, not in git)
+3. Install Rust toolchain: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+4. Build: `cargo build --release -p serialrun-gui`
+5. Plugin install dir: `~/.serialrun/plugins/`
