@@ -132,8 +132,9 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let has_qc = !state.quick_commands.is_empty();
     let show_qc = QC_OPEN.load(Ordering::Relaxed) && has_qc;
 
-    // Terminal display area
-    let available_height = ui.available_height() - 50.0;
+    // Terminal display area — subtract input row + quick commands panel
+    let qc_panel_height = if show_qc { 24.0 } else { 0.0 };
+    let available_height = (ui.available_height() - 50.0 - qc_panel_height).max(50.0);
 
     egui::ScrollArea::vertical()
         .auto_shrink([false, false])
@@ -318,19 +319,23 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
         let qc_snapshot: Vec<QuickCommand> = state.quick_commands.clone();
         let mut qc_clicked_idx: Option<usize> = None;
         ui.horizontal(|ui| {
-                ui.add_space(4.0);
-                ui.label(egui::RichText::new("快捷指令：").size(10.0).color(c.text_secondary));
-                let btn_color = match state.theme { crate::state::Theme::Dark => egui::Color32::from_rgb(55, 65, 81), crate::state::Theme::Light => egui::Color32::from_rgb(220, 220, 225) };
-                let btn_text_color = match state.theme { crate::state::Theme::Dark => egui::Color32::WHITE, crate::state::Theme::Light => egui::Color32::from_rgb(30, 30, 30) };
-                for (idx, qc) in qc_snapshot.iter().enumerate() {
-                    let btn = ui.add(egui::Button::new(
-                        egui::RichText::new(&qc.name).size(10.0).color(btn_text_color)
-                    ).fill(btn_color).rounding(3.0).min_size(egui::vec2(0.0, 20.0)));
-                    let h = btn.hovered();
-                    let c2 = btn.clicked();
-                if h { btn.on_hover_text(&qc.data); }
-                if c2 && state.port_owner.is_some() { qc_clicked_idx = Some(idx); }
-            }
+            ui.add_space(4.0);
+            ui.label(egui::RichText::new("快捷指令：").size(10.0).color(c.text_secondary));
+            let btn_color = match state.theme { crate::state::Theme::Dark => egui::Color32::from_rgb(55, 65, 81), crate::state::Theme::Light => egui::Color32::from_rgb(220, 220, 225) };
+            let btn_text_color = match state.theme { crate::state::Theme::Dark => egui::Color32::WHITE, crate::state::Theme::Light => egui::Color32::from_rgb(30, 30, 30) };
+            egui::ScrollArea::horizontal().max_height(22.0).show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    for (idx, qc) in qc_snapshot.iter().enumerate() {
+                        let btn = ui.add(egui::Button::new(
+                            egui::RichText::new(&qc.name).size(10.0).color(btn_text_color)
+                        ).fill(btn_color).rounding(3.0).min_size(egui::vec2(0.0, 20.0)));
+                        let h = btn.hovered();
+                        let c2 = btn.clicked();
+                        if h { btn.on_hover_text(&qc.data); }
+                        if c2 && state.port_owner.is_some() { qc_clicked_idx = Some(idx); }
+                    }
+                });
+            });
         });
         if let Some(idx) = qc_clicked_idx {
             if let Some(qc) = state.quick_commands.get(idx) {
