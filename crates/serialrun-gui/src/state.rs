@@ -4,6 +4,17 @@ use serialrun_core::{SerialPort, SerialPortInfo};
 use std::collections::{HashMap, VecDeque};
 use std::sync::mpsc;
 
+/// Quick command preset — one-click send from terminal
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct QuickCommand {
+    pub name: String,
+    pub data: String,
+    #[serde(default)]
+    pub is_hex: bool,
+    #[serde(default)]
+    pub line_ending: String,
+}
+
 /// Persisted user preferences (theme, language, serial config, etc.)
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct UserPrefs {
@@ -76,6 +87,8 @@ pub struct UserPrefs {
     // Modbus
     #[serde(default = "default_modbus_timeout")]
     pub modbus_response_timeout_ms: u64,
+    #[serde(default)]
+    pub quick_commands: Vec<QuickCommand>,
 }
 
 fn default_baud_rate() -> u32 { 115200 }
@@ -125,6 +138,7 @@ impl Default for UserPrefs {
             plc_response_timeout_ms: 500,
             plc_poll_interval_ms: 1000,
             modbus_response_timeout_ms: 500,
+            quick_commands: Vec::new(),
         }
     }
 }
@@ -193,6 +207,7 @@ impl UserPrefs {
             plc_response_timeout_ms: state.plc.plc_response_timeout_ms,
             plc_poll_interval_ms: state.plc.poll_interval_ms,
             modbus_response_timeout_ms: state.modbus.response_timeout_ms,
+            quick_commands: state.quick_commands.clone(),
         }
     }
 
@@ -259,6 +274,7 @@ impl UserPrefs {
         state.plc.plc_response_timeout_ms = self.plc_response_timeout_ms;
         state.plc.poll_interval_ms = self.plc_poll_interval_ms;
         state.modbus.response_timeout_ms = self.modbus_response_timeout_ms;
+        state.quick_commands = self.quick_commands.clone();
     }
 }
 
@@ -1268,6 +1284,7 @@ pub struct AppState {
     pub auto_reply_enabled: bool,
     pub auto_reply_pattern: String,
     pub auto_reply_response: String,
+    pub quick_commands: Vec<QuickCommand>,
     pub recording: bool,
     pub recording_last_time: i64,
     pub script_commands: Vec<ScriptCommand>,
@@ -1655,6 +1672,7 @@ impl AppState {
             auto_reply_enabled: false,
             auto_reply_pattern: String::new(),
             auto_reply_response: String::new(),
+            quick_commands: Vec::new(),
             recording: false,
             recording_last_time: 0,
             script_commands: Vec::new(),

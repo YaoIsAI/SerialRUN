@@ -1,5 +1,5 @@
 use crate::port_owner::PortCommand;
-use crate::state::{AppState, ChecksumMode, Direction, Language, LineEnding, ScriptAction, ScriptCommand, T};
+use crate::state::{AppState, ChecksumMode, Direction, Language, LineEnding, QuickCommand, ScriptAction, ScriptCommand, T};
 use crate::theme;
 use eframe::egui;
 
@@ -125,6 +125,12 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
     });
 
     ui.separator();
+
+    // Pre-compute quick commands state for ScrollArea height calculation
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static QC_OPEN: AtomicBool = AtomicBool::new(false);
+    let has_qc = !state.quick_commands.is_empty();
+    let show_qc = QC_OPEN.load(Ordering::Relaxed) && has_qc;
 
     // Terminal display area
     let available_height = ui.available_height() - 50.0;
@@ -307,67 +313,105 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
 
     ui.separator();
 
-    // Input area: [keep_input] [TXT/HEX] [========input========] [行尾] [发送]
-    let row_height = 32.0;
+    // ── Quick commands (collapsible, above input row) ──
+    if show_qc {
+        let qc_snapshot: Vec<QuickCommand> = state.quick_commands.clone();
+        let mut qc_clicked_idx: Option<usize> = None;
+        ui.horizontal(|ui| {
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new("快捷指令：").size(10.0).color(c.text_secondary));
+                let btn_color = match state.theme { crate::state::Theme::Dark => egui::Color32::from_rgb(55, 65, 81), crate::state::Theme::Light => egui::Color32::from_rgb(220, 220, 225) };
+                let btn_text_color = match state.theme { crate::state::Theme::Dark => egui::Color32::WHITE, crate::state::Theme::Light => egui::Color32::from_rgb(30, 30, 30) };
+                for (idx, qc) in qc_snapshot.iter().enumerate() {
+                    let btn = ui.add(egui::Button::new(
+                        egui::RichText::new(&qc.name).size(10.0).color(btn_text_color)
+                    ).fill(btn_color).rounding(3.0).min_size(egui::vec2(0.0, 20.0)));
+                    let h = btn.hovered();
+                    let c2 = btn.clicked();
+                if h { btn.on_hover_text(&qc.data); }
+                if c2 && state.port_owner.is_some() { qc_clicked_idx = Some(idx); }
+            }
+        });
+        if let Some(idx) = qc_clicked_idx {
+            if let Some(qc) = state.quick_commands.get(idx) {
+                let data = qc.data.clone();
+                let is_hex = qc.is_hex;
+                let le = if qc.line_ending.is_empty() { state.line_ending } else {
+                    match qc.line_ending.as_str() { "CR" => LineEnding::CR, "LF" => LineEnding::LF, "CRLF" => LineEnding::CRLF, _ => LineEnding::None }
+                };
+                let mut bytes = if is_hex { match parse_hex(&data) { Some(b) => b, None => return } }
+                else { let mut b = data.as_bytes().to_vec(); b.extend_from_slice(le.suffix()); b };
+                bytes = state.terminal_checksum_mode.append_checksum(&bytes);
+                let display = if is_hex { data } else { data.replace("\r", "\\r").replace("\n", "\\n") };
+                state.tx_count += bytes.len() as u64;
+                state.add_chart_data(bytes.len() as f64);
+                state.add_terminal_line(Direction::Tx, display, is_hex);
+                if let Some(ref po) = state.port_owner { po.send(PortCommand::Write(bytes)); }
+            }
+        }
+    }
+
+    // ── Input row: [▶/▲] [保留输入] [TXT/HEX] [input] [+] [行尾] [发送] ──
+    let is_connected = state.port_owner.is_some();
+    let row_height = 28.0;
     ui.allocate_ui_with_layout(
         egui::vec2(ui.available_width(), row_height),
         egui::Layout::left_to_right(egui::Align::Center),
         |ui| {
-            ui.add_space(8.0);
-            ui.checkbox(&mut state.keep_input, T::keep_input(lang));
-            ui.add_space(4.0);
+            // Expand/collapse toggle
+            let toggle_icon = if show_qc { "\u{25B2}" } else { "\u{25B6}" };
+            let toggle_color = if has_qc { egui::Color32::from_rgb(100, 116, 139) } else { egui::Color32::from_rgb(60, 60, 60) };
+            let toggle_btn = ui.add(egui::Button::new(
+                egui::RichText::new(toggle_icon).size(10.0).color(toggle_color)
+            ).frame(false).min_size(egui::vec2(16.0, row_height)));
+            let t_h = toggle_btn.hovered();
+            let t_c = toggle_btn.clicked();
+            if t_h && has_qc { toggle_btn.on_hover_text("快捷指令"); }
+            if t_c && has_qc { QC_OPEN.store(!show_qc, Ordering::Relaxed); }
 
-            // Hex mode toggle badge
-            let (mode_label, mode_color) = if state.hex_mode {
-                ("HEX", egui::Color32::from_rgb(255, 152, 0))
-            } else {
-                ("TXT", egui::Color32::from_rgb(76, 175, 80))
-            };
-            let mode_btn = ui.add(egui::Button::new(
-                egui::RichText::new(mode_label).color(egui::Color32::WHITE).strong().size(11.0)
-            ).fill(mode_color).min_size(egui::vec2(36.0, 18.0)).rounding(3.0));
-            if mode_btn.clicked() {
-                state.hex_mode = !state.hex_mode;
+            ui.add_space(2.0);
+            ui.checkbox(&mut state.keep_input, T::keep_input(lang));
+            ui.add_space(2.0);
+            let (mode_label, mode_color) = if state.hex_mode { ("HEX", egui::Color32::from_rgb(255, 152, 0)) } else { ("TXT", egui::Color32::from_rgb(76, 175, 80)) };
+            let mode_btn = ui.add(egui::Button::new(egui::RichText::new(mode_label).color(egui::Color32::WHITE).strong().size(11.0)).fill(mode_color).min_size(egui::vec2(36.0, 18.0)).rounding(3.0));
+            if mode_btn.clicked() { state.hex_mode = !state.hex_mode; }
+            ui.add_space(4.0);
+            let input_w = (ui.available_width() - 240.0).max(60.0);
+            ui.add_sized([input_w, row_height], egui::TextEdit::singleline(&mut state.input_buffer).frame(true).margin(egui::Margin::symmetric(8.0, 4.0)));
+            // "+" save as quick command
+            ui.add_space(2.0);
+            if !state.input_buffer.is_empty() {
+                let add_btn = ui.add(egui::Button::new(egui::RichText::new("+").size(14.0).color(egui::Color32::from_rgb(34, 197, 94))).frame(false).min_size(egui::vec2(16.0, row_height)));
+                let a_h = add_btn.hovered();
+                let a_c = add_btn.clicked();
+                if a_h { add_btn.on_hover_text("添加快捷指令"); }
+                if a_c {
+                    let input_data = state.input_buffer.clone();
+                    let already_exists = state.quick_commands.iter().any(|q| q.data == input_data && q.is_hex == state.hex_mode);
+                    if already_exists {
+                        state.show_error("该指令已存在");
+                    } else {
+                        let name = if input_data.len() > 12 { format!("{}…", &input_data[..12]) } else { input_data.clone() };
+                        state.quick_commands.push(QuickCommand { name, data: input_data, is_hex: state.hex_mode, line_ending: String::new() });
+                    }
+                }
             }
             ui.add_space(4.0);
-
-            // Input box — fill remaining space (right controls: ~200px)
-            let input_w = (ui.available_width() - 200.0).max(80.0);
-            ui.add_sized(
-                [input_w, row_height],
-                egui::TextEdit::singleline(&mut state.input_buffer)
-                    .frame(true)
-                    .margin(egui::Margin::symmetric(8.0, 5.0))
-            );
-
-            ui.add_space(4.0);
-
-            // Line ending selector
             ui.label(T::line_ending(lang));
             let le = state.line_ending;
-            egui::ComboBox::from_id_salt("le_input").width(70.0).selected_text(le.label(lang)).show_ui(ui, |ui| {
+            egui::ComboBox::from_id_salt("le_input").width(60.0).selected_text(le.label(lang)).show_ui(ui, |ui| {
                 ui.selectable_value(&mut state.line_ending, LineEnding::None, LineEnding::None.label(lang));
                 ui.selectable_value(&mut state.line_ending, LineEnding::CR, LineEnding::CR.label(lang));
                 ui.selectable_value(&mut state.line_ending, LineEnding::LF, LineEnding::LF.label(lang));
                 ui.selectable_value(&mut state.line_ending, LineEnding::CRLF, LineEnding::CRLF.label(lang));
             });
-
             ui.add_space(4.0);
-
-            // Send button
-            let btn_fill = if state.hex_mode {
-                egui::Color32::from_rgb(255, 152, 0)
-            } else {
-                c.btn_send
-            };
-            let send_btn = ui.add(egui::Button::new(
-                egui::RichText::new(T::send(lang)).color(egui::Color32::WHITE).strong().size(13.0)
-            ).fill(btn_fill).min_size(egui::vec2(60.0, row_height)));
-            if send_btn.clicked() && !state.input_buffer.is_empty() {
-                do_send(state);
-            }
+            let btn_fill = if state.hex_mode { egui::Color32::from_rgb(255, 152, 0) } else { c.btn_send };
+            let send_btn = ui.add(egui::Button::new(egui::RichText::new(T::send(lang)).color(egui::Color32::WHITE).strong().size(13.0)).fill(btn_fill).min_size(egui::vec2(50.0, row_height)));
+            if send_btn.clicked() && !state.input_buffer.is_empty() { do_send(state); }
         },
     );
+    ui.add_space(4.0);
 }
 
 pub fn do_send(state: &mut AppState) {
