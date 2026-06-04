@@ -329,135 +329,136 @@ fn handle_request(
                 "tools": [
                     {
                         "name": "list_ports",
-                        "description": "List available serial ports",
+                        "description": "Scan and list all available serial ports on this machine. Returns port name, description, and manufacturer. Call this first to find the correct port name before connecting.",
                         "inputSchema": { "type": "object", "properties": {} }
                     },
                     {
                         "name": "connect",
-                        "description": "Connect to a serial port (independently or via GUI)",
+                        "description": "Open a serial port connection. If already connected, automatically disconnects first and reconnects. After connecting, use send/send_command to communicate. IMPORTANT: Changing baud_rate/data_bits/stop_bits/parity via set_config requires disconnect+connect to take effect on hardware.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "port": { "type": "string", "description": "Port name (e.g., COM1, /dev/ttyUSB0)" },
-                                "baud_rate": { "type": "integer", "description": "Baud rate (default: 115200)" },
-                                "data_bits": { "type": "integer", "description": "Data bits: 5, 6, 7, 8 (default: 8)" },
-                                "stop_bits": { "type": "integer", "description": "Stop bits: 1, 2 (default: 1)" },
-                                "parity": { "type": "string", "description": "Parity: None, Odd, Even (default: None)" },
-                                "flow_control": { "type": "string", "description": "Flow control: None, Software, Hardware (default: None)" }
+                                "port": { "type": "string", "description": "Port name from list_ports (e.g., COM1, /dev/ttyUSB0, /dev/cu.usbserial-xxx)" },
+                                "baud_rate": { "type": "integer", "description": "Baud rate. Common values: 9600, 19200, 38400, 57600, 115200 (default), 230400, 460800, 921600" },
+                                "data_bits": { "type": "integer", "description": "Data bits: 5, 6, 7, or 8 (default: 8)" },
+                                "stop_bits": { "type": "integer", "description": "Stop bits: 1 (default) or 2" },
+                                "parity": { "type": "string", "description": "Parity: None (default), Odd, or Even" },
+                                "flow_control": { "type": "string", "description": "Flow control: None (default), Software (XON/XOFF), or Hardware (RTS/CTS)" }
                             },
                             "required": ["port"]
                         }
                     },
                     {
                         "name": "disconnect",
-                        "description": "Disconnect from current serial port",
+                        "description": "Close the serial port connection. Must be called before reconnecting with different parameters.",
                         "inputSchema": { "type": "object", "properties": {} }
                     },
                     {
                         "name": "send",
-                        "description": "Send data to serial port (text or hex). Use pause_after=true to keep reading paused for a subsequent read call.",
+                        "description": "Send raw data to the serial port. For text, data is sent as UTF-8 bytes. For hex, data is space-separated hex values (e.g. '48 65 6C 6C 6F'). To receive a response, set pause_after=true, then call read() with resume=false.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "data": { "type": "string", "description": "Data to send (text or hex string)" },
-                                "hex": { "type": "boolean", "description": "If true, data is interpreted as hex" },
-                                "pause_after": { "type": "boolean", "description": "If true, pauses the read loop after sending so next read() can receive the response" }
+                                "data": { "type": "string", "description": "Data to send. Text: 'Hello\\r\\n'. Hex: '48 65 6C 6C 6F'" },
+                                "hex": { "type": "boolean", "description": "If true, data is parsed as space-separated hex bytes (default: false)" },
+                                "pause_after": { "type": "boolean", "description": "If true, pauses the background read loop so the next read() call can cleanly receive the device response (default: false)" }
                             },
                             "required": ["data"]
                         }
                     },
                     {
                         "name": "read",
-                        "description": "Read data from serial port. After send(pause_after=true), use resume=false to keep reading paused.",
+                        "description": "Read data from the serial port receive buffer. Data is continuously captured in the background. For request-response patterns, use send_command instead. For manual control: send(data, pause_after=true) -> read(resume=false).",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "timeout_ms": { "type": "integer", "description": "Read timeout in ms (default: 1000)" },
-                                "max_bytes": { "type": "integer", "description": "Maximum bytes to read (default: 1024)" },
-                                "resume": { "type": "boolean", "description": "If true (default), resumes the read loop after reading. Set to false when reading after send(pause_after=true)." },
-                                "format": { "type": "string", "description": "Output format: 'hex' (space-separated hex), 'text' (UTF-8), 'raw' (base64). Default: 'hex'", "enum": ["hex", "text", "raw"] }
+                                "timeout_ms": { "type": "integer", "description": "How long to wait for data in ms (default: 1000, range: 100-30000)" },
+                                "resume": { "type": "boolean", "description": "If true (default), resumes the background read loop. Set to false when reading after send(pause_after=true)." },
+                                "format": { "type": "string", "description": "Output format: 'hex' (space-separated hex, default), 'text' (UTF-8 string), 'raw' (base64)", "enum": ["hex", "text", "raw"] }
                             }
                         }
                     },
                     {
                         "name": "send_command",
-                        "description": "Send a command and wait for response (write-read)",
+                        "description": "Send a command and wait for the response in one call. Best for AT commands and request-response protocols. Automatically appends \\r\\n if not present. This is the RECOMMENDED tool for conversational serial communication.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "command": { "type": "string", "description": "Command to send" },
-                                "timeout_ms": { "type": "integer", "description": "Response timeout in ms (default: 1000)" }
+                                "command": { "type": "string", "description": "Command to send (\\r\\n is auto-appended if missing)" },
+                                "timeout_ms": { "type": "integer", "description": "How long to wait for response in ms (default: 1000, range: 100-30000)" }
                             },
                             "required": ["command"]
                         }
                     },
                     {
                         "name": "modbus_read",
-                        "description": "Read Modbus RTU holding registers with optional engineering value conversion",
+                        "description": "Read Modbus RTU holding registers (FC03). Supports engineering value conversion with scale/offset. Use quantity>1 to read multiple consecutive registers.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "slave_id": { "type": "integer", "description": "Slave ID (1-247)", "default": 1 },
-                                "address": { "type": "integer", "description": "Start register address" },
-                                "quantity": { "type": "integer", "description": "Number of registers (default: 1)" },
-                                "scale": { "type": "number", "description": "Scale factor: value = raw * scale + offset (default: 1.0)" },
+                                "slave_id": { "type": "integer", "description": "Modbus slave ID 1-247 (default: 1)" },
+                                "address": { "type": "integer", "description": "Starting register address (0-65535)" },
+                                "quantity": { "type": "integer", "description": "Number of consecutive registers to read, 1-125 (default: 1)" },
+                                "scale": { "type": "number", "description": "Scale factor: engineering_value = raw_value * scale + offset (default: 1.0)" },
                                 "offset": { "type": "number", "description": "Offset added after scaling (default: 0.0)" },
-                                "unit": { "type": "string", "description": "Unit label for engineering values (default: '')" }
+                                "unit": { "type": "string", "description": "Unit label for engineering values, e.g. '°C', 'rpm', 'bar'" },
+                                "modbus_timeout_ms": { "type": "integer", "description": "Modbus response timeout in ms (default: 200, increase for slow devices)" }
                             },
                             "required": ["address"]
                         }
                     },
                     {
                         "name": "modbus_write",
-                        "description": "Write a Modbus RTU holding register",
+                        "description": "Write a single Modbus RTU holding register (FC06). Value must be 0-65535 (u16).",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "slave_id": { "type": "integer", "description": "Slave ID (1-247)", "default": 1 },
-                                "address": { "type": "integer", "description": "Register address" },
-                                "value": { "type": "integer", "description": "Value to write (u16)" }
+                                "slave_id": { "type": "integer", "description": "Modbus slave ID 1-247 (default: 1)" },
+                                "address": { "type": "integer", "description": "Register address (0-65535)" },
+                                "value": { "type": "integer", "description": "Value to write, 0-65535" },
+                                "modbus_timeout_ms": { "type": "integer", "description": "Modbus response timeout in ms (default: 200, increase for slow devices)" }
                             },
                             "required": ["address", "value"]
                         }
                     },
                     {
                         "name": "plc_read",
-                        "description": "Read all registers from a PLC preset",
+                        "description": "Read ALL registers from a PLC preset (auto-detects data types and applies scale factors). Supported brands: Siemens S7-1200, Mitsubishi FX3U, Delta DVP, Omron CP1H.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "brand": { "type": "string", "description": "PLC brand: Siemens, Mitsubishi, Delta, Omron", "default": "Siemens" },
-                                "slave_id": { "type": "integer", "description": "Slave ID (1-247)", "default": 1 }
+                                "brand": { "type": "string", "description": "PLC brand: Siemens, Mitsubishi, Delta, or Omron (default: Siemens)" },
+                                "slave_id": { "type": "integer", "description": "Modbus slave ID 1-247 (default: 1)" }
                             }
                         }
                     },
                     {
                         "name": "plc_write",
-                        "description": "Write to a PLC register by address",
+                        "description": "Write a value to a PLC register address using Modbus FC06. Note: brand is for reference only; the write goes to the specified address regardless of brand presets.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "brand": { "type": "string", "description": "PLC brand: Siemens, Mitsubishi, Delta, Omron", "default": "Siemens" },
-                                "slave_id": { "type": "integer", "description": "Slave ID (1-247)", "default": 1 },
-                                "address": { "type": "integer", "description": "Register address" },
-                                "value": { "type": "number", "description": "Value to write" }
+                                "brand": { "type": "string", "description": "PLC brand for reference: Siemens, Mitsubishi, Delta, Omron (default: Siemens)" },
+                                "slave_id": { "type": "integer", "description": "Modbus slave ID 1-247 (default: 1)" },
+                                "address": { "type": "integer", "description": "Register address (0-65535)" },
+                                "value": { "type": "number", "description": "Value to write, 0-65535" }
                             },
                             "required": ["address", "value"]
                         }
                     },
                     {
                         "name": "get_access_log",
-                        "description": "Get MCP access log (client IPs, tool calls, timestamps, device info)",
+                        "description": "View MCP access log showing client IPs, tool calls, and timestamps. Useful for debugging and audit.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "limit": { "type": "integer", "description": "Max entries to return (default: 50)" }
+                                "limit": { "type": "integer", "description": "Max entries to return, 1-500 (default: 50)" }
                             }
                         }
                     },
                     {
                         "name": "get_device_info",
-                        "description": "Get current device identification info (port, baud rate, connection status)",
+                        "description": "Get device identification: connection status, active clients, server version, protocol info.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {}
@@ -465,7 +466,7 @@ fn handle_request(
                     },
                     {
                         "name": "status",
-                        "description": "Get serial port status, connection info, and byte counters",
+                        "description": "Get detailed connection status: port name, baud rate, connection type (GUI vs AI), byte counters (TX/RX), active clients. Use this to check if the port is connected and by whom.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {}
@@ -473,22 +474,22 @@ fn handle_request(
                     },
                     {
                         "name": "get_config",
-                        "description": "Get all UI settings or specific setting values",
+                        "description": "Get all UI settings or a specific setting value. Call with no key to see all available settings. Keys that require reconnect to take effect: baud_rate, data_bits, stop_bits, parity, flow_control. Keys that take effect immediately: dtr, rts, show_timestamp, auto_scroll, hex_mode, line_ending, auto_send_*, auto_reply_*, rx_*.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "key": { "type": "string", "description": "Setting key (optional, returns all if omitted)" }
+                                "key": { "type": "string", "description": "Setting key. Omit to return all settings. Valid keys: baud_rate, data_bits, stop_bits, parity, flow_control, hex_mode, show_timestamp, auto_scroll, auto_send_enabled, auto_send_interval_ms, keep_input, line_ending, dtr, rts, auto_reply_enabled, auto_reply_pattern, auto_reply_response, rx_auto_aggregate, rx_aggregate_ms" }
                             }
                         }
                     },
                     {
                         "name": "set_config",
-                        "description": "Update a UI setting (syncs to GUI immediately)",
+                        "description": "Update a UI setting. WARNING: Changing serial port parameters (baud_rate, data_bits, stop_bits, parity, flow_control) only updates the GUI state — you MUST call disconnect() then connect() for hardware changes to take effect. DTR/RTS changes take effect immediately.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
-                                "key": { "type": "string", "description": "Setting key" },
-                                "value": { "description": "New value" }
+                                "key": { "type": "string", "description": "Setting key. Serial params (need reconnect): baud_rate, data_bits, stop_bits, parity, flow_control. Immediate: dtr, rts, show_timestamp, auto_scroll, hex_mode, line_ending, auto_send_enabled, auto_send_interval_ms, keep_input, auto_reply_enabled, auto_reply_pattern, auto_reply_response, rx_auto_aggregate, rx_aggregate_ms" },
+                                "value": { "description": "New value. Boolean keys (dtr, rts, show_timestamp, etc.) accept true/false. String keys (parity, line_ending, etc.) accept their enum values." }
                             },
                             "required": ["key", "value"]
                         }
@@ -625,9 +626,14 @@ fn handle_request(
                     }
 
                     let bytes = if hex {
-                        data.split_whitespace()
-                            .filter_map(|s| u8::from_str_radix(s, 16).ok())
-                            .collect::<Vec<_>>()
+                        let parsed: Result<Vec<u8>, _> = data.split_whitespace()
+                            .map(|s| u8::from_str_radix(s, 16))
+                            .collect();
+                        match parsed {
+                            Ok(b) => b,
+                            Err(_) => return McpResponse::error(request.id, -32602,
+                                format!("Invalid hex data: '{}'. Use space-separated hex like '48 65 6C 6C 6F'", data)),
+                        }
                     } else {
                         data.as_bytes().to_vec()
                     };
@@ -752,6 +758,7 @@ fn handle_request(
                     let scale = arguments.get("scale").and_then(|v| v.as_f64()).unwrap_or(1.0);
                     let offset = arguments.get("offset").and_then(|v| v.as_f64()).unwrap_or(0.0);
                     let unit = arguments.get("unit").and_then(|v| v.as_str()).unwrap_or("");
+                    let modbus_timeout = arguments.get("modbus_timeout_ms").and_then(|v| v.as_u64()).unwrap_or(200);
 
                     use serialrun_core::protocol::{ModbusFrame, ModbusParser, ModbusFunction};
                     let frame = ModbusParser::build_read_request(slave_id, ModbusFunction::ReadHoldingRegisters, address, quantity);
@@ -769,7 +776,7 @@ fn handle_request(
                     };
 
                     let (resp_tx, resp_rx) = mpsc::channel();
-                    let _ = tx.send(McpSerialRequest::SendRead { data: req.clone(), timeout_ms: 200, resp: resp_tx });
+                    let _ = tx.send(McpSerialRequest::SendRead { data: req.clone(), timeout_ms: modbus_timeout, resp: resp_tx });
                     match resp_rx.recv_timeout(Duration::from_secs(5)) {
                         Ok(Ok(resp)) if resp.len() >= 4 => {
                             if let Ok(sh) = shared.lock() {
@@ -818,6 +825,7 @@ fn handle_request(
                         Some(a) => a as u16,
                         None => return McpResponse::error(request.id, -32602, "address is required".into()),
                     };
+                    let modbus_timeout = arguments.get("modbus_timeout_ms").and_then(|v| v.as_u64()).unwrap_or(200);
                     let value = match arguments.get("value").and_then(|v| v.as_u64()) {
                         Some(v) => {
                             if v > 65535 {
@@ -844,7 +852,7 @@ fn handle_request(
                     };
 
                     let (resp_tx, resp_rx) = mpsc::channel();
-                    let _ = tx.send(McpSerialRequest::SendRead { data: req.clone(), timeout_ms: 200, resp: resp_tx });
+                    let _ = tx.send(McpSerialRequest::SendRead { data: req.clone(), timeout_ms: modbus_timeout, resp: resp_tx });
                     match resp_rx.recv_timeout(Duration::from_secs(5)) {
                         Ok(Ok(resp)) if resp.len() >= 4 => {
                             if let Ok(sh) = shared.lock() {
