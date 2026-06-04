@@ -100,6 +100,10 @@ SerialRUN 内置 MCP (Model Context Protocol) 服务器，允许 AI 助手通过
 | 13 | `set_config` | 修改配置项 | 是 |
 | 14 | `get_access_log` | 查看 MCP 访问日志 | 否 |
 | 15 | `get_device_info` | 查看设备标识信息 | 否 |
+| 16 | `clear_buffers` | 清空 TX/RX 缓冲区 | 是 |
+| 17 | `set_dtr` | 设置 DTR 硬件信号（立即生效） | 是 |
+| 18 | `set_rts` | 设置 RTS 硬件信号（立即生效） | 是 |
+| 19 | `get_config_keys` | 列出所有可用配置键及有效值 | 否 |
 
 ---
 
@@ -568,6 +572,61 @@ SerialRUN 内置 MCP (Model Context Protocol) 服务器，允许 AI 助手通过
 - 访问日志条目总数
 - MCP 服务器版本: `v0.2.0`
 - 协议: `JSON-RPC over TCP`
+
+### 3.16 clear_buffers -- 清空缓冲区
+
+清空串口的 TX 和 RX 缓冲区。在开始新的测量序列前使用，清除残留数据。
+
+**参数**: 无
+
+**示例**:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"clear_buffers","arguments":{}}}
+```
+
+### 3.17 set_dtr -- 设置 DTR 信号
+
+直接设置 DTR (Data Terminal Ready) 硬件信号，**立即生效，无需重连**。常见用途：通过 DTR 信号复位 Arduino/ESP32。
+
+**参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| value | boolean | 是 | true=高电平, false=低电平 |
+
+**示例**:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"set_dtr","arguments":{"value":true}}}
+```
+
+### 3.18 set_rts -- 设置 RTS 信号
+
+直接设置 RTS (Request To Send) 硬件信号，**立即生效，无需重连**。
+
+**参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| value | boolean | 是 | true=高电平, false=低电平 |
+
+**示例**:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"set_rts","arguments":{"value":false}}}
+```
+
+### 3.19 get_config_keys -- 列出所有配置键
+
+列出所有可用的配置键、类型、有效值和默认值。用于发现 `set_config` 可以修改哪些参数。
+
+**参数**: 无
+
+**返回内容包含**:
+
+- `serial_params_need_reconnect`: 修改后需要重连才生效的参数（baud_rate, data_bits, stop_bits, parity, flow_control）
+- `immediate_effect`: 修改后立即生效的参数（dtr, rts, hex_mode, show_timestamp 等）
 
 ---
 
