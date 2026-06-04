@@ -41,8 +41,8 @@
 
 | 平台 | 链接 |
 |------|------|
-| Windows (x64) | [SerialRUN-v0.1.0-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.1.0/serialrun-0.1.0-windows-x64.zip) |
-| macOS (Apple Silicon / Intel) | 从源码编译 |
+| Windows (x64) | 即将发布 |
+| macOS (Apple Silicon / Intel) | [SerialRUN-v0.3.0-macos-universal.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.3.0/serialrun-0.3.0-macos-universal.zip) |
 | Linux (x86_64 / aarch64) | 从源码编译 |
 
 ### 从源码编译
