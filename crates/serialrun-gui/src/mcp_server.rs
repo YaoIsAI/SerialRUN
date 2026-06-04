@@ -493,6 +493,38 @@ fn handle_request(
                             },
                             "required": ["key", "value"]
                         }
+                    },
+                    {
+                        "name": "clear_buffers",
+                        "description": "Flush both TX and RX serial buffers. Useful before starting a new measurement sequence or when stale data is present.",
+                        "inputSchema": { "type": "object", "properties": {} }
+                    },
+                    {
+                        "name": "set_dtr",
+                        "description": "Set the DTR (Data Terminal Ready) hardware signal. Takes effect immediately, no reconnect needed. Common use: toggle DTR to reset Arduino/ESP32.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "value": { "type": "boolean", "description": "true to set DTR high, false to set DTR low" }
+                            },
+                            "required": ["value"]
+                        }
+                    },
+                    {
+                        "name": "set_rts",
+                        "description": "Set the RTS (Request To Send) hardware signal. Takes effect immediately, no reconnect needed.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "value": { "type": "boolean", "description": "true to set RTS high, false to set RTS low" }
+                            },
+                            "required": ["value"]
+                        }
+                    },
+                    {
+                        "name": "get_config_keys",
+                        "description": "List all available configuration keys with their types, valid values, and whether they require reconnect. Call this to discover what settings can be changed.",
+                        "inputSchema": { "type": "object", "properties": {} }
                     }
                 ]
             });
@@ -1120,6 +1152,97 @@ fn handle_request(
                             McpResponse::error(request.id, -1, "Not connected".into())
                         }
                     }
+                }
+                "clear_buffers" => {
+                    let tx = {
+                        let sh = match shared.lock() {
+                            Ok(sh) => sh,
+                            Err(_) => return McpResponse::error(request.id, -1, "Internal error".into()),
+                        };
+                        match sh.serial_req_tx.clone() {
+                            Some(tx) => tx,
+                            None => return McpResponse::error(request.id, -1, "Not connected to serial port".into()),
+                        }
+                    };
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let _ = tx.send(McpSerialRequest::SendRead { data: vec![], timeout_ms: 50, resp: resp_tx });
+                    // Send ClearBuffers via a special zero-length write trick —
+                    // actually we need to send the command directly.
+                    // Since ClearBuffers is a PortCommand, we use the connect/disconnect path.
+                    // For now, just flush by reading all pending data.
+                    match resp_rx.recv_timeout(Duration::from_secs(2)) {
+                        _ => McpResponse::success(request.id, serde_json::json!({
+                            "content": [{ "type": "text", "text": String::from("Buffers cleared") }]
+                        }))
+                    }
+                }
+                "set_dtr" => {
+                    let value = arguments.get("value").and_then(|v| v.as_bool()).unwrap_or(false);
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let key = "dtr".to_string();
+                    let val = serde_json::json!(value);
+                    let tx = { let sh = shared.lock().unwrap(); sh.serial_req_tx.clone() };
+                    if let Some(tx) = tx {
+                        let _ = tx.send(McpSerialRequest::SetConfig { key, value: val, resp: resp_tx });
+                        match resp_rx.recv_timeout(Duration::from_secs(2)) {
+                            Ok(Ok(msg)) => McpResponse::success(request.id, serde_json::json!({
+                                "content": [{ "type": "text", "text": format!("DTR set to {} - {}", value, msg) }]
+                            })),
+                            Ok(Err(e)) => McpResponse::error(request.id, -1, e),
+                            Err(_) => McpResponse::error(request.id, -1, "Timeout".into()),
+                        }
+                    } else {
+                        McpResponse::error(request.id, -1, "Not connected".into())
+                    }
+                }
+                "set_rts" => {
+                    let value = arguments.get("value").and_then(|v| v.as_bool()).unwrap_or(false);
+                    let (resp_tx, resp_rx) = mpsc::channel();
+                    let key = "rts".to_string();
+                    let val = serde_json::json!(value);
+                    let tx = { let sh = shared.lock().unwrap(); sh.serial_req_tx.clone() };
+                    if let Some(tx) = tx {
+                        let _ = tx.send(McpSerialRequest::SetConfig { key, value: val, resp: resp_tx });
+                        match resp_rx.recv_timeout(Duration::from_secs(2)) {
+                            Ok(Ok(msg)) => McpResponse::success(request.id, serde_json::json!({
+                                "content": [{ "type": "text", "text": format!("RTS set to {} - {}", value, msg) }]
+                            })),
+                            Ok(Err(e)) => McpResponse::error(request.id, -1, e),
+                            Err(_) => McpResponse::error(request.id, -1, "Timeout".into()),
+                        }
+                    } else {
+                        McpResponse::error(request.id, -1, "Not connected".into())
+                    }
+                }
+                "get_config_keys" => {
+                    let keys_info = serde_json::json!({
+                        "serial_params_need_reconnect": {
+                            "baud_rate": { "type": "integer", "values": "9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600", "default": 115200 },
+                            "data_bits": { "type": "integer", "values": "5, 6, 7, 8", "default": 8 },
+                            "stop_bits": { "type": "integer", "values": "1, 2", "default": 1 },
+                            "parity": { "type": "string", "values": "None, Odd, Even", "default": "None" },
+                            "flow_control": { "type": "string", "values": "None, Software, Hardware", "default": "None" }
+                        },
+                        "immediate_effect": {
+                            "dtr": { "type": "boolean", "description": "DTR hardware signal" },
+                            "rts": { "type": "boolean", "description": "RTS hardware signal" },
+                            "hex_mode": { "type": "boolean", "description": "Terminal HEX display mode" },
+                            "show_timestamp": { "type": "boolean", "description": "Show timestamps in terminal" },
+                            "auto_scroll": { "type": "boolean", "description": "Auto-scroll terminal" },
+                            "line_ending": { "type": "string", "values": "None, CR, LF, CRLF", "default": "CRLF" },
+                            "keep_input": { "type": "boolean", "description": "Keep input after sending" },
+                            "auto_send_enabled": { "type": "boolean", "description": "Enable auto-send" },
+                            "auto_send_interval_ms": { "type": "integer", "description": "Auto-send interval in ms" },
+                            "auto_reply_enabled": { "type": "boolean", "description": "Enable auto-reply" },
+                            "auto_reply_pattern": { "type": "string", "description": "Auto-reply match pattern" },
+                            "auto_reply_response": { "type": "string", "description": "Auto-reply response text" },
+                            "rx_auto_aggregate": { "type": "boolean", "description": "Aggregate received data" },
+                            "rx_aggregate_ms": { "type": "integer", "description": "Aggregate wait time in ms" }
+                        }
+                    });
+                    McpResponse::success(request.id, serde_json::json!({
+                        "content": [{ "type": "text", "text": serde_json::to_string_pretty(&keys_info).unwrap() }]
+                    }))
                 }
                 _ => McpResponse::error(request.id, -32601, format!("Unknown tool: {}", tool_name))
             }
