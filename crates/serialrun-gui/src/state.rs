@@ -1422,6 +1422,8 @@ pub struct AppState {
     // Copy button state (help panel)
     pub copied: bool,
     pub copied_time: i64,
+    pub cli_copied: bool,
+    pub cli_copied_time: i64,
     pub rx_aggregate_ms: u64,
     pub rx_auto_aggregate: bool,
     // Auto-detect
@@ -1747,6 +1749,8 @@ impl AppState {
             help_content_en: load_help_file("help_en.md"),
             copied: false,
             copied_time: 0,
+            cli_copied: false,
+            cli_copied_time: 0,
             rx_aggregate_ms: 150,
             rx_auto_aggregate: true,
             auto_detect_receiver: None,

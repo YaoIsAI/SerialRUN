@@ -4225,6 +4225,7 @@ dependencies = [
  "arboard",
  "base64",
  "chrono",
+ "clap",
  "eframe",
  "egui",
  "egui_extras",

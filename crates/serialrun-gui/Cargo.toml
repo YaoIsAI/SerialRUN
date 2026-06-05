@@ -10,6 +10,7 @@ name = "serialrun"
 path = "src/main.rs"
 
 [dependencies]
+clap = { workspace = true }
 serialrun-core = { path = "../serialrun-core" }
 serialrun-plugin-api = { path = "../serialrun-plugin-api" }
 eframe = { workspace = true }

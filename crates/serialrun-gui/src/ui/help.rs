@@ -181,7 +181,8 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 - AI 助手可使用 tools/list 获取所有可用工具及其参数说明
 - 使用 get_config_keys 可查看所有配置键及其有效值
 - set_dtr/set_rts 立即生效，无需重连
-- clear_buffers 用于清除缓冲区残留数据"#;
+- clear_buffers 用于清除缓冲区残留数据
+- 快捷指令：输入框右侧点击 + 可保存常用指令，点击 ▶ 展开快捷指令栏，右键可删除"#;
 
 const MCP_PROMPT_EN: &str = r#"SerialRUN MCP Server Guide
 
@@ -362,12 +363,115 @@ List all available configuration keys with their types, valid values, and whethe
 - AI assistants can use tools/list to discover all available tools and their parameters
 - Use get_config_keys to list all config keys with valid values
 - set_dtr/set_rts take effect immediately, no reconnect needed
-- clear_buffers flushes stale data from TX and RX buffers"#;
+- clear_buffers flushes stale data from TX and RX buffers
+- Quick Commands: click + next to input to save, click ▶ to expand, right-click to delete"#;
+
+const CLI_GUIDE_ZH: &str = r#"SerialRUN CLI 命令行操作手册
+
+SerialRUN 同时提供命令行工具，无需打开 GUI 即可控制串口。
+安装后在终端直接使用 serialrun 命令。
+
+## 交互模式（推荐）
+
+启动交互式终端，串口保持打开：
+
+  serialrun interactive /dev/ttyUSB0 --baud 115200
+
+交互命令：
+  send <data>          发送文本数据
+  send-hex <hex>       发送十六进制数据
+  read                 读取数据（2秒超时）
+  read-hex             以十六进制读取数据
+  cmd <command>        发送命令并等待响应
+  modbus-r <addr> <qty> [slave]  读取 Modbus 寄存器
+  modbus-w <addr> <val> [slave]  写入 Modbus 寄存器
+  clear                清空接收缓冲区
+  status               显示连接状态
+  exit                 退出
+
+## 单次命令
+
+  serialrun list-ports
+  serialrun connect /dev/ttyUSB0 --baud 115200
+  serialrun send "Hello"
+  serialrun send "41 54" --hex
+  serialrun send-command "AT" --timeout 3000
+  serialrun read --timeout 2000
+  serialrun modbus-read 0 10 --slave 1
+  serialrun modbus-write 100 25 --slave 1
+  serialrun status
+  serialrun disconnect
+
+## Modbus 读取示例
+
+  serialrun modbus-read 0 10 --slave 1 --scale 0.1 --unit "°C"
+  serialrun modbus-read 0 5 --slave 1
+
+## Modbus 写入示例
+
+  serialrun modbus-write 100 25 --slave 1
+  serialrun modbus-write 200 1000 --slave 1
+
+## 注意事项
+- 交互模式下串口保持打开，所有操作共享连接
+- 单次命令每次独立打开/关闭串口
+- send-command 在同一次连接内发送+读取，推荐用于 AT 指令
+- 单独的 send + read 会因为进程独立导致数据丢失
+- 配置自动保存在 ~/.serialrun/cli_port
+- 支持局域网 MCP: serialrun 也可通过 MCP 服务器远程控制"#;
+
+const CLI_GUIDE_EN: &str = r#"SerialRUN CLI Operation Guide
+
+SerialRUN provides a command-line tool for serial port control without opening the GUI.
+
+## Interactive Mode (Recommended)
+
+Launch interactive terminal with persistent serial connection:
+
+  serialrun interactive /dev/ttyUSB0 --baud 115200
+
+Interactive commands:
+  send <data>          Send text data
+  send-hex <hex>       Send hex data
+  read                 Read data (2s timeout)
+  read-hex             Read data in hex format
+  cmd <command>        Send command and wait for response
+  modbus-r <addr> <qty> [slave]  Read Modbus registers
+  modbus-w <addr> <val> [slave]  Write Modbus register
+  clear                Clear RX buffer
+  status               Show connection status
+  exit                 Exit interactive mode
+
+## Single Commands
+
+  serialrun list-ports
+  serialrun connect /dev/ttyUSB0 --baud 115200
+  serialrun send "Hello"
+  serialrun send "41 54" --hex
+  serialrun send-command "AT" --timeout 3000
+  serialrun read --timeout 2000
+  serialrun modbus-read 0 10 --slave 1
+  serialrun modbus-write 100 25 --slave 1
+  serialrun status
+  serialrun disconnect
+
+## Modbus Examples
+
+  serialrun modbus-read 0 10 --slave 1 --scale 0.1 --unit "°C"
+  serialrun modbus-write 100 25 --slave 1
+
+## Notes
+- Interactive mode keeps serial port open for all operations
+- Single commands open/close port per invocation
+- send-command sends and reads in one connection (recommended for AT)
+- Separate send + read may lose data between processes
+- Connection config saved in ~/.serialrun/cli_port
+- Also works via MCP server for remote control"#;
 
 pub fn render_help_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
 
-    egui::ScrollArea::vertical().max_height(500.0).show(ui, |ui| {
+    egui::ScrollArea::vertical().max_height(700.0).show(ui, |ui| {
         let c = theme::get_colors(state.theme);
 
         ui.add_space(4.0);
@@ -438,6 +542,41 @@ pub fn render_help_panel(ui: &mut egui::Ui, state: &mut AppState) {
 
         ui.add_space(4.0);
         ui.label(egui::RichText::new(T::copy_hint(lang)).weak().small());
+
+        // ── CLI section ──
+        ui.add_space(16.0);
+        ui.separator();
+        ui.add_space(8.0);
+
+        ui.heading(if lang == Language::Chinese { "CLI 命令行工具 / CLI Tool" } else { "CLI Tool" });
+        ui.add_space(4.0);
+        ui.label(if lang == Language::Chinese {
+            "SerialRUN 同时支持命令行操作，无需打开 GUI 即可控制串口。安装后在终端直接使用。"
+        } else {
+            "SerialRUN also supports command-line operation. Control serial ports without opening the GUI."
+        });
+        ui.add_space(4.0);
+
+        let cli_text = if lang == Language::Chinese { CLI_GUIDE_ZH } else { CLI_GUIDE_EN };
+
+        // Reset CLI copied state
+        if state.cli_copied && now - state.cli_copied_time > 2000 {
+            state.cli_copied = false;
+        }
+        let cli_btn_color = if state.cli_copied { c.btn_mcp_copied } else { c.btn_mcp_copy };
+        let cli_copy_label = if state.cli_copied { T::copied(lang) } else {
+            if lang == Language::Chinese { "复制 CLI 操作手册" } else { "Copy CLI Guide" }
+        };
+        let cli_btn = ui.add(egui::Button::new(
+            egui::RichText::new(cli_copy_label).color(egui::Color32::WHITE).strong().size(14.0)
+        ).fill(cli_btn_color).min_size(egui::vec2(300.0, 36.0)));
+        if cli_btn.clicked() {
+            if let Ok(mut clipboard) = arboard::Clipboard::new() {
+                let _ = clipboard.set_text(cli_text.to_string());
+                state.cli_copied = true;
+                state.cli_copied_time = now;
+            }
+        }
 
         // ── Buy me a coffee ──
         ui.add_space(16.0);
