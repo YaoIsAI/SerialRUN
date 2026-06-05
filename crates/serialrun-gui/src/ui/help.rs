@@ -181,7 +181,8 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 - AI 助手可使用 tools/list 获取所有可用工具及其参数说明
 - 使用 get_config_keys 可查看所有配置键及其有效值
 - set_dtr/set_rts 立即生效，无需重连
-- clear_buffers 用于清除缓冲区残留数据"#;
+- clear_buffers 用于清除缓冲区残留数据
+- 快捷指令：输入框右侧点击 + 可保存常用指令，点击 ▶ 展开快捷指令栏，右键可删除"#;
 
 const MCP_PROMPT_EN: &str = r#"SerialRUN MCP Server Guide
 
@@ -362,7 +363,8 @@ List all available configuration keys with their types, valid values, and whethe
 - AI assistants can use tools/list to discover all available tools and their parameters
 - Use get_config_keys to list all config keys with valid values
 - set_dtr/set_rts take effect immediately, no reconnect needed
-- clear_buffers flushes stale data from TX and RX buffers"#;
+- clear_buffers flushes stale data from TX and RX buffers
+- Quick Commands: click + next to input to save, click ▶ to expand, right-click to delete"#;
 
 pub fn render_help_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
