@@ -41,7 +41,7 @@
 
 | Platform | Link |
 |----------|------|
-| Windows (x64) | [SerialRUN-v0.2.0-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.2.0/serialrun-0.2.0-windows-x64.zip) |
+| Windows (x64) | [SerialRUN-v0.3.0-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.3.0/serialrun-0.3.0-windows-x64.zip) |
 | macOS (Apple Silicon / Intel) | [SerialRUN-v0.4.0-macos-universal.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.0/serialrun-0.4.0-macos-universal.zip) |
 | Linux (x86_64 / aarch64) | Build from source |
 
