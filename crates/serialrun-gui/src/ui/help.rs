@@ -12,7 +12,7 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 - 端口：9527
 - 协议：JSON-RPC over TCP
 
-## 可用工具（12 个）
+## 可用工具（19 个）
 
 ### 1. list_ports
 列出所有可用的串口设备。
@@ -86,6 +86,48 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 {"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"get_access_log","arguments":{"limit":50}}}
 ```
 
+### 13. get_config
+获取所有 UI 设置或指定设置的值。不传 key 返回全部设置。
+```json
+{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"get_config","arguments":{"key":"hex_mode"}}}
+```
+
+### 14. set_config
+更新 UI 设置。修改串口参数（baud_rate 等）后需断开重连才生效。
+```json
+{"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"set_config","arguments":{"key":"hex_mode","value":true}}}
+```
+
+### 15. get_device_info
+获取设备标识信息：连接状态、活跃客户端、服务器版本、协议信息。
+```json
+{"jsonrpc":"2.0","id":15,"method":"tools/call","params":{"name":"get_device_info","arguments":{}}}
+```
+
+### 16. clear_buffers
+清空 TX 和 RX 串口缓冲区。用于清除残留数据。
+```json
+{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"clear_buffers","arguments":{}}}
+```
+
+### 17. set_dtr
+设置 DTR（数据终端就绪）硬件信号，立即生效。常用于复位 Arduino/ESP32。
+```json
+{"jsonrpc":"2.0","id":17,"method":"tools/call","params":{"name":"set_dtr","arguments":{"value":true}}}
+```
+
+### 18. set_rts
+设置 RTS（请求发送）硬件信号，立即生效。
+```json
+{"jsonrpc":"2.0","id":18,"method":"tools/call","params":{"name":"set_rts","arguments":{"value":false}}}
+```
+
+### 19. get_config_keys
+列出所有可用的配置键及其类型、有效值、是否需要重连。
+```json
+{"jsonrpc":"2.0","id":19,"method":"tools/call","params":{"name":"get_config_keys","arguments":{}}}
+```
+
 ## 使用示例
 
 1. 列出端口：`list_ports`
@@ -100,18 +142,25 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 
 ## 可配置项（get_config / set_config）
 
+**需要重连才生效的串口参数：**
+
 | 键 | 类型 | 说明 |
 |---|------|------|
-| `baud_rate` | integer | 波特率 |
+| `baud_rate` | integer | 波特率 (9600-921600) |
 | `data_bits` | integer | 数据位 (5-8) |
 | `stop_bits` | integer | 停止位 (1-2) |
 | `parity` | string | 校验 (None/Odd/Even) |
 | `flow_control` | string | 流控 (None/Software/Hardware) |
+
+**立即生效的设置：**
+
+| 键 | 类型 | 说明 |
+|---|------|------|
 | `hex_mode` | bool | HEX 输入模式 |
 | `show_timestamp` | bool | 显示时间戳 |
 | `auto_scroll` | bool | 自动滚动 |
 | `auto_send_enabled` | bool | 自动发送开关 |
-| `auto_send_interval_ms` | integer | 自动发送间隔 |
+| `auto_send_interval_ms` | integer | 自动发送间隔 (ms) |
 | `keep_input` | bool | 保留输入 |
 | `line_ending` | string | 行尾符 (None/CR/LF/CRLF) |
 | `dtr` | bool | DTR 信号 |
@@ -119,8 +168,8 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 | `auto_reply_enabled` | bool | 自动回复开关 |
 | `auto_reply_pattern` | string | 自动回复匹配模式 |
 | `auto_reply_response` | string | 自动回复内容 |
-| `rx_auto_aggregate` | bool | 自动计算超时 |
-| `rx_aggregate_ms` | integer | 手动超时值 |
+| `rx_auto_aggregate` | bool | 自动聚合接收数据 |
+| `rx_aggregate_ms` | integer | 聚合等待时间 (ms) |
 
 ## 注意事项
 - RX 数据由后台连续监听自动捕获，read 从缓冲区取数据，不会阻塞串口
@@ -129,7 +178,10 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 - 十六进制数据用空格分隔，如 "48 65 6C 6C 0F"
 - Modbus/PLC 写入值范围 0-65535，超出会返回错误
 - Modbus 读取数量限制 1-125
-- AI 助手可使用 tools/list 获取所有可用工具及其参数说明"#;
+- AI 助手可使用 tools/list 获取所有可用工具及其参数说明
+- 使用 get_config_keys 可查看所有配置键及其有效值
+- set_dtr/set_rts 立即生效，无需重连
+- clear_buffers 用于清除缓冲区残留数据"#;
 
 const MCP_PROMPT_EN: &str = r#"SerialRUN MCP Server Guide
 
@@ -141,7 +193,7 @@ RX data is automatically captured by background continuous monitoring and stored
 - Port: 9527
 - Protocol: JSON-RPC over TCP
 
-## Available Tools (12)
+## Available Tools (19)
 
 ### 1. list_ports
 List all available serial ports.
@@ -215,6 +267,48 @@ View MCP access log (client IPs, tool calls, timestamps).
 {"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"get_access_log","arguments":{"limit":50}}}
 ```
 
+### 13. get_config
+Get all UI settings or a specific setting value. Omit key to return all settings.
+```json
+{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"get_config","arguments":{"key":"hex_mode"}}}
+```
+
+### 14. set_config
+Update a UI setting. Changing serial params requires disconnect+connect to take effect.
+```json
+{"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"set_config","arguments":{"key":"hex_mode","value":true}}}
+```
+
+### 15. get_device_info
+Get device identification: connection status, active clients, server version, protocol info.
+```json
+{"jsonrpc":"2.0","id":15,"method":"tools/call","params":{"name":"get_device_info","arguments":{}}}
+```
+
+### 16. clear_buffers
+Flush both TX and RX serial buffers. Useful before starting a new measurement sequence.
+```json
+{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"clear_buffers","arguments":{}}}
+```
+
+### 17. set_dtr
+Set DTR (Data Terminal Ready) hardware signal. Takes effect immediately. Common use: toggle DTR to reset Arduino/ESP32.
+```json
+{"jsonrpc":"2.0","id":17,"method":"tools/call","params":{"name":"set_dtr","arguments":{"value":true}}}
+```
+
+### 18. set_rts
+Set RTS (Request To Send) hardware signal. Takes effect immediately.
+```json
+{"jsonrpc":"2.0","id":18,"method":"tools/call","params":{"name":"set_rts","arguments":{"value":false}}}
+```
+
+### 19. get_config_keys
+List all available configuration keys with their types, valid values, and whether they require reconnect.
+```json
+{"jsonrpc":"2.0","id":19,"method":"tools/call","params":{"name":"get_config_keys","arguments":{}}}
+```
+
 ## Usage Examples
 
 1. List ports: `list_ports`
@@ -229,18 +323,25 @@ View MCP access log (client IPs, tool calls, timestamps).
 
 ## Configurable Settings (get_config / set_config)
 
+**Serial params (require reconnect to take effect):**
+
 | Key | Type | Description |
 |-----|------|-------------|
-| `baud_rate` | integer | Baud rate |
+| `baud_rate` | integer | Baud rate (9600-921600) |
 | `data_bits` | integer | Data bits (5-8) |
 | `stop_bits` | integer | Stop bits (1-2) |
 | `parity` | string | Parity (None/Odd/Even) |
 | `flow_control` | string | Flow control (None/Software/Hardware) |
+
+**Immediate effect settings:**
+
+| Key | Type | Description |
+|-----|------|-------------|
 | `hex_mode` | bool | HEX input mode |
 | `show_timestamp` | bool | Show timestamps |
 | `auto_scroll` | bool | Auto scroll |
 | `auto_send_enabled` | bool | Auto send on/off |
-| `auto_send_interval_ms` | integer | Auto send interval |
+| `auto_send_interval_ms` | integer | Auto send interval (ms) |
 | `keep_input` | bool | Keep input after send |
 | `line_ending` | string | Line ending (None/CR/LF/CRLF) |
 | `dtr` | bool | DTR signal |
@@ -248,8 +349,8 @@ View MCP access log (client IPs, tool calls, timestamps).
 | `auto_reply_enabled` | bool | Auto reply on/off |
 | `auto_reply_pattern` | string | Auto reply match pattern |
 | `auto_reply_response` | string | Auto reply response |
-| `rx_auto_aggregate` | bool | Auto-calculate timeout |
-| `rx_aggregate_ms` | integer | Manual timeout value |
+| `rx_auto_aggregate` | bool | Auto-aggregate received data |
+| `rx_aggregate_ms` | integer | Aggregate wait time (ms) |
 
 ## Notes
 - RX data is auto-captured by background monitor; read retrieves from buffer without blocking
@@ -258,7 +359,10 @@ View MCP access log (client IPs, tool calls, timestamps).
 - Hex data uses space separator, e.g., "48 65 6C 6C 0F"
 - Modbus/PLC write value range 0-65535, out of range returns error
 - Modbus read quantity limited to 1-125
-- AI assistants can use tools/list to discover all available tools and their parameters"#;
+- AI assistants can use tools/list to discover all available tools and their parameters
+- Use get_config_keys to list all config keys with valid values
+- set_dtr/set_rts take effect immediately, no reconnect needed
+- clear_buffers flushes stale data from TX and RX buffers"#;
 
 pub fn render_help_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
@@ -292,9 +396,9 @@ pub fn render_help_panel(ui: &mut egui::Ui, state: &mut AppState) {
         ui.heading("MCP 服务器 / MCP Server");
         ui.add_space(4.0);
         ui.label(if lang == Language::Chinese {
-            "SerialRUN 内置 MCP 服务器（12 个工具），支持 AI 助手通过 TCP 控制串口设备。RX 数据由后台连续监听自动捕获，send_command 发送后响应自动在缓冲区中。"
+            "SerialRUN 内置 MCP 服务器（19 个工具），支持 AI 助手通过 TCP 控制串口设备。RX 数据由后台连续监听自动捕获，send_command 发送后响应自动在缓冲区中。"
         } else {
-            "SerialRUN includes a built-in MCP server (12 tools) for AI assistants to control serial devices via TCP. RX data is auto-captured by background monitor; send_command responses are available in the buffer immediately."
+            "SerialRUN includes a built-in MCP server (19 tools) for AI assistants to control serial devices via TCP. RX data is auto-captured by background monitor; send_command responses are available in the buffer immediately."
         });
         ui.add_space(4.0);
 
