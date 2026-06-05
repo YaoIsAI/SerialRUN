@@ -115,25 +115,33 @@
                     </div>
                 </div>
                 <div class="version-changes">
-                    <h3>Highlights</h3>
+                    <h3 data-i18n="dl_v4_highlights">Highlights</h3>
                     <ul>
-                        <li>CLI Interactive Mode — minicom-style, serial port stays open</li>
-                        <li>CLI Single Commands — send, read, send-command, modbus operations</li>
-                        <li>MCP 19 Tools — all tested and verified</li>
-                        <li>Quick Commands — save and one-click send from terminal</li>
-                        <li>Theme Toggle Fix — persistence and first-frame rendering</li>
+                        <li data-i18n="dl_v4_f1">CLI Interactive Mode — minicom-style serial terminal from command line</li>
+                        <li data-i18n="dl_v4_f2">CLI Single Commands — send, read, connect, modbus-read etc.</li>
+                        <li data-i18n="dl_v4_f3">Theme Toggle Fix — reads config on startup, applies before first frame</li>
+                        <li data-i18n="dl_v4_f4">MCP Server v0.4.0 — improved stability and tool descriptions</li>
                     </ul>
                 </div>
                 <div class="dl-buttons">
-                    <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.0/serialrun-0.4.0-macos-universal.zip" class="dl-btn dl-btn-primary">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.04-3.19z"/></svg>
-                        <span>macOS Universal (.zip)</span>
+                    <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.0/serialrun-0.4.0-windows-x64.zip" class="dl-btn dl-btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
+                        <span data-i18n="dl_win_btn">Windows x64 (.zip)</span>
                     </a>
                     <a href="https://github.com/YaoIsAI/SerialRUN/releases/tag/v0.4.0" class="dl-btn dl-btn-secondary" target="_blank">
-                        <span>View Release Notes</span>
+                        <span data-i18n="dl_view_release">View Release Notes</span>
                     </a>
                 </div>
-                <div class="dl-platform">macOS 12+ (Apple Silicon + Intel) — Universal binary. Includes help docs.</div>
+                <div class="dl-platform" data-i18n="dl_v4_platform_win">Windows 10/11 (x64) — Portable, no installation required. Includes help files.</div>
+                <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+                    <div class="dl-buttons" style="margin-bottom:8px;">
+                        <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.0/serialrun-0.4.0-macos-universal.zip" class="dl-btn dl-btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
+                            <span data-i18n="dl_mac_btn">macOS (.zip)</span>
+                        </a>
+                    </div>
+                    <div class="dl-platform" data-i18n="dl_v4_platform_mac">macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.</div>
+                </div>
             </div>
 
             <!-- v0.3.0 -->
@@ -280,7 +288,14 @@
             dl_back: "Back to Home",
             dl_title: "Download SerialRUN",
             dl_subtitle: "All versions with release notes",
-            dl_v3_highlights: "Highlights",
+            dl_v4_highlights: "Highlights",
+            dl_v4_f1: "CLI Interactive Mode — minicom-style serial terminal from command line",
+            dl_v4_f2: "CLI Single Commands — send, read, connect, modbus-read etc.",
+            dl_v4_f3: "Theme Toggle Fix — reads config on startup, applies before first frame",
+            dl_v4_f4: "MCP Server v0.4.0 — improved stability and tool descriptions",
+            dl_v4_platform_win: "Windows 10/11 (x64) — Portable, no installation required. Includes help files.",
+            dl_v4_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.",
+            dl_v3_highlights: "v0.3.0 Highlights",
             dl_v3_f1: "Quick Commands — save and send with one click from terminal toolbar",
             dl_v3_f2: "MCP 19 Tools — expanded from 12 to 19, including set_dtr/rts, clear_buffers, get_config_keys",
             dl_v3_f3: "Theme Persistence — dark/light theme saved across restarts",
@@ -317,7 +332,14 @@
             dl_back: "返回首页",
             dl_title: "下载 SerialRUN",
             dl_subtitle: "所有版本及更新日志",
-            dl_v3_highlights: "核心更新",
+            dl_v4_highlights: "核心更新",
+            dl_v4_f1: "CLI 交互模式 — 命令行 minicom 风格串口终端",
+            dl_v4_f2: "CLI 单命令 — send、read、connect、modbus-read 等",
+            dl_v4_f3: "主题切换修复 — 启动时读取配置，首帧前应用",
+            dl_v4_f4: "MCP 服务器 v0.4.0 — 稳定性和工具描述改进",
+            dl_v4_platform_win: "Windows 10/11 (x64) — 免安装便携版，包含帮助文件。",
+            dl_v4_platform_mac: "macOS 12+ (Apple Silicon / Intel) — 免安装便携版。",
+            dl_v3_highlights: "v0.3.0 核心更新",
             dl_v3_f1: "快捷指令 — 终端工具栏一键保存、一键发送常用命令",
             dl_v3_f2: "MCP 19 个工具 — 从 12 个扩展到 19 个，新增 set_dtr/rts、clear_buffers、get_config_keys",
             dl_v3_f3: "主题持久化 — 深色/浅色主题设置跨重启保存",

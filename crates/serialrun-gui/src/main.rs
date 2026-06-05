@@ -2,7 +2,6 @@
 
 mod app;
 mod async_utils;
-mod cli;
 mod icon;
 mod mcp_server;
 mod plc_presets;
@@ -13,29 +12,9 @@ pub mod theme;
 mod ui;
 pub mod util;
 
-use clap::Parser;
 use eframe::egui;
 
 fn main() -> eframe::Result<()> {
-    // Check if CLI mode: serialrun <command> or serialrun interactive
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    if !args.is_empty() {
-        let first = args[0].as_str();
-        let is_cli = matches!(first,
-            "list-ports" | "connect" | "disconnect" | "send" | "read" |
-            "send-command" | "modbus-read" | "modbus-write" | "status" |
-            "interactive" | "help" | "--help" | "-h"
-        );
-        if is_cli {
-            let cli = cli::Cli::try_parse().unwrap_or_else(|e| {
-                eprintln!("{}", e);
-                std::process::exit(1);
-            });
-            cli::run_cli(cli, None);
-            return Ok(());
-        }
-    }
-    // No args or unknown args → launch GUI
 
     tracing_subscriber::fmt()
         .with_env_filter(
