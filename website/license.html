@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SerialRUN License - BSL 1.1 Source Available</title>
+    <meta name="description" content="SerialRUN is licensed under BSL 1.1 (Business Source License). Free for personal and internal use. Converts to MIT in 2030.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://www.serialrun.com/license.html">
+    <meta property="og:title" content="SerialRUN License - BSL 1.1">
+    <meta property="og:description" content="Source available under BSL 1.1. Free for personal use, converts to MIT in 2030.">
+    <meta property="og:url" content="https://www.serialrun.com/license.html">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔌</text></svg>">
+    <style>
+        .license-page { padding: 120px 24px 80px; max-width: 800px; margin: 0 auto; }
+        .license-page h1 { font-size: 36px; font-weight: 800; margin-bottom: 8px; }
+        .license-page .subtitle { color: var(--text-muted); font-size: 16px; margin-bottom: 40px; }
+        .license-section { margin-bottom: 40px; }
+        .license-section h2 { font-size: 22px; font-weight: 700; margin-bottom: 12px; color: var(--accent); }
+        .license-section p { color: var(--text-muted); font-size: 15px; line-height: 1.8; margin-bottom: 12px; }
+        .license-section ul { list-style: none; padding: 0; margin-bottom: 12px; }
+        .license-section li { padding: 8px 0 8px 24px; position: relative; font-size: 15px; color: var(--text-muted); line-height: 1.6; }
+        .license-section li::before { content: ''; position: absolute; left: 0; top: 16px; width: 8px; height: 8px; border-radius: 50%; }
+        .can li::before { background: var(--accent); }
+        .cannot li::before { background: #ef4444; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-left: 6px; }
+        .tag-open { background: rgba(34,197,94,0.15); color: var(--accent); }
+        .tag-source { background: rgba(234,179,8,0.15); color: #facc15; }
+        .compare-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        .compare-table th, .compare-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .compare-table th { color: var(--text); font-weight: 600; }
+        .compare-table td { color: var(--text-muted); }
+        .compare-table .yes { color: var(--accent); }
+        .compare-table .no { color: #ef4444; }
+        .license-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 20px 0; }
+        .license-card h3 { font-size: 16px; margin-bottom: 8px; }
+        .license-card p { font-size: 14px; color: var(--text-muted); margin: 0; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: 14px; margin-bottom: 32px; transition: color 0.2s; }
+        .back-link:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container nav-inner">
+            <a href="index.html" class="nav-logo" style="text-decoration:none;color:inherit">Serial<span class="accent">RUN</span></a>
+            <div class="nav-links">
+                <a href="index.html#features" data-i18n="nav_features">Features</a>
+                <a href="index.html#download" data-i18n="nav_download">Download</a>
+                <a href="https://github.com/YaoIsAI/SerialRUN" target="_blank">GitHub</a>
+                <button class="lang-toggle" onclick="toggleLang()">
+                    <span class="lang-en">中</span>
+                    <span class="lang-zh" style="display:none">EN</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="license-page container">
+        <a href="index.html" class="back-link">&larr; <span data-i18n="lic_back">Back to Home</span></a>
+
+        <h1 data-i18n="lic_title">License</h1>
+        <p class="subtitle" data-i18n="lic_subtitle">SerialRUN is source available under the Business Source License 1.1.</p>
+
+        <!-- What is BSL -->
+        <div class="license-section">
+            <h2 data-i18n="lic_what_title">What is BSL 1.1?</h2>
+            <p data-i18n="lic_what_desc">The Business Source License 1.1 (BSL 1.1) is a "source available" license created by MariaDB. It allows you to view, use, and modify the source code, but restricts commercial use for a specified period. After the change date, the license automatically converts to a permissive open source license (MIT).</p>
+        </div>
+
+        <!-- What you can do -->
+        <div class="license-section">
+            <h2 data-i18n="lic_can_title">What You Can Do</h2>
+            <ul class="can">
+                <li data-i18n="lic_can_1">View and study the full source code</li>
+                <li data-i18n="lic_can_2">Use SerialRUN for personal and internal business purposes</li>
+                <li data-i18n="lic_can_3">Modify the source code for your own use</li>
+                <li data-i18n="lic_can_4">Contribute improvements back to the project</li>
+                <li data-i18n="lic_can_5">Distribute unmodified copies to others</li>
+            </ul>
+        </div>
+
+        <!-- What you cannot do -->
+        <div class="license-section">
+            <h2 data-i18n="lic_cannot_title">What You Cannot Do</h2>
+            <ul class="cannot">
+                <li data-i18n="lic_cannot_1">Offer SerialRUN as a commercial hosted service (SaaS)</li>
+                <li data-i18n="lic_cannot_2">Sell modified versions of SerialRUN</li>
+                <li data-i18n="lic_cannot_3">Use the SerialRUN name or branding in competing products</li>
+            </ul>
+        </div>
+
+        <!-- Open Source Components -->
+        <div class="license-section">
+            <h2 data-i18n="lic_open_title">Open Source Components</h2>
+            <p data-i18n="lic_open_desc">The following crates are available under BSL 1.1 and will convert to MIT after the change date:</p>
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="lic_table_component">Component</th>
+                        <th data-i18n="lic_table_license">License</th>
+                        <th data-i18n="lic_table_status">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>serialrun-core</code></td>
+                        <td>BSL 1.1</td>
+                        <td><span class="tag tag-source">Source Available</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>serialrun-cli</code></td>
+                        <td>BSL 1.1</td>
+                        <td><span class="tag tag-source">Source Available</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>serialrun-mcp</code></td>
+                        <td>BSL 1.1</td>
+                        <td><span class="tag tag-source">Source Available</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>serialrun-plugin-api</code></td>
+                        <td>BSL 1.1</td>
+                        <td><span class="tag tag-source">Source Available</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>serialrun-gui</code></td>
+                        <td>BSL 1.1</td>
+                        <td><span class="tag tag-source">Source Available</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Comparison -->
+        <div class="license-section">
+            <h2 data-i18n="lic_compare_title">BSL 1.1 vs MIT vs Proprietary</h2>
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="lic_compare_action">Action</th>
+                        <th>BSL 1.1</th>
+                        <th>MIT</th>
+                        <th data-i18n="lic_compare_proprietary">Proprietary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-i18n="lic_compare_view">View source code</td>
+                        <td class="yes">&#10003;</td>
+                        <td class="yes">&#10003;</td>
+                        <td class="no">&#10007;</td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="lic_compare_use">Personal / internal use</td>
+                        <td class="yes">&#10003;</td>
+                        <td class="yes">&#10003;</td>
+                        <td class="yes">&#10003;</td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="lic_compare_modify">Modify for own use</td>
+                        <td class="yes">&#10003;</td>
+                        <td class="yes">&#10003;</td>
+                        <td class="no">&#10007;</td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="lic_compare_sell">Sell modified versions</td>
+                        <td class="no">&#10007;</td>
+                        <td class="yes">&#10003;</td>
+                        <td class="no">&#10007;</td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="lic_compare_saas">Offer as SaaS</td>
+                        <td class="no">&#10007;</td>
+                        <td class="yes">&#10003;</td>
+                        <td class="no">&#10007;</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Change Date -->
+        <div class="license-section">
+            <h2 data-i18n="lic_convert_title">Conversion to MIT</h2>
+            <p data-i18n="lic_convert_desc">On the change date, all SerialRUN source code automatically converts to the MIT license. After that, you can use, modify, and distribute the code for any purpose, including commercial use.</p>
+            <div class="license-card">
+                <h3 data-i18n="lic_convert_card_title">Change Date</h3>
+                <p data-i18n="lic_convert_card_desc">4 years from initial publication. SerialRUN v0.1.0 was published on May 31, 2026. The code will convert to MIT on or after May 31, 2030.</p>
+            </div>
+        </div>
+
+        <!-- Full License -->
+        <div class="license-section">
+            <h2 data-i18n="lic_full_title">Full License Text</h2>
+            <p data-i18n="lic_full_desc">For the complete legal text, see:</p>
+            <p><a href="https://mariadb.com/bsl11/" target="_blank" style="color:var(--accent)">https://mariadb.com/bsl11/</a></p>
+            <p data-i18n="lic_full_desc2">Or read the LICENSE file in the repository root.</p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 SerialRUN. Source Available under <a href="https://mariadb.com/bsl11/" target="_blank" style="color:var(--accent)">BSL 1.1</a>.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="i18n.js"></script>
+    <script>
+        // Add license page translations
+        const licTranslations = {
+            en: {
+                lic_back: "Back to Home",
+                lic_title: "License",
+                lic_subtitle: "SerialRUN is source available under the Business Source License 1.1.",
+                lic_what_title: "What is BSL 1.1?",
+                lic_what_desc: "The Business Source License 1.1 (BSL 1.1) is a \"source available\" license created by MariaDB. It allows you to view, use, and modify the source code, but restricts commercial use for a specified period. After the change date, the license automatically converts to a permissive open source license (MIT).",
+                lic_can_title: "What You Can Do",
+                lic_can_1: "View and study the full source code",
+                lic_can_2: "Use SerialRUN for personal and internal business purposes",
+                lic_can_3: "Modify the source code for your own use",
+                lic_can_4: "Contribute improvements back to the project",
+                lic_can_5: "Distribute unmodified copies to others",
+                lic_cannot_title: "What You Cannot Do",
+                lic_cannot_1: "Offer SerialRUN as a commercial hosted service (SaaS)",
+                lic_cannot_2: "Sell modified versions of SerialRUN",
+                lic_cannot_3: "Use the SerialRUN name or branding in competing products",
+                lic_open_title: "Open Source Components",
+                lic_open_desc: "The following crates are available under BSL 1.1 and will convert to MIT after the change date:",
+                lic_table_component: "Component",
+                lic_table_license: "License",
+                lic_table_status: "Status",
+                lic_compare_title: "BSL 1.1 vs MIT vs Proprietary",
+                lic_compare_action: "Action",
+                lic_compare_proprietary: "Proprietary",
+                lic_compare_view: "View source code",
+                lic_compare_use: "Personal / internal use",
+                lic_compare_modify: "Modify for own use",
+                lic_compare_sell: "Sell modified versions",
+                lic_compare_saas: "Offer as SaaS",
+                lic_convert_title: "Conversion to MIT",
+                lic_convert_desc: "On the change date, all SerialRUN source code automatically converts to the MIT license. After that, you can use, modify, and distribute the code for any purpose, including commercial use.",
+                lic_convert_card_title: "Change Date",
+                lic_convert_card_desc: "4 years from initial publication. SerialRUN v0.1.0 was published on May 31, 2026. The code will convert to MIT on or after May 31, 2030.",
+                lic_full_title: "Full License Text",
+                lic_full_desc: "For the complete legal text, see:",
+                lic_full_desc2: "Or read the LICENSE file in the repository root.",
+            },
+            zh: {
+                lic_back: "返回首页",
+                lic_title: "许可证",
+                lic_subtitle: "SerialRUN 基于商业源码许可证 1.1 (BSL 1.1) 发布。",
+                lic_what_title: "什么是 BSL 1.1？",
+                lic_what_desc: "商业源码许可证 1.1 (BSL 1.1) 是由 MariaDB 创建的「源码可用」许可证。它允许你查看、使用和修改源代码，但在指定期间内限制商业使用。变更日期后，许可证自动转换为宽松的开源许可证 (MIT)。",
+                lic_can_title: "你可以做的",
+                lic_can_1: "查看和学习完整的源代码",
+                lic_can_2: "将 SerialRUN 用于个人和内部业务用途",
+                lic_can_3: "修改源代码供自己使用",
+                lic_can_4: "向项目贡献改进",
+                lic_can_5: "向他人分发未修改的副本",
+                lic_cannot_title: "你不可以做的",
+                lic_cannot_1: "将 SerialRUN 作为商业托管服务 (SaaS) 提供",
+                lic_cannot_2: "销售 SerialRUN 的修改版本",
+                lic_cannot_3: "在竞争产品中使用 SerialRUN 的名称或品牌",
+                lic_open_title: "开源组件",
+                lic_open_desc: "以下 crate 基于 BSL 1.1 发布，变更日期后将转换为 MIT：",
+                lic_table_component: "组件",
+                lic_table_license: "许可证",
+                lic_table_status: "状态",
+                lic_compare_title: "BSL 1.1 vs MIT vs 闭源",
+                lic_compare_action: "行为",
+                lic_compare_proprietary: "闭源",
+                lic_compare_view: "查看源代码",
+                lic_compare_use: "个人 / 内部使用",
+                lic_compare_modify: "修改供自己使用",
+                lic_compare_sell: "销售修改版本",
+                lic_compare_saas: "作为 SaaS 提供",
+                lic_convert_title: "转换为 MIT",
+                lic_convert_desc: "在变更日期，所有 SerialRUN 源代码自动转换为 MIT 许可证。之后你可以将代码用于任何目的，包括商业使用。",
+                lic_convert_card_title: "变更日期",
+                lic_convert_card_desc: "自首次发布起 4 年。SerialRUN v0.1.0 于 2026 年 5 月 31 日发布，代码将于 2030 年 5 月 31 日或之后转换为 MIT。",
+                lic_full_title: "完整许可证文本",
+                lic_full_desc: "完整法律文本请参见：",
+                lic_full_desc2: "或阅读仓库根目录下的 LICENSE 文件。",
+            }
+        };
+
+        // Patch the applyLang function to include license translations
+        const origApplyLang = window.applyLang;
+        window.applyLang = function(lang) {
+            origApplyLang(lang);
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (licTranslations[lang] && licTranslations[lang][key]) {
+                    el.innerHTML = licTranslations[lang][key];
+                }
+            });
+        };
+    </script>
+    <script src="https://cdn.counter.dev/script.js" data-id="3318d339-fc57-44cd-ae02-d43ea607fb6a" data-utcoffset="8"></script>
+</body>
+</html>

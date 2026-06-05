@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plugins - SerialRUN</title>
+    <meta name="description" content="Extend SerialRUN with plugins. Learn how to develop, package, and share plugins.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔌</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .plugin-page { padding-top: 100px; padding-bottom: 80px; min-height: 100vh; }
+        .plugin-header { text-align: center; margin-bottom: 48px; }
+        .plugin-header h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 12px; }
+        .plugin-header p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+        .plugin-section { margin-bottom: 48px; }
+        .plugin-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+        .plugin-section h3 { font-size: 1.1rem; font-weight: 600; margin: 20px 0 10px; }
+        .plugin-section p, .plugin-section li { color: var(--text-muted); line-height: 1.8; }
+        .plugin-section ul { padding-left: 20px; }
+        .plugin-section li { margin-bottom: 6px; }
+        .code-block {
+            background: #1a1a25;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #e4e4e7;
+            line-height: 1.6;
+        }
+        .code-block .kw { color: #c084fc; }
+        .code-block .str { color: #86efac; }
+        .code-block .comment { color: #71717a; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .feature-card h4 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+        .feature-card p { font-size: 0.9rem; color: var(--text-muted); margin: 0; }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .status-local { background: rgba(34,197,94,0.15); color: #22c55e; }
+        .status-soon { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); text-decoration: none; font-weight: 500; margin-bottom: 32px; }
+        .back-link:hover { text-decoration: underline; }
+        .step-list { counter-reset: step; list-style: none; padding: 0; }
+        .step-list li { counter-increment: step; padding: 12px 0 12px 48px; position: relative; border-left: 2px solid var(--border); margin-left: 16px; }
+        .step-list li::before {
+            content: counter(step);
+            position: absolute;
+            left: -14px;
+            top: 12px;
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .step-list li:last-child { border-left-color: transparent; }
+        @media (max-width: 640px) {
+            .plugin-header h1 { font-size: 1.8rem; }
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container nav-inner">
+            <a href="index.html" class="nav-logo" style="text-decoration:none">Serial<span class="accent">RUN</span></a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="downloads.html">Download</a>
+                <a href="guide.html" target="_blank">Guide</a>
+                <a href="plugins.html" style="color:var(--accent)">Plugins</a>
+                <a href="https://github.com/YaoIsAI/SerialRUN" target="_blank">GitHub</a>
+                <button class="lang-toggle" onclick="toggleLang()">
+                    <span class="lang-en">中</span>
+                    <span class="lang-zh" style="display:none">EN</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="plugin-page">
+        <div class="container">
+            <a href="index.html" class="back-link">← <span data-i18n="pl_back">Back to Home</span></a>
+
+            <div class="plugin-header">
+                <h1 data-i18n="pl_title">SerialRUN Plugins</h1>
+                <p data-i18n="pl_subtitle">Extend SerialRUN with custom functionality. Develop plugins in Rust with full access to serial ports, UI, and more.</p>
+            </div>
+
+            <!-- Status -->
+            <div class="plugin-section">
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <h2 style="margin:0" data-i18n="pl_status_title">Current Status</h2>
+                    <span class="status-badge status-local" data-i18n="pl_status_local">LOCAL IMPORT</span>
+                    <span class="status-badge status-soon" data-i18n="pl_status_community">COMMUNITY SOON</span>
+                </div>
+                <p style="margin-top:12px" data-i18n="pl_status_desc">Plugin local import is fully functional. Import .zip packages directly into SerialRUN. Community marketplace coming in a future release — developers are welcome to build and share plugins now!</p>
+            </div>
+
+            <!-- Capabilities -->
+            <div class="plugin-section">
+                <h2 data-i18n="pl_cap_title">Plugin Capabilities</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>🔌 SerialPort</h4>
+                        <p data-i18n="pl_cap_serial">Read and write to serial ports. Full access to TX/RX with HEX and text modes.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🖥️ UiPanel</h4>
+                        <p data-i18n="pl_cap_ui">Dedicated UI panel with custom controls, inputs, and real-time display.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>📁 FileDialog</h4>
+                        <p data-i18n="pl_cap_file">Open file picker for loading firmware, configurations, or export data.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>📊 Progress</h4>
+                        <p data-i18n="pl_cap_progress">Progress bar with status text for long operations like firmware flashing.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>📝 Logging</h4>
+                        <p data-i18n="pl_cap_log">Write to SerialRUN's log system. Users can see plugin activity in the log viewer.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>⚡ Commands</h4>
+                        <p data-i18n="pl_cap_cmd">Generic command panel for text-based interactions. No custom UI needed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Start -->
+            <div class="plugin-section">
+                <h2 data-i18n="pl_qs_title">Quick Start</h2>
+                <ol class="step-list">
+                    <li>
+                        <h3 data-i18n="pl_step1_title">Create Plugin Project</h3>
+                        <div class="code-block"><span class="comment"># Create a new Rust library</span>
+cargo new --lib my-plugin
+<span class="kw">cd</span> my-plugin</div>
+                    </li>
+                    <li>
+                        <h3 data-i18n="pl_step2_title">Configure Cargo.toml</h3>
+                        <div class="code-block">[lib]
+crate-type = [<span class="str">"cdylib"</span>]
+
+[dependencies]
+serialrun-plugin-api = <span class="str">"0.2"</span>
+serde = { version = <span class="str">"1"</span>, features = [<span class="str">"derive"</span>] }
+serde_json = <span class="str">"1"</span></div>
+                    </li>
+                    <li>
+                        <h3 data-i18n="pl_step3_title">Implement Plugin FFI</h3>
+                        <div class="code-block"><span class="kw">use</span> std::ffi::{CStr, CString};
+<span class="kw">use</span> std::os::raw::c_char;
+
+<span class="comment">// Required: return plugin metadata</span>
+#[no_mangle]
+<span class="kw">pub extern</span> <span class="str">"C"</span> <span class="kw">fn</span> plugin_get_info() -> *<span class="kw">mut</span> c_char {
+    <span class="kw">let</span> info = serde_json::json!({
+        <span class="str">"name"</span>: <span class="str">"my-plugin"</span>,
+        <span class="str">"version"</span>: <span class="str">"1.0.0"</span>,
+        <span class="str">"description"</span>: <span class="str">"My awesome plugin"</span>,
+        <span class="str">"author"</span>: <span class="str">"Your Name"</span>
+    });
+    CString::new(info.to_string()).unwrap().into_raw()
+}
+
+<span class="comment">// Required: return available commands</span>
+#[no_mangle]
+<span class="kw">pub extern</span> <span class="str">"C"</span> <span class="kw">fn</span> plugin_get_commands() -> *<span class="kw">mut</span> c_char { <span class="comment">/* ... */</span> }
+
+<span class="comment">// Required: execute a command</span>
+#[no_mangle]
+<span class="kw">pub extern</span> <span class="str">"C"</span> <span class="kw">fn</span> plugin_execute(
+    command: *<span class="kw">const</span> c_char,
+    params: *<span class="kw">const</span> c_char,
+    callbacks: *<span class="kw">const</span> PluginCallbacks,
+) -> *<span class="kw">mut</span> c_char { <span class="comment">/* ... */</span> }</div>
+                    </li>
+                    <li>
+                        <h3 data-i18n="pl_step4_title">Build & Package</h3>
+                        <div class="code-block"><span class="comment"># Build for release</span>
+cargo build --release
+
+<span class="comment"># Create plugin.zip with:</span>
+<span class="comment">#   - target/release/my_plugin.dll (or .so / .dylib)</span>
+<span class="comment">#   - plugin.json (manifest)</span></div>
+                    </li>
+                    <li>
+                        <h3 data-i18n="pl_step5_title">Import into SerialRUN</h3>
+                        <p data-i18n="pl_step5_desc">Open SerialRUN → Plugins panel → Import ZIP → Select your plugin.zip. The plugin will be discovered and ready to use.</p>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- plugin.json -->
+            <div class="plugin-section">
+                <h2 data-i18n="pl_manifest_title">Plugin Manifest (plugin.json)</h2>
+                <p data-i18n="pl_manifest_desc">Every plugin needs a <code>plugin.json</code> file in the ZIP package:</p>
+                <div class="code-block">{
+    <span class="str">"name"</span>: <span class="str">"my-plugin"</span>,
+    <span class="str">"version"</span>: <span class="str">"1.0.0"</span>,
+    <span class="str">"description"</span>: <span class="str">"What this plugin does"</span>,
+    <span class="str">"author"</span>: <span class="str">"Your Name"</span>,
+    <span class="str">"min_serialrun_version"</span>: <span class="str">"0.2.0"</span>,
+    <span class="str">"platforms"</span>: [<span class="str">"windows"</span>, <span class="str">"macos"</span>, <span class="str">"linux"</span>],
+    <span class="str">"tags"</span>: [<span class="str">"modbus"</span>, <span class="str">"industrial"</span>],
+    <span class="str">"usage"</span>: <span class="str">"How to use this plugin..."</span>
+}</div>
+            </div>
+
+            <!-- Examples -->
+            <div class="plugin-section">
+                <h2 data-i18n="pl_examples_title">Example Plugins</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>serialrun-example-plugin</h4>
+                        <p data-i18n="pl_ex_example">Minimal plugin example with all FFI functions. Great starting point for new plugins.</p>
+                        <a href="https://github.com/YaoIsAI/SerialRUN/tree/master/plugins/serialrun-example-plugin" target="_blank" style="color:var(--accent);font-size:0.9rem;" data-i18n="pl_view_source">View Source →</a>
+                    </div>
+                    <div class="feature-card">
+                        <h4>serialrun-stc-isp</h4>
+                        <p data-i18n="pl_ex_stc">STC MCU ISP flasher plugin. Full-featured with chip detection, firmware loading, and progress tracking.</p>
+                        <a href="https://github.com/YaoIsAI/SerialRUN/tree/master/plugins/serialrun-stc-isp" target="_blank" style="color:var(--accent);font-size:0.9rem;" data-i18n="pl_view_source">View Source →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Links -->
+            <div class="plugin-section">
+                <h2 data-i18n="pl_docs_title">Documentation</h2>
+                <ul>
+                    <li><a href="https://github.com/YaoIsAI/SerialRUN/blob/master/docs/PLUGIN_DEVELOPMENT.md" target="_blank" style="color:var(--accent)" data-i18n="pl_doc_dev">Full Plugin Development Guide</a> — <span data-i18n="pl_doc_dev_desc">Complete reference for all FFI functions, callbacks, and capabilities</span></li>
+                    <li><a href="https://github.com/YaoIsAI/SerialRUN/blob/master/docs/PLUGIN_SPEC.md" target="_blank" style="color:var(--accent)" data-i18n="pl_doc_spec">Plugin Specification</a> — <span data-i18n="pl_doc_spec_desc">Technical spec for the plugin ABI and manifest format</span></li>
+                    <li><a href="https://github.com/YaoIsAI/SerialRUN/blob/master/docs/PLUGIN_GUIDE.md" target="_blank" style="color:var(--accent)" data-i18n="pl_doc_guide">Plugin User Guide</a> — <span data-i18n="pl_doc_guide_desc">How to install, enable, and manage plugins in SerialRUN</span></li>
+                </ul>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+    const plTranslations = {
+        en: {
+            pl_back: "Back to Home",
+            pl_title: "SerialRUN Plugins",
+            pl_subtitle: "Extend SerialRUN with custom functionality. Develop plugins in Rust with full access to serial ports, UI, and more.",
+            pl_status_title: "Current Status",
+            pl_status_local: "LOCAL IMPORT",
+            pl_status_community: "COMMUNITY SOON",
+            pl_status_desc: "Plugin local import is fully functional. Import .zip packages directly into SerialRUN. Community marketplace coming in a future release — developers are welcome to build and share plugins now!",
+            pl_cap_title: "Plugin Capabilities",
+            pl_cap_serial: "Read and write to serial ports. Full access to TX/RX with HEX and text modes.",
+            pl_cap_ui: "Dedicated UI panel with custom controls, inputs, and real-time display.",
+            pl_cap_file: "Open file picker for loading firmware, configurations, or export data.",
+            pl_cap_progress: "Progress bar with status text for long operations like firmware flashing.",
+            pl_cap_log: "Write to SerialRUN's log system. Users can see plugin activity in the log viewer.",
+            pl_cap_cmd: "Generic command panel for text-based interactions. No custom UI needed.",
+            pl_qs_title: "Quick Start",
+            pl_step1_title: "Create Plugin Project",
+            pl_step2_title: "Configure Cargo.toml",
+            pl_step3_title: "Implement Plugin FFI",
+            pl_step4_title: "Build & Package",
+            pl_step5_title: "Import into SerialRUN",
+            pl_step5_desc: "Open SerialRUN → Plugins panel → Import ZIP → Select your plugin.zip. The plugin will be discovered and ready to use.",
+            pl_manifest_title: "Plugin Manifest (plugin.json)",
+            pl_manifest_desc: "Every plugin needs a <code>plugin.json</code> file in the ZIP package:",
+            pl_examples_title: "Example Plugins",
+            pl_ex_example: "Minimal plugin example with all FFI functions. Great starting point for new plugins.",
+            pl_ex_stc: "STC MCU ISP flasher plugin. Full-featured with chip detection, firmware loading, and progress tracking.",
+            pl_view_source: "View Source →",
+            pl_docs_title: "Documentation",
+            pl_doc_dev: "Full Plugin Development Guide",
+            pl_doc_dev_desc: "Complete reference for all FFI functions, callbacks, and capabilities",
+            pl_doc_spec: "Plugin Specification",
+            pl_doc_spec_desc: "Technical spec for the plugin ABI and manifest format",
+            pl_doc_guide: "Plugin User Guide",
+            pl_doc_guide_desc: "How to install, enable, and manage plugins in SerialRUN"
+        },
+        zh: {
+            pl_back: "返回首页",
+            pl_title: "SerialRUN 插件开发",
+            pl_subtitle: "扩展 SerialRUN 功能。使用 Rust 开发插件，完全访问串口、UI 等能力。",
+            pl_status_title: "当前状态",
+            pl_status_local: "本地导入",
+            pl_status_community: "社区即将上线",
+            pl_status_desc: "插件本地导入功能已完成。直接在 SerialRUN 中导入 .zip 插件包即可使用。社区市场将在后续版本推出——欢迎开发者现在就开始构建和分享插件！",
+            pl_cap_title: "插件能力",
+            pl_cap_serial: "读写串口，完全访问 TX/RX，支持 HEX 和文本模式。",
+            pl_cap_ui: "专用 UI 面板，自定义控件、输入框和实时显示。",
+            pl_cap_file: "文件选择器，用于加载固件、配置或导出数据。",
+            pl_cap_progress: "进度条和状态文字，适用于固件烧录等长时间操作。",
+            pl_cap_log: "写入 SerialRUN 日志系统，用户可在日志查看器中看到插件活动。",
+            pl_cap_cmd: "通用命令面板，基于文本交互，无需自定义 UI。",
+            pl_qs_title: "快速开始",
+            pl_step1_title: "创建插件项目",
+            pl_step2_title: "配置 Cargo.toml",
+            pl_step3_title: "实现插件 FFI",
+            pl_step4_title: "构建与打包",
+            pl_step5_title: "导入 SerialRUN",
+            pl_step5_desc: "打开 SerialRUN → 插件面板 → 导入 ZIP → 选择你的 plugin.zip。插件将被发现并立即可用。",
+            pl_manifest_title: "插件清单 (plugin.json)",
+            pl_manifest_desc: "每个插件都需要在 ZIP 包中包含 <code>plugin.json</code> 文件：",
+            pl_examples_title: "示例插件",
+            pl_ex_example: "最小化插件示例，包含所有 FFI 函数。新插件开发的最佳起点。",
+            pl_ex_stc: "STC MCU ISP 烧录插件。完整功能，包含芯片检测、固件加载和进度追踪。",
+            pl_view_source: "查看源码 →",
+            pl_docs_title: "文档",
+            pl_doc_dev: "完整插件开发指南",
+            pl_doc_dev_desc: "所有 FFI 函数、回调和能力的完整参考",
+            pl_doc_spec: "插件规范",
+            pl_doc_spec_desc: "插件 ABI 和清单格式的技术规范",
+            pl_doc_guide: "插件使用指南",
+            pl_doc_guide_desc: "如何在 SerialRUN 中安装、启用和管理插件"
+        }
+    };
+    function toggleLang() {
+        const html = document.documentElement;
+        const isEn = html.getAttribute('data-lang') === 'en';
+        const newLang = isEn ? 'zh' : 'en';
+        html.setAttribute('data-lang', newLang);
+        const t = plTranslations[newLang];
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (t[key]) el.innerHTML = t[key];
+        });
+        document.querySelector('.lang-en').style.display = isEn ? 'none' : '';
+        document.querySelector('.lang-zh').style.display = isEn ? '' : 'none';
+        document.title = newLang === 'zh' ? '插件开发 - SerialRUN' : 'Plugins - SerialRUN';
+    }
+    </script>
+</body>
+</html>
