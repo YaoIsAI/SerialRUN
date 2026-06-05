@@ -154,9 +154,14 @@ serialrun replay COM1 test.txt
 
 ### Build & Test Flow
 ```bash
-taskkill //F //IM serialrun.exe  # Windows: close running app
-cargo build --release -p serialrun-gui
-./target/release/serialrun.exe   # Launch for testing
+# Windows (platform-separated output)
+taskkill //F //IM serialrun.exe  # Close running app
+cargo build --target x86_64-pc-windows-msvc --release -p serialrun-gui
+./target/x86_64-pc-windows-msvc/release/serialrun.exe   # Launch for testing
+
+# macOS (use Makefile)
+make app       # Build .app bundle
+make install   # Install to /Applications
 ```
 
 ### Git Remotes
@@ -184,7 +189,7 @@ cargo build --release -p serialrun-gui
 1. Clone from GitHub: `git clone https://github.com/YaoIsAI/SerialRUN.git`
 2. Copy GUI crate separately (proprietary, not in git)
 3. Install Rust toolchain: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-4. Build: `cargo build --release -p serialrun-gui`
+4. Build: `make app` (macOS) or `cargo build --target x86_64-pc-windows-msvc --release -p serialrun-gui` (Windows)
 5. Plugin install dir: `~/.serialrun/plugins/`
 
 ### Website Deployment

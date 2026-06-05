@@ -1,6 +1,6 @@
 [package]
 name = "serialrun-mpy-ide"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "MicroPython IDE plugin for SerialRUN - REPL, file management, code editing"
 license = "BSL-1.1"

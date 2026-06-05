@@ -106,8 +106,46 @@
                 <p data-i18n="dl_subtitle">All versions with release notes</p>
             </div>
 
-            <!-- v0.2.0 -->
+            <!-- v0.3.0 -->
             <div class="version-card latest">
+                <div class="version-top">
+                    <div>
+                        <span class="version-num">v0.3.0</span>
+                        <span class="version-date">2026-06-05</span>
+                    </div>
+                </div>
+                <div class="version-changes">
+                    <h3 data-i18n="dl_v3_highlights">Highlights</h3>
+                    <ul>
+                        <li data-i18n="dl_v3_f1">Quick Commands — save and send with one click from terminal toolbar</li>
+                        <li data-i18n="dl_v3_f2">MCP 19 Tools — expanded from 12 to 19, including set_dtr/rts, clear_buffers, get_config_keys</li>
+                        <li data-i18n="dl_v3_f3">Theme Persistence — dark/light theme saved across restarts</li>
+                        <li data-i18n="dl_v3_f4">Platform-separated builds — Windows and macOS outputs no longer mixed</li>
+                    </ul>
+                </div>
+                <div class="dl-buttons">
+                    <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.3.0/serialrun-0.3.0-windows-x64.zip" class="dl-btn dl-btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
+                        <span data-i18n="dl_win_btn">Windows x64 (.zip)</span>
+                    </a>
+                    <a href="https://github.com/YaoIsAI/SerialRUN/releases/tag/v0.3.0" class="dl-btn dl-btn-secondary" target="_blank">
+                        <span data-i18n="dl_view_release">View Release Notes</span>
+                    </a>
+                </div>
+                <div class="dl-platform" data-i18n="dl_v3_platform_win">Windows 10/11 (x64) — Portable, no installation required. Includes help files.</div>
+                <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+                    <div class="dl-buttons" style="margin-bottom:8px;">
+                        <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.3.0/serialrun-0.3.0-macos-universal.zip" class="dl-btn dl-btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
+                            <span data-i18n="dl_mac_btn">macOS (.zip)</span>
+                        </a>
+                    </div>
+                    <div class="dl-platform" data-i18n="dl_v3_platform_mac">macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.</div>
+                </div>
+            </div>
+
+            <!-- v0.2.0 -->
+            <div class="version-card">
                 <div class="version-top">
                     <div>
                         <span class="version-num">v0.2.0</span>
@@ -137,12 +175,12 @@
                 <div class="dl-platform" data-i18n="dl_v2_platform_win">Windows 10/11 (x64) — Portable, no installation required. Includes help files.</div>
                 <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
                     <div class="dl-buttons" style="margin-bottom:8px;">
-                        <span class="dl-btn dl-btn-secondary" style="opacity:0.6;cursor:default;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.04-3.19z"/></svg>
-                            <span data-i18n="dl_mac_coming">macOS (Apple Silicon) — Coming Soon</span>
-                        </span>
+                        <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.2.0/serialrun-0.2.0-macos-universal.zip" class="dl-btn dl-btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
+                            <span data-i18n="dl_mac_btn">macOS (.zip)</span>
+                        </a>
                     </div>
-                    <div class="dl-platform" data-i18n="dl_v2_platform_mac">macOS 12+ (Apple Silicon) — Build from source or wait for official release.</div>
+                    <div class="dl-platform" data-i18n="dl_v2_platform_mac">macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.</div>
                 </div>
             </div>
 
@@ -212,7 +250,18 @@
             dl_back: "Back to Home",
             dl_title: "Download SerialRUN",
             dl_subtitle: "All versions with release notes",
-            dl_v2_highlights: "Highlights",
+            dl_v3_highlights: "Highlights",
+            dl_v3_f1: "Quick Commands — save and send with one click from terminal toolbar",
+            dl_v3_f2: "MCP 19 Tools — expanded from 12 to 19, including set_dtr/rts, clear_buffers, get_config_keys",
+            dl_v3_f3: "Theme Persistence — dark/light theme saved across restarts",
+            dl_v3_f4: "Platform-separated builds — Windows and macOS outputs no longer mixed",
+            dl_v3_platform_win: "Windows 10/11 (x64) — Portable, no installation required. Includes help files.",
+            dl_mac_coming: "macOS (Apple Silicon) — Coming Soon",
+            dl_v3_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.",
+            dl_win_btn: "Windows x64 (.zip)",
+            dl_mac_btn: "macOS (.zip)",
+            dl_view_release: "View Release Notes",
+            dl_v2_highlights: "v0.2.0 Highlights",
             dl_v2_f1: "Plugin System — online search, one-click install from GitHub",
             dl_v2_f2: "CAN Bus Analyzer — independent connection, frame table, periodic send",
             dl_v2_f3: "MCP Server — 15 tools, real-time GUI sync, dedicated read buffer",
@@ -220,11 +269,7 @@
             dl_v2_f5: "STC ISP Plugin — flash STC89/12/15/8 series MCUs",
             dl_v2_f6: "43 automated tests against real MCU hardware",
             dl_v2_platform_win: "Windows 10/11 (x64) — Portable, no installation required. Includes help files.",
-            dl_mac_coming: "macOS (Apple Silicon) — Coming Soon",
             dl_v2_platform_mac: "macOS 12+ (Apple Silicon) — Build from source or wait for official release.",
-            dl_win_btn: "Windows x64 (.zip)",
-            dl_mac_btn: "macOS (.zip)",
-            dl_view_release: "View Release Notes",
             dl_v1_highlights: "Initial Release",
             dl_v1_f1: "Serial communication — HEX/TEXT, timestamps, CRC, auto-send, DTR/RTS",
             dl_v1_f2: "Modbus RTU/TCP — 8 function codes, register monitor",
@@ -242,7 +287,18 @@
             dl_back: "返回首页",
             dl_title: "下载 SerialRUN",
             dl_subtitle: "所有版本及更新日志",
-            dl_v2_highlights: "核心更新",
+            dl_v3_highlights: "核心更新",
+            dl_v3_f1: "快捷指令 — 终端工具栏一键保存、一键发送常用命令",
+            dl_v3_f2: "MCP 19 个工具 — 从 12 个扩展到 19 个，新增 set_dtr/rts、clear_buffers、get_config_keys",
+            dl_v3_f3: "主题持久化 — 深色/浅色主题设置跨重启保存",
+            dl_v3_f4: "平台分离构建 — Windows 和 macOS 输出不再混用",
+            dl_v3_platform_win: "Windows 10/11 (x64) — 免安装便携版，包含帮助文件。",
+            dl_mac_coming: "macOS (Apple Silicon) — 即将发布",
+            dl_v3_platform_mac: "macOS 12+ (Apple Silicon / Intel) — 免安装便携版。",
+            dl_win_btn: "Windows x64 (.zip)",
+            dl_mac_btn: "macOS (.zip)",
+            dl_view_release: "查看发布说明",
+            dl_v2_highlights: "v0.2.0 核心更新",
             dl_v2_f1: "插件系统 — GitHub 在线搜索，一键安装",
             dl_v2_f2: "CAN 总线分析器 — 独立连接，帧表格，定时发送",
             dl_v2_f3: "MCP 服务器 — 15 个工具，GUI 实时同步，独立读缓冲区",
@@ -250,11 +306,7 @@
             dl_v2_f5: "STC ISP 插件 — 支持烧录 STC89/12/15/8 系列 MCU",
             dl_v2_f6: "43 项自动化测试，基于真实 MCU 硬件验证",
             dl_v2_platform_win: "Windows 10/11 (x64) — 免安装便携版，包含帮助文件。",
-            dl_mac_coming: "macOS (Apple Silicon) — 即将发布",
             dl_v2_platform_mac: "macOS 12+ (Apple Silicon) — 可从源码编译，或等待官方发布。",
-            dl_win_btn: "Windows x64 (.zip)",
-            dl_mac_btn: "macOS (.zip)",
-            dl_view_release: "查看发布说明",
             dl_v1_highlights: "初始版本",
             dl_v1_f1: "串口通信 — HEX/TEXT、时间戳、CRC 校验、自动发送、DTR/RTS",
             dl_v1_f2: "Modbus RTU/TCP — 8 种功能码，寄存器监控",

@@ -1,6 +1,6 @@
 # SerialRUN 构建指南
 
-[English](BUILD.md)
+[English](BUILD.md) | [构建检查清单](BUILD_CHECKLIST.md)
 
 ---
 
@@ -8,6 +8,16 @@
 
 - [Rust](https://www.rust-lang.org/tools/install) 1.70+
 - 平台特定的构建工具（见下方）
+
+## 构建理念：平台分离输出
+
+每个平台构建到各自的 `target/<triple>/release/` 目录，Windows 和 macOS 的产物完全分离：
+
+```
+target/x86_64-pc-windows-msvc/release/    # Windows
+target/aarch64-apple-darwin/release/       # macOS ARM
+target/x86_64-apple-darwin/release/        # macOS Intel
+```
 
 ## Windows
 
@@ -22,7 +32,23 @@ rustup target add x86_64-pc-windows-msvc
 cargo build --target x86_64-pc-windows-msvc --release -p serialrun-gui
 ```
 
-输出: `target/x86_64-pc-windows-msvc/release/serialrun-gui.exe`
+输出: `target/x86_64-pc-windows-msvc/release/serialrun.exe`
+
+### 发布打包
+
+```bash
+# 自动化（通过发布脚本）
+./scripts/release.sh v0.3.0 --dry-run     # 预览
+./scripts/release.sh v0.3.0               # 构建 + 发布到 GitHub & Gitea
+
+# 手动
+mkdir -p /tmp/serialrun-win
+cp target/x86_64-pc-windows-msvc/release/serialrun.exe /tmp/serialrun-win/
+cp docs/help_en.md docs/help_zh.md /tmp/serialrun-win/
+cd /tmp/serialrun-win && zip -r serialrun-0.3.0-windows-x64.zip .
+```
+
+ZIP 内容: `serialrun.exe`, `help_en.md`, `help_zh.md`
 
 ## macOS
 
@@ -43,6 +69,8 @@ cargo build --target aarch64-apple-darwin --release -p serialrun-gui
 rustup target add x86_64-apple-darwin
 cargo build --target x86_64-apple-darwin --release -p serialrun-gui
 ```
+
+输出: `target/<target>/release/serialrun`
 
 ### 打包为 .app
 
@@ -67,6 +95,13 @@ cargo bundle --target aarch64-apple-darwin --release -p serialrun-gui
 ```
 
 输出: `target/release/bundle/osx/SerialRUN.app`
+
+### 发布打包（通过 Makefile）
+
+```bash
+make release    # 构建 + 签名 .app
+make install    # 复制到 /Applications
+```
 
 ## Linux
 
@@ -102,15 +137,15 @@ cargo ios build --release -p serialrun-gui
 
 ## 交叉编译参考
 
-| 目标 | 命令 |
-|------|------|
-| Windows x64 | `--target x86_64-pc-windows-msvc` |
-| macOS ARM | `--target aarch64-apple-darwin` |
-| macOS x64 | `--target x86_64-apple-darwin` |
-| Linux x64 | `--target x86_64-unknown-linux-gnu` |
-| Linux ARM64 | `--target aarch64-unknown-linux-gnu` |
-| Android | `--target aarch64-linux-android` |
-| iOS | `--target aarch64-apple-ios` |
+| 目标 | 命令 | 输出 |
+|------|------|------|
+| Windows x64 | `--target x86_64-pc-windows-msvc` | `serialrun.exe` |
+| macOS ARM | `--target aarch64-apple-darwin` | `serialrun` |
+| macOS x64 | `--target x86_64-apple-darwin` | `serialrun` |
+| Linux x64 | `--target x86_64-unknown-linux-gnu` | `serialrun` |
+| Linux ARM64 | `--target aarch64-unknown-linux-gnu` | `serialrun` |
+| Android | `--target aarch64-linux-android` | `serialrun` |
+| iOS | `--target aarch64-apple-ios` | `serialrun` |
 
 ```bash
 rustup target add <target>
@@ -120,9 +155,21 @@ cargo build --target <target> --release -p serialrun-gui
 ## 输出路径
 
 ```
-target/<target>/release/serialrun-gui.exe              # Windows
-target/<target>/release/serialrun-gui                  # macOS/Linux
-target/release/bundle/osx/SerialRUN.app                # macOS .app
-target/release/bundle/deb/serialrun-gui_*.deb          # Debian 包
-target/release/bundle/rpm/serialrun-gui-*.rpm          # RPM 包
+target/x86_64-pc-windows-msvc/release/serialrun.exe     # Windows
+target/aarch64-apple-darwin/release/serialrun            # macOS ARM
+target/x86_64-apple-darwin/release/serialrun             # macOS Intel
+target/x86_64-unknown-linux-gnu/release/serialrun        # Linux
+target/release/bundle/osx/SerialRUN.app                  # macOS .app 包
 ```
+
+## 快速参考
+
+| 任务 | 命令 |
+|------|------|
+| 调试构建 | `cargo build -p serialrun-gui` |
+| 发布构建（本机） | `cargo build --release -p serialrun-gui` |
+| 发布构建（Windows） | `cargo build --target x86_64-pc-windows-msvc --release -p serialrun-gui` |
+| 运行 | `cargo run -p serialrun-gui` |
+| 测试 | `cargo test --workspace` |
+| 代码检查 | `cargo clippy --workspace` |
+| 格式化 | `cargo fmt --all` |
