@@ -62,7 +62,7 @@ impl SerialRunApp {
         std::thread::spawn(move || {
             mcp_serial_request_loop(mcp_serial_rx, app_state);
         });
-        Self { state: state_clone, current_theme: Theme::Light, mcp_handle, last_prefs, open_viewports: std::collections::HashSet::new() }
+        Self { state: state_clone, current_theme: prefs.theme, mcp_handle, last_prefs, open_viewports: std::collections::HashSet::new() }
     }
 }
 
@@ -88,6 +88,7 @@ fn sync_theme_visuals(ctx: &egui::Context, theme: Theme, current_theme: &mut The
         visuals.widgets.hovered.rounding = egui::Rounding::same(6.0);
         visuals.widgets.active.rounding = egui::Rounding::same(6.0);
         ctx.set_visuals(visuals);
+        ctx.request_repaint();
         *current_theme = theme;
     }
 }
