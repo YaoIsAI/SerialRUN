@@ -41,7 +41,7 @@ assets/screenshot_website.png
 crates/serialrun-gui/
 
 # Internal scripts (contain private URLs, only on Gitea)
-scripts/sync-remotes.sh
+# (sync-remotes.sh is tracked — no secrets, uses env vars)
 
 # Cloudflare Wrangler cache
 .wrangler/
