@@ -11,6 +11,7 @@
 
 # OS
 .DS_Store
+**/.DS_Store
 Thumbs.db
 *.log
 
