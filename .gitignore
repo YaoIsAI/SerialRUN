@@ -25,6 +25,11 @@ tests/output/
 
 # Claude Code
 .claude/
+.claude-phases/
+
+# Non-core files
+wechat_article.html
+assets/screenshot_website.png
 
 # Python test files
 test_*.py
