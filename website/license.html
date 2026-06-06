@@ -50,8 +50,11 @@
             <div class="nav-links">
                 <a href="index.html#features" data-i18n="nav_features">Features</a>
                 <a href="index.html#download" data-i18n="nav_download">Download</a>
+                <a href="guide.html" data-i18n="nav_guide">Guide</a>
+                <a href="plugins.html" data-i18n="nav_plugins">Plugins</a>
+                <a href="license.html" data-i18n="nav_license">License</a>
                 <a href="https://github.com/YaoIsAI/SerialRUN" target="_blank">GitHub</a>
-                <button class="lang-toggle" onclick="toggleLang()">
+                <button class="lang-toggle">
                     <span class="lang-en">中</span>
                     <span class="lang-zh" style="display:none">EN</span>
                 </button>
@@ -214,6 +217,10 @@
         // Add license page translations
         const licTranslations = {
             en: {
+                _title_en: "License - SerialRUN",
+                _title_zh: "许可证 - SerialRUN",
+                nav_features: "Features", nav_download: "Download", nav_guide: "Guide",
+                nav_plugins: "Plugins", nav_license: "License",
                 lic_back: "Back to Home",
                 lic_title: "License",
                 lic_subtitle: "SerialRUN is source available under the Business Source License 1.1.",
@@ -251,6 +258,9 @@
                 lic_full_desc2: "Or read the LICENSE file in the repository root.",
             },
             zh: {
+                _title_zh: "许可证 - SerialRUN",
+                nav_features: "功能特性", nav_download: "下载", nav_guide: "使用指南",
+                nav_plugins: "插件", nav_license: "许可证",
                 lic_back: "返回首页",
                 lic_title: "许可证",
                 lic_subtitle: "SerialRUN 基于商业源码许可证 1.1 (BSL 1.1) 发布。",
@@ -286,20 +296,167 @@
                 lic_full_title: "完整许可证文本",
                 lic_full_desc: "完整法律文本请参见：",
                 lic_full_desc2: "或阅读仓库根目录下的 LICENSE 文件。",
-            }
+            },
+            "zh-TW": {
+                _title_zh: "授權條款 - SerialRUN",
+                nav_features: "功能特性", nav_download: "下載", nav_guide: "使用指南",
+                nav_plugins: "外掛", nav_license: "授權條款",
+                lic_back: "返回首頁", lic_title: "授權條款",
+                lic_subtitle: "SerialRUN 基於商業原始碼授權條款 1.1 (BSL 1.1) 發布。",
+                lic_what_title: "什麼是 BSL 1.1？",
+                lic_what_desc: "商業原始碼授權條款 1.1 (BSL 1.1) 是由 MariaDB 創建的「原始碼可用」授權。它允許你查看、使用和修改原始碼，但在指定期間內限制商業使用。變更日期後，授權自動轉換為寬鬆的開源授權 (MIT)。",
+                lic_can_title: "你可以做的",
+                lic_can_1: "查看和學習完整的原始碼",
+                lic_can_2: "將 SerialRUN 用於個人和內部業務用途",
+                lic_can_3: "修改原始碼供自己使用",
+                lic_can_4: "向專案貢獻改進",
+                lic_can_5: "向他人分發未修改的副本",
+                lic_cannot_title: "你不可以做的",
+                lic_cannot_1: "將 SerialRUN 作為商業託管服務 (SaaS) 提供",
+                lic_cannot_2: "銷售 SerialRUN 的修改版本",
+                lic_cannot_3: "在競爭產品中使用 SerialRUN 的名稱或品牌",
+                lic_open_title: "開源元件",
+                lic_convert_title: "轉換為 MIT",
+                lic_convert_desc: "在變更日期，所有 SerialRUN 原始碼自動轉換為 MIT 授權。之後你可以將代碼用於任何目的，包括商業使用。",
+                lic_convert_card_title: "變更日期",
+                lic_full_title: "完整授權條款文本",
+            },
+            ja: {
+                _title_zh: "ライセンス - SerialRUN",
+                nav_features: "機能", nav_download: "ダウンロード", nav_guide: "ガイド",
+                nav_plugins: "プラグイン", nav_license: "ライセンス",
+                lic_back: "ホームに戻る", lic_title: "ライセンス",
+                lic_subtitle: "SerialRUNはビジネスソースライセンス1.1 (BSL 1.1) でソース利用可能。",
+                lic_what_title: "BSL 1.1とは？",
+                lic_what_desc: "ビジネスソースライセンス1.1 (BSL 1.1) はMariaDBが作成した「ソース利用可能」ライセンス。ソースコードの参照、使用、変更を許可しますが、指定期間中は商用使用を制限します。変更日後、ライセンスは自動的にMITに変換されます。",
+                lic_can_title: "できること",
+                lic_can_1: "完全なソースコードを閲覧・学習",
+                lic_can_2: "個人および社内業務目的でSerialRUNを使用",
+                lic_can_3: "自分の使用のためにソースコードを変更",
+                lic_can_4: "プロジェクトに改善を貢献",
+                lic_can_5: "未変更のコピーを他者に配布",
+                lic_cannot_title: "できないこと",
+                lic_cannot_1: "SerialRUNを商用ホスティングサービス (SaaS) として提供",
+                lic_cannot_2: "SerialRUNの変更版を販売",
+                lic_cannot_3: "競合製品でSerialRUNの名前またはブランドを使用",
+                lic_open_title: "オープンソースコンポーネント",
+                lic_convert_title: "MITへの変換",
+                lic_convert_desc: "変更日、すべてのSerialRUNソースコードは自動的にMITライセンスに変換されます。その後、商業使用を含むすべての目的でコードを使用、変更、配布できます。",
+                lic_convert_card_title: "変更日",
+                lic_full_title: "完全なライセンステキスト",
+            },
+            ko: {
+                _title_zh: "라이선스 - SerialRUN",
+                nav_features: "기능", nav_download: "다운로드", nav_guide: "가이드",
+                nav_plugins: "플러그인", nav_license: "라이선스",
+                lic_back: "홈으로 돌아가기", lic_title: "라이선스",
+                lic_subtitle: "SerialRUN은 비즈니스 소스 라이선스 1.1 (BSL 1.1)으로 소스 사용 가능.",
+                lic_what_title: "BSL 1.1이란?",
+                lic_what_desc: "비즈니스 소스 라이선스 1.1 (BSL 1.1)은 MariaDB가 만든 '소스 사용 가능' 라이선스입니다. 소스 코드를 보고, 사용하고, 수정할 수 있지만 지정된 기간 동안 상업적 사용을 제한합니다. 변경 날짜 후 라이선스는 자동으로 MIT로 전환됩니다.",
+                lic_can_title: "할 수 있는 것",
+                lic_can_1: "전체 소스 코드 열람 및 학습",
+                lic_can_2: "개인 및 내부 업무 목적으로 SerialRUN 사용",
+                lic_can_3: "자신의 사용을 위해 소스 코드 수정",
+                lic_can_4: "프로젝트에 개선 사항 기여",
+                lic_can_5: "수정되지 않은 사본을 다른 사람에게 배포",
+                lic_cannot_title: "할 수 없는 것",
+                lic_cannot_1: "SerialRUN을 상업적 호스팅 서비스 (SaaS)로 제공",
+                lic_cannot_2: "SerialRUN의 수정된 버전 판매",
+                lic_cannot_3: "경쟁 제품에서 SerialRUN 이름 또는 브랜드 사용",
+                lic_open_title: "오픈 소스 컴포넌트",
+                lic_convert_title: "MIT로 전환",
+                lic_convert_desc: "변경 날짜에 모든 SerialRUN 소스 코드는 자동으로 MIT 라이선스로 전환됩니다. 이후 상업적 사용을 포함한 모든 목적으로 코드를 사용, 수정, 배포할 수 있습니다.",
+                lic_convert_card_title: "변경 날짜",
+                lic_full_title: "전체 라이선스 텍스트",
+            },
+            fr: {
+                _title_zh: "Licence - SerialRUN",
+                nav_features: "Fonctionnalités", nav_download: "Télécharger", nav_guide: "Guide",
+                nav_plugins: "Plugins", nav_license: "Licence",
+                lic_back: "Retour à l'accueil", lic_title: "Licence",
+                lic_subtitle: "SerialRUN est disponible en source sous la Licence Commerciale de Source 1.1.",
+                lic_what_title: "Qu'est-ce que la BSL 1.1 ?",
+                lic_what_desc: "La Licence Commerciale de Source 1.1 (BSL 1.1) est une licence \"source disponible\" créée par MariaDB. Elle vous permet de consulter, utiliser et modifier le code source, mais restreint l'utilisation commerciale pendant une période spécifiée. Après la date de conversion, la licence se convertit automatiquement en licence open source permissive (MIT).",
+                lic_can_title: "Ce que vous pouvez faire",
+                lic_can_1: "Consulter et étudier le code source complet",
+                lic_can_2: "Utiliser SerialRUN à des fins personnelles et internes",
+                lic_can_3: "Modifier le code source pour votre propre usage",
+                lic_can_4: "Contribuer des améliorations au projet",
+                lic_cannot_title: "Ce que vous ne pouvez pas faire",
+                lic_cannot_1: "Offrir SerialRUN comme service hébergé commercial (SaaS)",
+                lic_cannot_2: "Vendre des versions modifiées de SerialRUN",
+                lic_open_title: "Composants open source",
+                lic_convert_title: "Conversion en MIT",
+                lic_convert_desc: "À la date de conversion, tout le code source de SerialRUN se convertit automatiquement en licence MIT. Ensuite, vous pouvez utiliser, modifier et distribuer le code à quelque fin que ce soit, y compris un usage commercial.",
+                lic_convert_card_title: "Date de conversion",
+                lic_full_title: "Texte complet de la licence",
+            },
+            de: {
+                _title_zh: "Lizenz - SerialRUN",
+                nav_features: "Funktionen", nav_download: "Download", nav_guide: "Anleitung",
+                nav_plugins: "Plugins", nav_license: "Lizenz",
+                lic_back: "Zurück zur Startseite", lic_title: "Lizenz",
+                lic_subtitle: "SerialRUN ist unter der Business Source License 1.1 quellverfügbar.",
+                lic_what_title: "Was ist BSL 1.1?",
+                lic_what_desc: "Die Business Source License 1.1 (BSL 1.1) ist eine \"quellverfügbare\" Lizenz von MariaDB. Sie erlaubt das Ansehen, Verändern und Verwenden des Quellcodes, schränkt die kommerzielle Nutzung jedoch für einen bestimmten Zeitraum ein. Nach dem Änderungsdatum wandelt sich die Lizenz automatisch in eine Open-Source-Lizenz (MIT) um.",
+                lic_can_title: "Was Sie tun können",
+                lic_can_1: "Den vollständigen Quellcode ansehen und studieren",
+                lic_can_2: "SerialRUN für persönliche und interne geschäftliche Zwecke verwenden",
+                lic_can_3: "Den Quellcode für den eigenen Gebrauch ändern",
+                lic_cannot_title: "Was Sie nicht tun können",
+                lic_cannot_1: "SerialRUN als kommerziellen Hosting-Service (SaaS) anbieten",
+                lic_cannot_2: "Geänderte Versionen von SerialRUN verkaufen",
+                lic_open_title: "Open-Source-Komponenten",
+                lic_convert_title: "Umwandlung in MIT",
+                lic_convert_desc: "Am Änderungsdatum wird der gesamte SerialRUN-Quellcode automatisch in die MIT-Lizenz umgewandelt. Danach können Sie den Code für jeden Zweck verwenden, ändern und verteilen, einschließlich kommerzieller Nutzung.",
+                lic_convert_card_title: "Änderungsdatum",
+                lic_full_title: "Vollständiger Lizenztext",
+            },
+            es: {
+                _title_zh: "Licencia - SerialRUN",
+                nav_features: "Características", nav_download: "Descargar", nav_guide: "Guía",
+                nav_plugins: "Plugins", nav_license: "Licencia",
+                lic_back: "Volver al inicio", lic_title: "Licencia",
+                lic_subtitle: "SerialRUN está disponible como fuente bajo la Licencia de Código Fuente Comercial 1.1.",
+                lic_what_title: "¿Qué es BSL 1.1?",
+                lic_what_desc: "La Licencia de Código Fuente Comercial 1.1 (BSL 1.1) es una licencia \"disponible como fuente\" creada por MariaDB. Le permite ver, usar y modificar el código fuente, pero restringe el uso comercial por un período especificado.",
+                lic_can_title: "Lo que puede hacer",
+                lic_can_1: "Ver y estudiar el código fuente completo",
+                lic_can_2: "Usar SerialRUN para fines personales e internos",
+                lic_can_3: "Modificar el código fuente para uso propio",
+                lic_cannot_title: "Lo que no puede hacer",
+                lic_cannot_1: "Ofrecer SerialRUN como servicio de alojamiento comercial (SaaS)",
+                lic_cannot_2: "Vender versiones modificadas de SerialRUN",
+                lic_open_title: "Componentes de código abierto",
+                lic_convert_title: "Conversión a MIT",
+                lic_convert_desc: "En la fecha de conversión, todo el código fuente de SerialRUN se convierte automáticamente a la licencia MIT. Después puede usar, modificar y distribuir el código para cualquier propósito, incluido el uso comercial.",
+                lic_convert_card_title: "Fecha de conversión",
+                lic_full_title: "Texto completo de la licencia",
+            },
+            "pt-BR": {
+                _title_zh: "Licença - SerialRUN",
+                nav_features: "Recursos", nav_download: "Download", nav_guide: "Guia",
+                nav_plugins: "Plugins", nav_license: "Licença",
+                lic_back: "Voltar ao início", lic_title: "Licença",
+                lic_subtitle: "SerialRUN está disponível como código-fonte sob a Licença de Código-fonte Comercial 1.1.",
+                lic_what_title: "O que é BSL 1.1?",
+                lic_what_desc: "A Licença de Código-fonte Comercial 1.1 (BSL 1.1) é uma licença \"código disponível\" criada pela MariaDB. Permite visualizar, usar e modificar o código-fonte, mas restringe o uso comercial por um período especificado.",
+                lic_can_title: "O que você pode fazer",
+                lic_can_1: "Visualizar e estudar o código-fonte completo",
+                lic_can_2: "Usar SerialRUN para fins pessoais e internos",
+                lic_can_3: "Modificar o código-fonte para uso próprio",
+                lic_cannot_title: "O que você não pode fazer",
+                lic_cannot_1: "Oferecer SerialRUN como serviço de hospedagem comercial (SaaS)",
+                lic_cannot_2: "Vender versões modificadas do SerialRUN",
+                lic_open_title: "Componentes de código aberto",
+                lic_convert_title: "Conversão para MIT",
+                lic_convert_desc: "Na data de conversão, todo o código-fonte do SerialRUN é automaticamente convertido para a licença MIT. Depois disso, você pode usar, modificar e distribuir o código para qualquer propósito, incluindo uso comercial.",
+                lic_convert_card_title: "Data de conversão",
+                lic_full_title: "Texto completo da licença",
+            },
         };
 
-        // Patch the applyLang function to include license translations
-        const origApplyLang = window.applyLang;
-        window.applyLang = function(lang) {
-            origApplyLang(lang);
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (licTranslations[lang] && licTranslations[lang][key]) {
-                    el.innerHTML = licTranslations[lang][key];
-                }
-            });
-        };
+        registerTranslations(licTranslations);
     </script>
     <script src="https://cdn.counter.dev/script.js" data-id="3318d339-fc57-44cd-ae02-d43ea607fb6a" data-utcoffset="8"></script>
 </body>

@@ -84,12 +84,12 @@
         <div class="container nav-inner">
             <a href="index.html" class="nav-logo" style="text-decoration:none">Serial<span class="accent">RUN</span></a>
             <div class="nav-links">
-                <a href="index.html#features">Features</a>
-                <a href="downloads.html" style="color:var(--accent)">Download</a>
-                <a href="guide.html" target="_blank">Guide</a>
-                <a href="plugins.html">Plugins</a>
+                <a href="index.html#features" data-i18n="nav_features">Features</a>
+                <a href="downloads.html" style="color:var(--accent)" data-i18n="nav_download">Download</a>
+                <a href="guide.html" target="_blank" data-i18n="nav_guide">Guide</a>
+                <a href="plugins.html" data-i18n="nav_plugins">Plugins</a>
                 <a href="https://github.com/YaoIsAI/SerialRUN" target="_blank">GitHub</a>
-                <button class="lang-toggle" onclick="toggleLang()">
+                <button class="lang-toggle">
                     <span class="lang-en">中</span>
                     <span class="lang-zh" style="display:none">EN</span>
                 </button>
@@ -128,20 +128,16 @@
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
                         <span data-i18n="dl_win_btn">Windows x64 (.zip)</span>
                     </a>
+                    <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.0/serialrun-0.4.0-macos-universal.zip" class="dl-btn dl-btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.04-3.19z"/></svg>
+                        <span data-i18n="dl_mac_btn">macOS (.zip)</span>
+                    </a>
                     <a href="https://github.com/YaoIsAI/SerialRUN/releases/tag/v0.4.0" class="dl-btn dl-btn-secondary" target="_blank">
                         <span data-i18n="dl_view_release">View Release Notes</span>
                     </a>
                 </div>
                 <div class="dl-platform" data-i18n="dl_v4_platform_win">Windows 10/11 (x64) — Portable, no installation required. Includes help files.</div>
-                <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-                    <div class="dl-buttons" style="margin-bottom:8px;">
-                        <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.0/serialrun-0.4.0-macos-universal.zip" class="dl-btn dl-btn-primary">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
-                            <span data-i18n="dl_mac_btn">macOS (.zip)</span>
-                        </a>
-                    </div>
-                    <div class="dl-platform" data-i18n="dl_v4_platform_mac">macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.</div>
-                </div>
+                <div class="dl-platform" data-i18n="dl_v4_platform_mac" style="margin-top:4px">macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.</div>
             </div>
 
             <!-- v0.3.0 -->
@@ -166,20 +162,16 @@
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
                         <span data-i18n="dl_win_btn">Windows x64 (.zip)</span>
                     </a>
+                    <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.3.0/serialrun-0.3.0-macos-universal.zip" class="dl-btn dl-btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.04-3.19z"/></svg>
+                        <span data-i18n="dl_mac_btn">macOS (.zip)</span>
+                    </a>
                     <a href="https://github.com/YaoIsAI/SerialRUN/releases/tag/v0.3.0" class="dl-btn dl-btn-secondary" target="_blank">
                         <span data-i18n="dl_view_release">View Release Notes</span>
                     </a>
                 </div>
                 <div class="dl-platform" data-i18n="dl_v3_platform_win">Windows 10/11 (x64) — Portable, no installation required. Includes help files.</div>
-                <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-                    <div class="dl-buttons" style="margin-bottom:8px;">
-                        <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.3.0/serialrun-0.3.0-macos-universal.zip" class="dl-btn dl-btn-primary">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
-                            <span data-i18n="dl_mac_btn">macOS (.zip)</span>
-                        </a>
-                    </div>
-                    <div class="dl-platform" data-i18n="dl_v3_platform_mac">macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.</div>
-                </div>
+                <div class="dl-platform" data-i18n="dl_v3_platform_mac" style="margin-top:4px">macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.</div>
             </div>
 
             <!-- v0.2.0 -->
@@ -206,20 +198,16 @@
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
                         <span data-i18n="dl_win_btn">Windows x64 (.zip)</span>
                     </a>
+                    <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.2.0/serialrun-0.2.0-macos-universal.zip" class="dl-btn dl-btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.04-3.19z"/></svg>
+                        <span data-i18n="dl_mac_btn">macOS (.zip)</span>
+                    </a>
                     <a href="https://github.com/YaoIsAI/SerialRUN/releases/tag/v0.2.0" class="dl-btn dl-btn-secondary" target="_blank">
                         <span data-i18n="dl_view_release">View Release Notes</span>
                     </a>
                 </div>
-                <div class="dl-platform" data-i18n="dl_v2_platform_win">Windows 10/11 (x64) — Portable, no installation required. Includes help files.</div>
-                <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-                    <div class="dl-buttons" style="margin-bottom:8px;">
-                        <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.2.0/serialrun-0.2.0-macos-universal.zip" class="dl-btn dl-btn-primary">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
-                            <span data-i18n="dl_mac_btn">macOS (.zip)</span>
-                        </a>
-                    </div>
-                    <div class="dl-platform" data-i18n="dl_v2_platform_mac">macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.</div>
-                </div>
+                <div class="dl-platform" data-i18n="dl_v2_platform_win">Windows 10/11 (x64) — Portable, no installation required.</div>
+                <div class="dl-platform" data-i18n="dl_v2_platform_mac" style="margin-top:4px">macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.</div>
             </div>
 
             <!-- v0.1.0 -->
@@ -246,15 +234,14 @@
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 7h3V0h4v7h3L8 12z"/><path d="M0 14h16v2H0z"/></svg>
                         <span data-i18n="dl_win_btn">Windows x64 (.zip)</span>
                     </a>
-                    <a href="https://github.com/YaoIsAI/SerialRUN/releases/tag/v0.1.0" class="dl-btn dl-btn-secondary" target="_blank">
-                        <span data-i18n="dl_view_release">View Release Notes</span>
-                    </a>
-                </div>
-                <div class="dl-buttons" style="margin-top:12px;">
                     <a href="https://github.com/YaoIsAI/SerialRUN/releases/download/v0.1.0/serialrun-0.1.0-macos-arm64.zip" class="dl-btn dl-btn-primary">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.04-3.19z"/></svg>
                         <span data-i18n="dl_mac_btn">macOS (.zip)</span>
                     </a>
+                    <a href="https://github.com/YaoIsAI/SerialRUN/releases/tag/v0.1.0" class="dl-btn dl-btn-secondary" target="_blank">
+                        <span data-i18n="dl_view_release">View Release Notes</span>
+                    </a>
+                </div>
                 </div>
             </div>
 
@@ -282,9 +269,13 @@
         </div>
     </main>
 
+    <script src="i18n.js"></script>
     <script>
     const dlTranslations = {
         en: {
+            _title_en: "Downloads - SerialRUN",
+            _title_zh: "下載 - SerialRUN",
+            nav_features: "Features", nav_download: "Download", nav_guide: "Guide", nav_plugins: "Plugins",
             dl_back: "Back to Home",
             dl_title: "Download SerialRUN",
             dl_subtitle: "All versions with release notes",
@@ -314,7 +305,7 @@
             dl_v2_f5: "STC ISP Plugin — flash STC89/12/15/8 series MCUs",
             dl_v2_f6: "43 automated tests against real MCU hardware",
             dl_v2_platform_win: "Windows 10/11 (x64) — Portable, no installation required. Includes help files.",
-            dl_v2_platform_mac: "macOS 12+ (Apple Silicon) — Build from source or wait for official release.",
+            dl_v2_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portable, no installation required.",
             dl_v1_highlights: "Initial Release",
             dl_v1_f1: "Serial communication — HEX/TEXT, timestamps, CRC, auto-send, DTR/RTS",
             dl_v1_f2: "Modbus RTU/TCP — 8 function codes, register monitor",
@@ -329,6 +320,8 @@
             dl_view_source: "View Source Code"
         },
         zh: {
+            _title_zh: "下载 - SerialRUN",
+            nav_features: "功能特性", nav_download: "下载", nav_guide: "使用指南", nav_plugins: "插件",
             dl_back: "返回首页",
             dl_title: "下载 SerialRUN",
             dl_subtitle: "所有版本及更新日志",
@@ -358,7 +351,7 @@
             dl_v2_f5: "STC ISP 插件 — 支持烧录 STC89/12/15/8 系列 MCU",
             dl_v2_f6: "43 项自动化测试，基于真实 MCU 硬件验证",
             dl_v2_platform_win: "Windows 10/11 (x64) — 免安装便携版，包含帮助文件。",
-            dl_v2_platform_mac: "macOS 12+ (Apple Silicon) — 可从源码编译，或等待官方发布。",
+            dl_v2_platform_mac: "macOS 12+ (Apple Silicon / Intel) — 免安装便携版。",
             dl_v1_highlights: "初始版本",
             dl_v1_f1: "串口通信 — HEX/TEXT、时间戳、CRC 校验、自动发送、DTR/RTS",
             dl_v1_f2: "Modbus RTU/TCP — 8 种功能码，寄存器监控",
@@ -371,22 +364,311 @@
             dl_source_f2: "克隆仓库后运行 cargo build --release",
             dl_source_f3: "支持所有平台 (Windows、macOS、Linux)",
             dl_view_source: "查看源代码"
-        }
+        },
+        "zh-TW": {
+            _title_zh: "下載 - SerialRUN",
+            nav_features: "功能特性", nav_download: "下載", nav_guide: "使用指南", nav_plugins: "外掛",
+            dl_back: "返回首頁", dl_title: "下載 SerialRUN",
+            dl_subtitle: "所有版本及更新日誌",
+            dl_v4_highlights: "核心更新",
+            dl_v4_f1: "CLI 互動模式 — minicom 風格，序列埠保持開啟",
+            dl_v4_f2: "CLI 單條命令 — send、read、connect、modbus-read 等",
+            dl_v4_f3: "主題切換修復 — 啟動時讀取設定，首幀前應用",
+            dl_v4_f4: "MCP 伺服器 v0.4.0 — 穩定性和工具描述改進",
+            dl_v4_platform_win: "Windows 10/11 (x64) — 免安裝攜帶版，包含說明文件。",
+            dl_v4_platform_mac: "macOS 12+ (Apple Silicon / Intel) — 免安裝攜帶版。",
+            dl_v3_highlights: "v0.3.0 核心更新",
+            dl_v3_f1: "快捷指令 — 終端機工具列一鍵保存、一鍵傳送常用命令",
+            dl_v3_f2: "MCP 15 個工具 — 從 12 個擴展到 15 個",
+            dl_v3_f3: "主題持久化 — 深色/淺色主題設定跨重啟保存",
+            dl_v3_f4: "平台分離構建 — Windows 和 macOS 輸出不再混用",
+            dl_v3_platform_win: "Windows 10/11 (x64) — 免安裝攜帶版，包含說明文件。",
+            dl_v3_platform_mac: "macOS 12+ (Apple Silicon / Intel) — 免安裝攜帶版。",
+            dl_win_btn: "Windows x64 (.zip)", dl_mac_btn: "macOS (.zip)",
+            dl_view_release: "檢視發布說明",
+            dl_v2_highlights: "v0.2.0 核心更新",
+            dl_v2_f1: "外掛系統 — GitHub 線上搜尋，一鍵安裝",
+            dl_v2_f2: "CAN 匯流排分析器 — 獨立連接，幀表格，定時傳送",
+            dl_v2_f3: "MCP 伺服器 — 15 個工具，GUI 即時同步，獨立讀緩衝區",
+            dl_v2_f4: "終端機 — 標籤行號，修復文字遮擋，MCP RX 顯示",
+            dl_v2_f5: "STC ISP 外掛 — 支援燒錄 STC89/12/15/8 系列 MCU",
+            dl_v2_f6: "43 項自動化測試，基於真實 MCU 硬體驗證",
+            dl_v2_platform_win: "Windows 10/11 (x64) — 免安裝攜帶版，包含說明文件。",
+            dl_v2_platform_mac: "macOS 12+ (Apple Silicon / Intel) — 免安裝攜帶版。",
+            dl_v1_highlights: "初始版本",
+            dl_v1_f1: "序列埠通訊 — HEX/TEXT、時間戳、CRC 校驗、自動傳送、DTR/RTS",
+            dl_v1_f2: "Modbus RTU/TCP — 8 種功能碼，暫存器監控",
+            dl_v1_f3: "PLC 控制 — 西門子、三菱、台達、歐姆龍預設",
+            dl_v1_f4: "TCP/RTU 橋接、HMI 模擬器、CAN 匯流排、I2C/SPI",
+            dl_v1_f5: "MCP 伺服器，15 個工具支援 AI 整合",
+            dl_v1_f6: "跨平台 (Windows、macOS、Linux)",
+            dl_source_title: "從原始碼編譯",
+            dl_source_f1: "需要 Rust 1.70+ 工具鏈",
+            dl_source_f2: "複製倉庫後執行 cargo build --release",
+            dl_source_f3: "支援所有平台 (Windows、macOS、Linux)",
+            dl_view_source: "檢視原始碼"
+        },
+        ja: {
+            _title_zh: "ダウンロード - SerialRUN",
+            nav_features: "機能", nav_download: "ダウンロード", nav_guide: "ガイド", nav_plugins: "プラグイン",
+            dl_back: "ホームに戻る", dl_title: "SerialRUNをダウンロード",
+            dl_subtitle: "リリースノート付きの全バージョン",
+            dl_v4_highlights: "ハイライト",
+            dl_v4_f1: "CLIインタラクティブモード — minicomスタイル、シリアルポートを維持",
+            dl_v4_f2: "CLIコマンド — send、read、connect、Modbus操作",
+            dl_v4_f3: "テーマ切替修正 — 起動時に設定を読み込み、初回フレーム前に適用",
+            dl_v4_f4: "MCPサーバー v0.4.0 — 安定性とツール説明の改善",
+            dl_v4_platform_win: "Windows 10/11 (x64) — ポータブル、インストール不要。ヘルプファイル付き。",
+            dl_v4_platform_mac: "macOS 12+ (Apple Silicon / Intel) — ポータブル、インストール不要。",
+            dl_v3_highlights: "v0.3.0 ハイライト",
+            dl_v3_f1: "クイックコマンド — ターミナルツールバーからワンクリック送信",
+            dl_v3_f2: "MCP 15ツール — 12から15に拡張",
+            dl_v3_f3: "テーマ永続化 — ダーク/ライトテーマが再起動後も維持",
+            dl_v3_f4: "プラットフォーム別ビルド — WindowsとmacOSの出力が混在しなくなる",
+            dl_v3_platform_win: "Windows 10/11 (x64) — ポータブル、インストール不要。ヘルプファイル付き。",
+            dl_v3_platform_mac: "macOS 12+ (Apple Silicon / Intel) — ポータブル、インストール不要。",
+            dl_win_btn: "Windows x64 (.zip)", dl_mac_btn: "macOS (.zip)",
+            dl_view_release: "リリースノートを見る",
+            dl_v2_highlights: "v0.2.0 ハイライト",
+            dl_v2_f1: "プラグインシステム — GitHub オンライン検索、ワンクリックインストール",
+            dl_v2_f2: "CANバスアナライザー — 独立接続、フレームテーブル、定期送信",
+            dl_v2_f3: "MCPサーバー — 15ツール、GUIリアルタイム同期、専用リードバッファ",
+            dl_v2_f4: "ターミナル — バッジ行番号、テキストクリッピング修正、MCP RX表示",
+            dl_v2_f5: "STC ISPプラグイン — STC89/12/15/8シリーズMCUのフラッシュ",
+            dl_v2_f6: "実際のMCUハードウェアに対する43の自動化テスト",
+            dl_v2_platform_win: "Windows 10/11 (x64) — ポータブル、インストール不要。ヘルプファイル付き。",
+            dl_v2_platform_mac: "macOS 12+ (Apple Silicon / Intel) — ポータブル、インストール不要。",
+            dl_v1_highlights: "初期リリース",
+            dl_v1_f1: "シリアル通信 — HEX/TEXT、タイムスタンプ、CRC、自動送信、DTR/RTS",
+            dl_v1_f2: "Modbus RTU/TCP — 8ファンクションコード、レジスタモニター",
+            dl_v1_f3: "PLC制御 — シーメンズ、三菱、デルタ、オムロンプリセット",
+            dl_v1_f4: "TCP/RTUブリッジ、HMIシミュレーター、CANバス、I2C/SPI",
+            dl_v1_f5: "AI統合のための15ツールを備えたMCPサーバー",
+            dl_v1_f6: "クロスプラットフォーム (Windows、macOS、Linux)",
+            dl_source_title: "ソースからビルド",
+            dl_source_f1: "Rust 1.70+ツールチェーンが必要",
+            dl_source_f2: "リポジトリをクローンしてcargo build --releaseを実行",
+            dl_source_f3: "全プラットフォーム対応 (Windows、macOS、Linux)",
+            dl_view_source: "ソースコードを見る"
+        },
+        ko: {
+            _title_zh: "다운로드 - SerialRUN",
+            nav_features: "기능", nav_download: "다운로드", nav_guide: "가이드", nav_plugins: "플러그인",
+            dl_back: "홈으로 돌아가기", dl_title: "SerialRUN 다운로드",
+            dl_subtitle: "릴리스 노트가 포함된 모든 버전",
+            dl_v4_highlights: "하이라이트",
+            dl_v4_f1: "CLI 대화형 모드 — minicom 스타일, 시리얼 포트 유지",
+            dl_v4_f2: "CLI 명령 — send, read, connect, Modbus 작업",
+            dl_v4_f3: "테마 전환 수정 — 시작 시 설정 읽기, 첫 프레임 전 적용",
+            dl_v4_f4: "MCP 서버 v0.4.0 — 안정성 및 도구 설명 개선",
+            dl_v4_platform_win: "Windows 10/11 (x64) — 포터블, 설치 불필요. 도움말 파일 포함.",
+            dl_v4_platform_mac: "macOS 12+ (Apple Silicon / Intel) — 포터블, 설치 불필요.",
+            dl_v3_highlights: "v0.3.0 하이라이트",
+            dl_v3_f1: "빠른 명령 — 터미널 툴바에서 원클릭 전송",
+            dl_v3_f2: "MCP 15개 도구 — 12개에서 15개로 확장",
+            dl_v3_f3: "테마 지속성 — 다크/라이트 테마가 재시작 후 유지",
+            dl_v3_f4: "플랫폼별 빌드 — Windows와 macOS 출력이 분리됨",
+            dl_v3_platform_win: "Windows 10/11 (x64) — 포터블, 설치 불필요. 도움말 파일 포함.",
+            dl_v3_platform_mac: "macOS 12+ (Apple Silicon / Intel) — 포터블, 설치 불필요.",
+            dl_win_btn: "Windows x64 (.zip)", dl_mac_btn: "macOS (.zip)",
+            dl_view_release: "릴리스 노트 보기",
+            dl_v2_highlights: "v0.2.0 하이라이트",
+            dl_v2_f1: "플러그인 시스템 — GitHub 온라인 검색, 원클릭 설치",
+            dl_v2_f2: "CAN 버스 분석기 — 독립 연결, 프레임 테이블, 주기적 전송",
+            dl_v2_f3: "MCP 서버 — 15개 도구, GUI 실시간 동기화, 전용 읽기 버퍼",
+            dl_v2_f4: "터미널 — 배지 줄 번호, 텍스트 클리핑 수정, MCP RX 표시",
+            dl_v2_f5: "STC ISP 플러그인 — STC89/12/15/8 시리즈 MCU 플래시",
+            dl_v2_f6: "실제 MCU 하드웨어에 대한 43개 자동화 테스트",
+            dl_v2_platform_win: "Windows 10/11 (x64) — 포터블, 설치 불필요. 도움말 파일 포함.",
+            dl_v2_platform_mac: "macOS 12+ (Apple Silicon / Intel) — 포터블, 설치 불필요.",
+            dl_v1_highlights: "초기 릴리스",
+            dl_v1_f1: "시리얼 통신 — HEX/TEXT, 타임스탬프, CRC, 자동 전송, DTR/RTS",
+            dl_v1_f2: "Modbus RTU/TCP — 8개 함수 코드, 레지스터 모니터",
+            dl_v1_f3: "PLC 제어 — 지멘스, 미쓰비시, 델타, 오므론 프리셋",
+            dl_v1_f4: "TCP/RTU 브릿지, HMI 시뮬레이터, CAN 버스, I2C/SPI",
+            dl_v1_f5: "AI 통합을 위한 15개 도구가 있는 MCP 서버",
+            dl_v1_f6: "크로스 플랫폼 (Windows, macOS, Linux)",
+            dl_source_title: "소스에서 빌드",
+            dl_source_f1: "Rust 1.70+ 툴체인이 필요",
+            dl_source_f2: "저장소를 클론하고 cargo build --release 실행",
+            dl_source_f3: "모든 플랫폼 지원 (Windows, macOS, Linux)",
+            dl_view_source: "소스 코드 보기"
+        },
+        fr: {
+            _title_zh: "Téléchargements - SerialRUN",
+            nav_features: "Fonctionnalités", nav_download: "Télécharger", nav_guide: "Guide", nav_plugins: "Plugins",
+            dl_back: "Retour à l'accueil", dl_title: "Télécharger SerialRUN",
+            dl_subtitle: "Toutes les versions avec notes de version",
+            dl_v4_highlights: "Points forts",
+            dl_v4_f1: "Mode CLI interactif — style minicom, port série maintenu ouvert",
+            dl_v4_f2: "Commandes CLI — send, read, connect, opérations Modbus",
+            dl_v4_f3: "Correctif bascule de thème — persistance et rendu premier cadre",
+            dl_v4_f4: "Serveur MCP v0.4.0 — stabilité et descriptions d'outils améliorées",
+            dl_v4_platform_win: "Windows 10/11 (x64) — Portable, aucune installation requise. Fichiers d'aide inclus.",
+            dl_v4_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portable, aucune installation requise.",
+            dl_v3_highlights: "Points forts v0.3.0",
+            dl_v3_f1: "Commandes rapides — sauvegarder et envoyer en un clic depuis la barre d'outils",
+            dl_v3_f2: "MCP 15 outils — passage de 12 à 15 outils",
+            dl_v3_f3: "Persistance du thème — thème sombre/clair sauvegardé entre les redémarrages",
+            dl_v3_f4: "Builds séparés par plateforme — sorties Windows et macOS plus mélangées",
+            dl_v3_platform_win: "Windows 10/11 (x64) — Portable, aucune installation requise. Fichiers d'aide inclus.",
+            dl_v3_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portable, aucune installation requise.",
+            dl_win_btn: "Windows x64 (.zip)", dl_mac_btn: "macOS (.zip)",
+            dl_view_release: "Voir les notes de version",
+            dl_v2_highlights: "Points forts v0.2.0",
+            dl_v2_f1: "Système de plugins — recherche en ligne, installation en un clic depuis GitHub",
+            dl_v2_f2: "Analyseur de bus CAN — connexion indépendante, tableau de trames, envoi périodique",
+            dl_v2_f3: "Serveur MCP — 15 outils, synchronisation GUI en temps réel",
+            dl_v2_f4: "Terminal — numéros de ligne badge, correction du découpage texte",
+            dl_v2_f5: "Plugin STC ISP — flash des MCU série STC89/12/15/8",
+            dl_v2_f6: "43 tests automatisés sur du matériel MCU réel",
+            dl_v2_platform_win: "Windows 10/11 (x64) — Portable, aucune installation requise.",
+            dl_v2_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portable, aucune installation requise.",
+            dl_v1_highlights: "Version initiale",
+            dl_v1_f1: "Communication série — HEX/TEXT, horodatages, CRC, envoi auto, DTR/RTS",
+            dl_v1_f2: "Modbus RTU/TCP — 8 codes de fonction, moniteur de registres",
+            dl_v1_f3: "Contrôle PLC — préréglages Siemens, Mitsubishi, Delta, Omron",
+            dl_v1_f4: "Pont TCP/RTU, simulateur HMI, bus CAN, I2C/SPI",
+            dl_v1_f5: "Serveur MCP avec 15 outils pour l'intégration IA",
+            dl_v1_f6: "Multiplateforme (Windows, macOS, Linux)",
+            dl_source_title: "Compiler depuis les sources",
+            dl_source_f1: "Nécessite la chaîne d'outils Rust 1.70+",
+            dl_source_f2: "Cloner le dépôt et exécuter cargo build --release",
+            dl_source_f3: "Toutes les plateformes supportées",
+            dl_view_source: "Voir le code source"
+        },
+        de: {
+            _title_zh: "Downloads - SerialRUN",
+            nav_features: "Funktionen", nav_download: "Download", nav_guide: "Anleitung", nav_plugins: "Plugins",
+            dl_back: "Zurück zur Startseite", dl_title: "SerialRUN herunterladen",
+            dl_subtitle: "Alle Versionen mit Release-Notes",
+            dl_v4_highlights: "Höhepunkte",
+            dl_v4_f1: "CLI-Interaktiver Modus — minicom-Stil, serieller Port bleibt offen",
+            dl_v4_f2: "CLI-Einzelbefehle — send, read, connect, Modbus-Operationen",
+            dl_v4_f3: "Themenumschaltung behoben — Persistenz und Erstrahrenderung",
+            dl_v4_f4: "MCP-Server v0.4.0 — verbesserte Stabilität und Tool-Beschreibungen",
+            dl_v4_platform_win: "Windows 10/11 (x64) — Portabel, keine Installation erforderlich.",
+            dl_v4_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portabel, keine Installation erforderlich.",
+            dl_v3_highlights: "Höhepunkte v0.3.0",
+            dl_v3_f1: "Schnellbefehle — mit einem Klick von der Toolbar senden",
+            dl_v3_f2: "MCP 15 Tools — von 12 auf 15 erweitert",
+            dl_v3_f3: "Thema-Persistenz — Dunkles/ helles Thema wird gespeichert",
+            dl_v3_f4: "Plattformgetrennte Builds — Windows- und macOS-Ausgaben nicht mehr vermischt",
+            dl_v3_platform_win: "Windows 10/11 (x64) — Portabel, keine Installation erforderlich.",
+            dl_v3_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portabel, keine Installation erforderlich.",
+            dl_win_btn: "Windows x64 (.zip)", dl_mac_btn: "macOS (.zip)",
+            dl_view_release: "Release-Notes ansehen",
+            dl_v2_highlights: "Höhepunkte v0.2.0",
+            dl_v2_f1: "Plugin-System — Online-Suche, Ein-Klick-Installation von GitHub",
+            dl_v2_f2: "CAN-Bus-Analyser — unabhängige Verbindung, Frametabelle",
+            dl_v2_f3: "MCP-Server — 15 Tools, Echtzeit-GUI-Sync",
+            dl_v2_f4: "Terminal — Badge-Zeilennummern, behobener Text-Clipping",
+            dl_v2_f5: "STC ISP Plugin — Flash von STC89/12/15/8 Serien-MCUs",
+            dl_v2_f6: "43 automatisierte Tests gegen echte MCU-Hardware",
+            dl_v2_platform_win: "Windows 10/11 (x64) — Portabel, keine Installation erforderlich.",
+            dl_v2_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portabel, keine Installation erforderlich.",
+            dl_v1_highlights: "Erstveröffentlichung",
+            dl_v1_f1: "Serielle Kommunikation — HEX/TEXT, Zeitstempel, CRC, Auto-Send, DTR/RTS",
+            dl_v1_f2: "Modbus RTU/TCP — 8 Funktionscodes, Register-Monitor",
+            dl_v1_f3: "PLC-Steuerung — Siemens, Mitsubishi, Delta, Omron Voreinstellungen",
+            dl_v1_f4: "TCP/RTU-Brücke, HMI-Simulator, CAN-Bus, I2C/SPI",
+            dl_v1_f5: "MCP-Server mit 15 Tools für KI-Integration",
+            dl_v1_f6: "Cross-Platform (Windows, macOS, Linux)",
+            dl_source_title: "Aus Quellen kompilieren",
+            dl_source_f1: "Erfordert Rust 1.70+ Werkzeugkette",
+            dl_source_f2: "Repo klonen und cargo build --release ausführen",
+            dl_source_f3: "Alle Plattformen unterstützt",
+            dl_view_source: "Quellcode ansehen"
+        },
+        es: {
+            _title_zh: "Descargas - SerialRUN",
+            nav_features: "Características", nav_download: "Descargar", nav_guide: "Guía", nav_plugins: "Plugins",
+            dl_back: "Volver al inicio", dl_title: "Descargar SerialRUN",
+            dl_subtitle: "Todas las versiones con notas de versión",
+            dl_v4_highlights: "Destacados",
+            dl_v4_f1: "Modo CLI interactivo — estilo minicom, puerto serial se mantiene abierto",
+            dl_v4_f2: "Comandos CLI — send, read, connect, operaciones Modbus",
+            dl_v4_f3: "Corrección de cambio de tema — persistencia y renderizado de primer cuadro",
+            dl_v4_f4: "Servidor MCP v0.4.0 — estabilidad y descripciones de herramientas mejoradas",
+            dl_v4_platform_win: "Windows 10/11 (x64) — Portátil, sin instalación requerida.",
+            dl_v4_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portátil, sin instalación requerida.",
+            dl_v3_highlights: "Destacados v0.3.0",
+            dl_v3_f1: "Comandos rápidos — enviar con un clic desde la barra de herramientas",
+            dl_v3_f2: "MCP 15 herramientas — de 12 a 15 herramientas",
+            dl_v3_f3: "Persistencia de tema — tema oscuro/claro guardado entre reinicios",
+            dl_v3_f4: "Compilaciones separadas por plataforma — salidas Windows y macOS ya no mezcladas",
+            dl_v3_platform_win: "Windows 10/11 (x64) — Portátil, sin instalación requerida.",
+            dl_v3_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portátil, sin instalación requerida.",
+            dl_win_btn: "Windows x64 (.zip)", dl_mac_btn: "macOS (.zip)",
+            dl_view_release: "Ver notas de versión",
+            dl_v2_highlights: "Destacados v0.2.0",
+            dl_v2_f1: "Sistema de plugins — búsqueda en línea, instalación con un clic desde GitHub",
+            dl_v2_f2: "Analizador de bus CAN — conexión independiente, tabla de tramas",
+            dl_v2_f3: "Servidor MCP — 15 herramientas, sincronización GUI en tiempo real",
+            dl_v2_f4: "Terminal — números de línea con badge, corrección de recorte de texto",
+            dl_v2_f5: "Plugin STC ISP — flash de MCU serie STC89/12/15/8",
+            dl_v2_f6: "43 pruebas automatizadas contra hardware MCU real",
+            dl_v2_platform_win: "Windows 10/11 (x64) — Portátil, sin instalación requerida.",
+            dl_v2_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portátil, sin instalación requerida.",
+            dl_v1_highlights: "Versión inicial",
+            dl_v1_f1: "Comunicación serial — HEX/TEXT, marcas de tiempo, CRC, envío automático, DTR/RTS",
+            dl_v1_f2: "Modbus RTU/TCP — 8 códigos de función, monitor de registros",
+            dl_v1_f3: "Control PLC — preajustes Siemens, Mitsubishi, Delta, Omron",
+            dl_v1_f4: "Puente TCP/RTU, simulador HMI, bus CAN, I2C/SPI",
+            dl_v1_f5: "Servidor MCP con 15 herramientas para integración con IA",
+            dl_v1_f6: "Multiplataforma (Windows, macOS, Linux)",
+            dl_source_title: "Compilar desde código fuente",
+            dl_source_f1: "Requiere cadena de herramientas Rust 1.70+",
+            dl_source_f2: "Clonar el repositorio y ejecutar cargo build --release",
+            dl_source_f3: "Todas las plataformas soportadas",
+            dl_view_source: "Ver código fuente"
+        },
+        "pt-BR": {
+            _title_zh: "Downloads - SerialRUN",
+            nav_features: "Recursos", nav_download: "Download", nav_guide: "Guia", nav_plugins: "Plugins",
+            dl_back: "Voltar ao início", dl_title: "Baixar SerialRUN",
+            dl_subtitle: "Todas as versões com notas de versão",
+            dl_v4_highlights: "Destaques",
+            dl_v4_f1: "Modo CLI interativo — estilo minicom, porta serial permanece aberta",
+            dl_v4_f2: "Comandos CLI — send, read, connect, operações Modbus",
+            dl_v4_f3: "Correção de alternância de tema — persistência e renderização do primeiro quadro",
+            dl_v4_f4: "Servidor MCP v0.4.0 — estabilidade e descrições de ferramentas melhoradas",
+            dl_v4_platform_win: "Windows 10/11 (x64) — Portátil, sem instalação necessária.",
+            dl_v4_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portátil, sem instalação necessária.",
+            dl_v3_highlights: "Destaques v0.3.0",
+            dl_v3_f1: "Comandos rápidos — enviar com um clique da barra de ferramentas",
+            dl_v3_f2: "MCP 15 ferramentas — de 12 para 15 ferramentas",
+            dl_v3_f3: "Persistência de tema — tema escuro/claro salvo entre reinicializações",
+            dl_v3_f4: "Compilações separadas por plataforma — saídas Windows e macOS não misturadas",
+            dl_v3_platform_win: "Windows 10/11 (x64) — Portátil, sem instalação necessária.",
+            dl_v3_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portátil, sem instalação necessária.",
+            dl_win_btn: "Windows x64 (.zip)", dl_mac_btn: "macOS (.zip)",
+            dl_view_release: "Ver notas de versão",
+            dl_v2_highlights: "Destaques v0.2.0",
+            dl_v2_f1: "Sistema de plugins — pesquisa online, instalação com um clique do GitHub",
+            dl_v2_f2: "Analisador de barramento CAN — conexão independente, tabela de frames",
+            dl_v2_f3: "Servidor MCP — 15 ferramentas, sincronização GUI em tempo real",
+            dl_v2_f4: "Terminal — números de linha com badge, correção de corte de texto",
+            dl_v2_f5: "Plugin STC ISP — flash de MCUs série STC89/12/15/8",
+            dl_v2_f6: "43 testes automatizados contra hardware MCU real",
+            dl_v2_platform_win: "Windows 10/11 (x64) — Portátil, sem instalação necessária.",
+            dl_v2_platform_mac: "macOS 12+ (Apple Silicon / Intel) — Portátil, sem instalação necessária.",
+            dl_v1_highlights: "Versão inicial",
+            dl_v1_f1: "Comunicação serial — HEX/TEXT, timestamps, CRC, envio automático, DTR/RTS",
+            dl_v1_f2: "Modbus RTU/TCP — 8 códigos de função, monitor de registradores",
+            dl_v1_f3: "Controle PLC — predefinições Siemens, Mitsubishi, Delta, Omron",
+            dl_v1_f4: "Ponte TCP/RTU, simulador HMI, barramento CAN, I2C/SPI",
+            dl_v1_f5: "Servidor MCP com 15 ferramentas para integração com IA",
+            dl_v1_f6: "Multiplataforma (Windows, macOS, Linux)",
+            dl_source_title: "Compilar a partir do código-fonte",
+            dl_source_f1: "Requer cadeia de ferramentas Rust 1.70+",
+            dl_source_f2: "Clonar o repositório e executar cargo build --release",
+            dl_source_f3: "Todas as plataformas suportadas",
+            dl_view_source: "Ver código-fonte"
+        },
     };
-    function toggleLang() {
-        const html = document.documentElement;
-        const isEn = html.getAttribute('data-lang') === 'en';
-        const newLang = isEn ? 'zh' : 'en';
-        html.setAttribute('data-lang', newLang);
-        const t = dlTranslations[newLang];
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (t[key]) el.innerHTML = t[key];
-        });
-        document.querySelector('.lang-en').style.display = isEn ? 'none' : '';
-        document.querySelector('.lang-zh').style.display = isEn ? '' : 'none';
-        document.title = newLang === 'zh' ? '下载 - SerialRUN' : 'Downloads - SerialRUN';
-    }
+
+    registerTranslations(dlTranslations);
     </script>
 </body>
 </html>

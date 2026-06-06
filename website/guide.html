@@ -56,13 +56,13 @@
                 <span></span><span></span><span></span>
             </button>
             <div class="nav-links">
-                <a href="index.html#features">Features</a>
-                <a href="index.html#download">Download</a>
-                <a href="guide.html">Guide</a>
-                <a href="plugins.html">Plugins</a>
-                <a href="license.html">License</a>
+                <a href="index.html#features" data-i18n="nav_features">Features</a>
+                <a href="index.html#download" data-i18n="nav_download">Download</a>
+                <a href="guide.html" data-i18n="nav_guide">Guide</a>
+                <a href="plugins.html" data-i18n="nav_plugins">Plugins</a>
+                <a href="license.html" data-i18n="nav_license">License</a>
                 <a href="https://github.com/YaoIsAI/SerialRUN" target="_blank">GitHub</a>
-                <button class="lang-toggle" onclick="toggleLang()">
+                <button class="lang-toggle">
                     <span class="lang-en">中</span>
                     <span class="lang-zh" style="display:none">EN</span>
                 </button>
@@ -397,6 +397,10 @@
         // Guide page translations
         const guideTranslations = {
             en: {
+                _title_en: "User Guide - SerialRUN",
+                _title_zh: "使用指南 - SerialRUN",
+                nav_features: "Features", nav_download: "Download", nav_guide: "Guide",
+                nav_plugins: "Plugins", nav_license: "License",
                 guide_back: "Back to Home",
                 guide_title: "User Guide",
                 guide_subtitle: "Complete guide to using SerialRUN for serial port debugging.",
@@ -761,19 +765,194 @@
                 guide_persist_4: "警告/错误历史（最多 1000 条）",
                 guide_persist_5: "MCP 访问日志（最多 1000 条）",
                 footer_tagline: "专业串口调试助手",
-            }
+                nav_features: "功能特性", nav_download: "下載", nav_guide: "使用指南",
+                nav_plugins: "插件", nav_license: "许可证",
+            },
+            "zh-TW": {
+                _title_zh: "使用指南 - SerialRUN",
+                nav_features: "功能特性", nav_download: "下載", nav_guide: "使用指南",
+                nav_plugins: "外掛", nav_license: "授權條款",
+                guide_back: "返回首頁", guide_title: "使用指南",
+                guide_subtitle: "SerialRUN 串口調試完整使用指南。",
+                guide_toc: "目錄",
+                guide_qs_title: "快速開始",
+                guide_qs_1: "透過 USB 將序列裝置連接到電腦",
+                guide_qs_2: "點擊左側面板中的重新整理按鈕 <code>↻</code> 偵測連接埠",
+                guide_qs_3: "從下拉選單中選擇序列埠（例如 COM3）",
+                guide_qs_4: "設定波特率（預設 115200，支援自訂值）",
+                guide_qs_5: "點擊綠色的<strong>連接</strong>按鈕",
+                guide_qs_6: "在底部終端機輸入框中輸入命令並點擊<strong>傳送</strong>",
+                guide_qs_tip_label: "提示：",
+                guide_qs_tip: "如果不知道波特率，點擊<strong>自動</strong>按鈕進行自動偵測（進度顯示在狀態列中）。",
+                guide_int_title: "介面佈局",
+                guide_term_title: "終端機功能",
+                guide_mod_title: "Modbus 調試",
+                guide_plc_title: "PLC 控制",
+                guide_bridge_title: "TCP/RTU 橋接",
+                guide_mcp_title: "MCP 伺服器",
+                guide_plugins_title: "外掛系統",
+                guide_tips_title: "技巧與疑難排解",
+                footer_tagline: "專業序列埠調試助手",
+            },
+            ja: {
+                _title_zh: "ユーザーガイド - SerialRUN",
+                nav_features: "機能", nav_download: "ダウンロード", nav_guide: "ガイド",
+                nav_plugins: "プラグイン", nav_license: "ライセンス",
+                guide_back: "ホームに戻る", guide_title: "ユーザーガイド",
+                guide_subtitle: "SerialRUNによるシリアルポートデバッグの完全ガイド。",
+                guide_toc: "目次",
+                guide_qs_title: "クイックスタート",
+                guide_qs_1: "USB経由でシリアルデバイスをコンピュータに接続",
+                guide_qs_2: "左パネルの更新ボタン <code>↻</code> をクリックしてポートを検出",
+                guide_qs_3: "ドロップダウンからシリアルポートを選択（例：COM3）",
+                guide_qs_4: "ボーレートを設定（デフォルト115200、カスタム値対応）",
+                guide_qs_5: "緑色の<strong>接続</strong>ボタンをクリック",
+                guide_qs_6: "下部のターミナル入力ボックスにコマンドを入力し<strong>送信</strong>をクリック",
+                guide_qs_tip_label: "ヒント：",
+                guide_qs_tip: "ボーレートが不明な場合は<strong>自動</strong>ボタンをクリックして自動検出（ステータスバーに進捗表示）。",
+                guide_int_title: "インターフェースレイアウト",
+                guide_term_title: "ターミナル機能",
+                guide_mod_title: "Modbusデバッグ",
+                guide_plc_title: "PLC制御",
+                guide_bridge_title: "TCP/RTUブリッジ",
+                guide_mcp_title: "MCPサーバー",
+                guide_plugins_title: "プラグインシステム",
+                guide_tips_title: "ヒントとトラブルシューティング",
+                footer_tagline: "プロフェッショナルシリアルポートデバッグアシスタント",
+            },
+            ko: {
+                _title_zh: "사용자 가이드 - SerialRUN",
+                nav_features: "기능", nav_download: "다운로드", nav_guide: "가이드",
+                nav_plugins: "플러그인", nav_license: "라이선스",
+                guide_back: "홈으로 돌아가기", guide_title: "사용자 가이드",
+                guide_subtitle: "SerialRUN을 사용한 시리얼 포트 디버깅 완전 가이드.",
+                guide_toc: "목차",
+                guide_qs_title: "빠른 시작",
+                guide_qs_1: "USB를 통해 시리얼 디바이스를 컴퓨터에 연결",
+                guide_qs_2: "왼쪽 패널의 새로고침 버튼 <code>↻</code>을 클릭하여 포트 감지",
+                guide_qs_3: "드롭다운에서 시리얼 포트 선택 (예: COM3)",
+                guide_qs_4: "보드레이트 설정 (기본값 115200, 사용자 지정 값 지원)",
+                guide_qs_5: "녹색 <strong>연결</strong> 버튼 클릭",
+                guide_qs_6: "하단 터미널 입력 상자에 명령을 입력하고 <strong>전송</strong> 클릭",
+                guide_qs_tip_label: "팁:",
+                guide_qs_tip: "보드레이트를 모르면 <strong>자동</strong> 버튼을 클릭하여 자동 감지 (상태 표시줄에 진행률 표시).",
+                guide_int_title: "인터페이스 레이아웃",
+                guide_term_title: "터미널 기능",
+                guide_mod_title: "Modbus 디버깅",
+                guide_plc_title: "PLC 제어",
+                guide_bridge_title: "TCP/RTU 브릿지",
+                guide_mcp_title: "MCP 서버",
+                guide_plugins_title: "플러그인 시스템",
+                guide_tips_title: "팁 및 문제 해결",
+                footer_tagline: "프로페셔널 시리얼 포트 디버깅 어시스턴트",
+            },
+            fr: {
+                _title_zh: "Guide utilisateur - SerialRUN",
+                nav_features: "Fonctionnalités", nav_download: "Télécharger", nav_guide: "Guide",
+                nav_plugins: "Plugins", nav_license: "Licence",
+                guide_back: "Retour à l'accueil", guide_title: "Guide utilisateur",
+                guide_subtitle: "Guide complet de l'utilisation de SerialRUN pour le débogage de port série.",
+                guide_toc: "Sommaire",
+                guide_qs_title: "Démarrage rapide",
+                guide_qs_1: "Connectez votre appareil série à l'ordinateur via USB",
+                guide_qs_2: "Cliquez sur le bouton actualiser <code>↻</code> dans le panneau gauche pour détecter les ports",
+                guide_qs_3: "Sélectionnez un port série dans le menu déroulant (par ex., COM3)",
+                guide_qs_4: "Définissez le débit en bauds (par défaut 115200, valeurs personnalisées supportées)",
+                guide_qs_5: "Cliquez sur le bouton vert <strong>Connecter</strong>",
+                guide_qs_6: "Tapez des commandes dans la zone de saisie du terminal et cliquez sur <strong>Envoyer</strong>",
+                guide_qs_tip_label: "Astuce :",
+                guide_qs_tip: "Si vous ne connaissez pas le débit en bauds, cliquez sur le bouton <strong>Auto</strong> pour la détection automatique (progression affichée dans la barre d'état).",
+                guide_int_title: "Disposition de l'interface",
+                guide_term_title: "Fonctionnalités du terminal",
+                guide_mod_title: "Débogage Modbus",
+                guide_plc_title: "Contrôle PLC",
+                guide_bridge_title: "Pont TCP/RTU",
+                guide_mcp_title: "Serveur MCP",
+                guide_plugins_title: "Système de plugins",
+                guide_tips_title: "Astuces et dépannage",
+                footer_tagline: "Assistant de débogage de port série professionnel",
+            },
+            de: {
+                _title_zh: "Benutzerhandbuch - SerialRUN",
+                nav_features: "Funktionen", nav_download: "Download", nav_guide: "Anleitung",
+                nav_plugins: "Plugins", nav_license: "Lizenz",
+                guide_back: "Zurück zur Startseite", guide_title: "Benutzerhandbuch",
+                guide_subtitle: "Vollständiger Leitfaden zur Nutzung von SerialRUN für das serielle Debugging.",
+                guide_toc: "Inhaltsverzeichnis",
+                guide_qs_title: "Schnellstart",
+                guide_qs_1: "Verbinden Sie Ihr serielles Gerät über USB mit dem Computer",
+                guide_qs_2: "Klicken Sie auf die Aktualisierungsschaltfläche <code>↻</code> im linken Panel, um Ports zu erkennen",
+                guide_qs_3: "Wählen Sie einen seriellen Port aus dem Dropdown (z.B. COM3)",
+                guide_qs_4: "Stellen Sie die Baudrate ein (Standard 115200, benutzerdefinierte Werte unterstützt)",
+                guide_qs_5: "Klicken Sie auf die grüne <strong>Verbinden</strong>-Schaltfläche",
+                guide_qs_6: "Geben Sie Befehle in das Terminaleingabefeld ein und klicken Sie auf <strong>Senden</strong>",
+                guide_qs_tip_label: "Tipp:",
+                guide_qs_tip: "Wenn Sie die Baudrate nicht kennen, klicken Sie auf die <strong>Auto</strong>-Schaltfläche zur automatischen Erkennung (Fortschritt in der Statusleiste angezeigt).",
+                guide_int_title: "Interface-Layout",
+                guide_term_title: "Terminal-Funktionen",
+                guide_mod_title: "Modbus-Debugging",
+                guide_plc_title: "PLC-Steuerung",
+                guide_bridge_title: "TCP/RTU-Brücke",
+                guide_mcp_title: "MCP-Server",
+                guide_plugins_title: "Plugin-System",
+                guide_tips_title: "Tipps & Fehlerbehebung",
+                footer_tagline: "Professioneller Serieller Port Debugging Assistent",
+            },
+            es: {
+                _title_zh: "Guía del usuario - SerialRUN",
+                nav_features: "Características", nav_download: "Descargar", nav_guide: "Guía",
+                nav_plugins: "Plugins", nav_license: "Licencia",
+                guide_back: "Volver al inicio", guide_title: "Guía del usuario",
+                guide_subtitle: "Guía completa del uso de SerialRUN para la depuración de puerto serial.",
+                guide_toc: "Contenido",
+                guide_qs_title: "Inicio rápido",
+                guide_qs_1: "Conecte su dispositivo serial a la computadora por USB",
+                guide_qs_2: "Haga clic en el botón actualizar <code>↻</code> en el panel izquierdo para detectar puertos",
+                guide_qs_3: "Seleccione un puerto serial del menú desplegable (por ejemplo, COM3)",
+                guide_qs_4: "Configure la velocidad en baudios (predeterminado 115200, admite valores personalizados)",
+                guide_qs_5: "Haga clic en el botón verde <strong>Conectar</strong>",
+                guide_qs_6: "Escriba comandos en la caja de entrada del terminal y haga clic en <strong>Enviar</strong>",
+                guide_qs_tip_label: "Consejo:",
+                guide_qs_tip: "Si no conoce la velocidad en baudios, haga clic en el botón <strong>Auto</strong> para la detección automática (progreso mostrado en la barra de estado).",
+                guide_int_title: "Disposición de la interfaz",
+                guide_term_title: "Características del terminal",
+                guide_mod_title: "Depuración Modbus",
+                guide_plc_title: "Control PLC",
+                guide_bridge_title: "Puente TCP/RTU",
+                guide_mcp_title: "Servidor MCP",
+                guide_plugins_title: "Sistema de plugins",
+                guide_tips_title: "Consejos y solución de problemas",
+                footer_tagline: "Asistente de depuración de puerto serial profesional",
+            },
+            "pt-BR": {
+                _title_zh: "Guia do usuário - SerialRUN",
+                nav_features: "Recursos", nav_download: "Download", nav_guide: "Guia",
+                nav_plugins: "Plugins", nav_license: "Licença",
+                guide_back: "Voltar ao início", guide_title: "Guia do usuário",
+                guide_subtitle: "Guia completo do uso do SerialRUN para depuração de porta serial.",
+                guide_toc: "Sumário",
+                guide_qs_title: "Início rápido",
+                guide_qs_1: "Conecte seu dispositivo serial ao computador via USB",
+                guide_qs_2: "Clique no botão atualizar <code>↻</code> no painel esquerdo para detectar portas",
+                guide_qs_3: "Selecione uma porta serial no menu suspenso (ex: COM3)",
+                guide_qs_4: "Defina a taxa de transmissão (padrão 115200, suporta valores personalizados)",
+                guide_qs_5: "Clique no botão verde <strong>Conectar</strong>",
+                guide_qs_6: "Digite comandos na caixa de entrada do terminal e clique em <strong>Enviar</strong>",
+                guide_qs_tip_label: "Dica:",
+                guide_qs_tip: "Se você não conhece a taxa de transmissão, clique no botão <strong>Auto</strong> para detecção automática (progresso exibido na barra de status).",
+                guide_int_title: "Layout da interface",
+                guide_term_title: "Recursos do terminal",
+                guide_mod_title: "Depuração Modbus",
+                guide_plc_title: "Controle PLC",
+                guide_bridge_title: "Ponte TCP/RTU",
+                guide_mcp_title: "Servidor MCP",
+                guide_plugins_title: "Sistema de plugins",
+                guide_tips_title: "Dicas e solução de problemas",
+                footer_tagline: "Assistente de depuração de porta serial profissional",
+            },
         };
 
-        const origApplyLang = window.applyLang;
-        window.applyLang = function(lang) {
-            origApplyLang(lang);
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (guideTranslations[lang] && guideTranslations[lang][key]) {
-                    el.innerHTML = guideTranslations[lang][key];
-                }
-            });
-        };
+        registerTranslations(guideTranslations);
     </script>
     <script src="https://cdn.counter.dev/script.js" data-id="3318d339-fc57-44cd-ae02-d43ea607fb6a" data-utcoffset="8"></script>
 </body>
