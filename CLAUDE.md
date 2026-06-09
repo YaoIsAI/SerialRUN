@@ -177,7 +177,34 @@ make install   # Install to /Applications
 | `crates/serialrun-core/src/plugin_install.rs` | PluginManager, install/uninstall/enable/disable |
 | `crates/serialrun-core/src/plugin_registry.rs` | GitHub community search and download |
 | `plugins/serialrun-mpy-ide/` | MicroPython IDE plugin (REPL, editor, file browser) |
-| `docs/PLUGIN_DEVELOPMENT.md` | Plugin development handbook |
+| `plugins/serialrun-example-plugin/` | **Template plugin** — copy this to start new plugin |
+| `docs/PLUGIN_DEVELOPMENT.md` | Full plugin development handbook |
+| `docs/PLUGIN_CHEATSHEET.md` | Quick reference for agents and developers |
+| `docs/PLUGIN_SCHEMA.json` | Machine-readable plugin.json schema |
+
+### Plugin Development (Agent Guide)
+
+**To create a new plugin:**
+1. Copy `plugins/serialrun-example-plugin/` as template
+2. Edit `plugin.json` (name, version, description, author)
+3. Edit `src/lib.rs` — implement commands in `plugin_execute()`
+4. Add to workspace `Cargo.toml` members list
+5. Build: `cargo build --release -p <plugin-name>`
+6. Install: `cp target/release/lib<name>.dylib ~/.serialrun/plugins/<name>/`
+7. Validate: `serialrun plugin validate ~/.serialrun/plugins/<name>/`
+
+**FFI contract (4 required + 4 optional functions):**
+- Required: `plugin_get_info`, `plugin_get_commands`, `plugin_execute`, `plugin_free_string`
+- Optional: `plugin_get_capabilities`, `plugin_init`, `plugin_cleanup`, `plugin_get_ui_layout`
+- All return `*mut c_char` containing JSON strings
+- Thread safety: use `OnceLock<Mutex<Option<PluginCallbacks>>>` for callbacks
+
+**Plugin CLI commands:**
+```bash
+serialrun plugin validate <dir>   # Check plugin.json format
+serialrun plugin info <dir>       # Show plugin details
+serialrun plugin list             # List installed plugins
+```
 
 ### Known Bug Patterns
 - `repo_name` in RegistryPlugin must be plugin name (not repo name)

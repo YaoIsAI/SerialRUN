@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SerialRUN Plugin Manifest",
+  "description": "Schema for plugin.json — the metadata file every SerialRUN plugin must contain.",
+  "type": "object",
+  "required": ["name", "version", "description", "author"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Unique plugin identifier. Use serialrun-xxx format. Must match plugin_get_info() return value.",
+      "examples": ["serialrun-mpy-ide", "serialrun-stc-isp"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version (MAJOR.MINOR.PATCH)"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable description (1-2 sentences)"
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Author name or organization"
+    },
+    "license": {
+      "type": "string",
+      "default": "BSL-1.1",
+      "description": "SPDX license identifier"
+    },
+    "min_serialrun_version": {
+      "type": "string",
+      "default": "0.1.0",
+      "description": "Minimum SerialRUN version required"
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["windows-x64", "macos-arm64", "macos-x64", "linux-x64", "linux-arm64"]
+      },
+      "default": ["windows-x64", "macos-arm64", "linux-x64"],
+      "description": "Supported platforms. Empty array = all platforms."
+    },
+    "category": {
+      "type": "string",
+      "enum": ["ide", "firmware-flash", "tool", "protocol", "example"],
+      "description": "Plugin category for filtering"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Search tags for discoverability"
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "description": "Project homepage URL"
+    },
+    "repository": {
+      "type": "string",
+      "format": "uri",
+      "description": "GitHub repo URL"
+    },
+    "usage": {
+      "type": "string",
+      "description": "Usage instructions (Markdown format)"
+    },
+    "toolbar": {
+      "type": "object",
+      "description": "Toolbar integration config. If present, plugin appears in main toolbar.",
+      "required": ["icon", "label"],
+      "properties": {
+        "icon": {
+          "type": "string",
+          "description": "Emoji icon for toolbar button"
+        },
+        "label": {
+          "type": "string",
+          "description": "Button text"
+        },
+        "tooltip": {
+          "type": "string",
+          "default": "",
+          "description": "Hover tooltip"
+        },
+        "position": {
+          "type": "string",
+          "enum": ["left", "center", "right", "plugins"],
+          "default": "plugins",
+          "description": "Position in toolbar"
+        }
+      }
+    },
+    "window": {
+      "type": "object",
+      "description": "Standalone window config. If present, plugin opens as a floating window.",
+      "required": ["title"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Window title"
+        },
+        "default_width": {
+          "type": "number",
+          "default": 800,
+          "description": "Default width in pixels"
+        },
+        "default_height": {
+          "type": "number",
+          "default": 600,
+          "description": "Default height in pixels"
+        },
+        "resizable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether window is resizable"
+        },
+        "min_width": {
+          "type": "number",
+          "description": "Minimum width in pixels"
+        },
+        "min_height": {
+          "type": "number",
+          "description": "Minimum height in pixels"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
