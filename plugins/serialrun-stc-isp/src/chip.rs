@@ -49,6 +49,7 @@ impl std::fmt::Display for StcFamily {
 pub struct ChipInfo {
     pub family: StcFamily,
     pub family_code: u8,
+    #[allow(dead_code)]
     pub mcu_id: u16,
     pub flash_size: u32,       // bytes (from handshake response)
     pub eeprom_size: u32,      // bytes (from handshake response)

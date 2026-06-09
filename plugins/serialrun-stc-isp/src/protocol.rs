@@ -9,7 +9,6 @@
 ///
 /// Baud rate detection: send 0x7F repeatedly, MCU responds after power cycle.
 
-use std::time::Duration;
 
 // ============================================================================
 // Protocol Constants
@@ -27,9 +26,11 @@ pub const CMD_ERASE: u8 = 0x03;       // Erase flash
 pub const CMD_WRITE: u8 = 0x02;       // Write flash
 pub const CMD_VERIFY: u8 = 0x06;      // Verify flash
 pub const CMD_RESET: u8 = 0xFF;       // Reset MCU
-pub const CMD_SET_BAUD: u8 = 0x0F;    // Set baud rate
+#[allow(dead_code)]
+pub const CMD_SET_BAUD: u8 = 0x0F;    // Set baud rate (reserved for future use)
 
 /// Baud rates to try during detection
+#[allow(dead_code)]
 pub const DETECT_BAUD_RATES: &[u32] = &[2400, 4800, 9600, 19200, 38400, 57600, 115200];
 
 // ============================================================================
@@ -93,7 +94,8 @@ pub fn reset_packet() -> Vec<u8> {
     build_packet(CMD_RESET, &[])
 }
 
-/// Get chip info command
+/// Get chip info command (reserved for future use)
+#[allow(dead_code)]
 pub fn info_packet() -> Vec<u8> {
     build_packet(CMD_INFO, &[])
 }

@@ -4,7 +4,7 @@
 /// for MicroPython devices (ESP32, ESP8266, RP2040, etc.)
 
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int};
+use std::os::raw::c_char;
 use std::sync::{Mutex, OnceLock};
 
 use serialrun_plugin_api::*;
@@ -207,18 +207,21 @@ fn write_file(path: &str, content: &str) -> bool {
 }
 
 /// Delete a file on the device
+#[allow(dead_code)]
 fn delete_file(path: &str) -> bool {
     let code = format!("import os\nos.remove('{}')", path);
     execute_code(&code).is_some()
 }
 
 /// Create a directory on the device
+#[allow(dead_code)]
 fn make_dir(path: &str) -> bool {
     let code = format!("import os\nos.mkdir('{}')", path);
     execute_code(&code).is_some()
 }
 
 /// Check if a file exists on the device
+#[allow(dead_code)]
 fn file_exists(path: &str) -> bool {
     let code = format!("import os\nprint(os.path.exists('{}'))", path);
     if let Some(output) = execute_code(&code) {

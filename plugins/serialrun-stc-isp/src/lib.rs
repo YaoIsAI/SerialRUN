@@ -6,7 +6,7 @@
 mod chip;
 mod protocol;
 
-use chip::{ChipInfo, StcFamily, parse_hex_file};
+use chip::{ChipInfo, parse_hex_file};
 use protocol::*;
 use serialrun_plugin_api::{PluginCapability, PluginCallbacks, PluginInfo, PluginCommand, PluginParameter, PluginResult, PluginStatus, serialize_capabilities};
 use std::ffi::{c_char, CStr, CString};
@@ -153,6 +153,7 @@ fn log_info(msg: &str) {
     }
 }
 
+#[allow(dead_code)]
 fn log_warn(msg: &str) {
     if let Some(cbs) = get_callbacks() {
         if let Some(log) = cbs.log_warn {
@@ -163,6 +164,7 @@ fn log_warn(msg: &str) {
     }
 }
 
+#[allow(dead_code)]
 fn log_error(msg: &str) {
     if let Some(cbs) = get_callbacks() {
         if let Some(log) = cbs.log_error {

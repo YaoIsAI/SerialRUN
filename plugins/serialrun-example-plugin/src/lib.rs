@@ -7,9 +7,9 @@ static CALLBACKS: OnceLock<Mutex<Option<PluginCallbacks>>> = OnceLock::new();
 #[no_mangle]
 pub extern "C" fn plugin_get_info() -> *mut c_char {
     let info = ApiPluginInfo {
-        name: "Example Plugin".to_string(),
+        name: "serialrun-example-plugin".to_string(),
         version: "0.1.0".to_string(),
-        description: "An example plugin for SerialRUN".to_string(),
+        description: "An example plugin for SerialRUN demonstrating the plugin API".to_string(),
         author: "SerialRUN Team".to_string(),
     };
 
@@ -166,7 +166,7 @@ mod tests {
         let info_str = unsafe { CStr::from_ptr(ptr).to_string_lossy() };
         let info: ApiPluginInfo = serde_json::from_str(&info_str).unwrap();
 
-        assert_eq!(info.name, "Example Plugin");
+        assert_eq!(info.name, "serialrun-example-plugin");
         assert_eq!(info.version, "0.1.0");
 
         plugin_free_string(ptr);

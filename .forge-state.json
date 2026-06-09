@@ -1,16 +1,44 @@
 {
   "version": "1.0",
-  "task": "MCP 全面修复：文档升级 + 代码修复 + 新增工具 + Standalone 同步",
-  "started_at": "2026-06-04T03:15:00Z",
+  "task": "修复插件系统所有问题 + 测试插件开发功能",
+  "started_at": "2026-06-06T19:00:00Z",
   "current_phase": 1,
   "total_phases": 4,
   "git_branch": "full",
-  "initial_commit": "38858acf9616d864b98f59460e7d4a433d63a9e7",
+  "initial_commit": "d131d61bf0d2ccdbc5c4872819515f947b088bf4",
   "phases": [
-    { "id": 1, "name": "MCP 文档全面升级", "status": "in_progress" },
-    { "id": 2, "name": "MCP 代码修复（死参数+行为问题）", "status": "pending" },
-    { "id": 3, "name": "新增对话友好工具", "status": "pending" },
-    { "id": 4, "name": "Standalone 同步 + 构建验证", "status": "pending" }
+    {
+      "id": 1,
+      "name": "修复代码问题",
+      "status": "in_progress",
+      "started_at": "2026-06-06T19:00:00Z",
+      "completed_at": null,
+      "commit_hash": null
+    },
+    {
+      "id": 2,
+      "name": "更新插件开发文档",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "commit_hash": null
+    },
+    {
+      "id": 3,
+      "name": "添加插件验证工具",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "commit_hash": null
+    },
+    {
+      "id": 4,
+      "name": "端到端集成测试",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "commit_hash": null
+    }
   ],
   "retry_count": 0,
   "max_retries": 3
