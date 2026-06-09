@@ -1,14 +1,28 @@
 {
   "name": "serialrun-example-plugin",
   "version": "0.1.0",
-  "description": "Example plugin for SerialRUN demonstrating the plugin API",
+  "description": "Example plugin demonstrating ALL SerialRUN plugin API features — copy this to start your own plugin",
   "author": "SerialRUN Team",
   "license": "BSL-1.1",
-  "min_serialrun_version": "0.1.0",
+  "min_serialrun_version": "0.2.0",
   "platforms": ["windows-x64", "macos-arm64", "macos-x64", "linux-x64", "linux-arm64"],
   "category": "example",
-  "tags": ["example", "demo"],
+  "tags": ["example", "demo", "template"],
   "homepage": "https://github.com/YaoIsAI/SerialRUN",
   "repository": "https://github.com/YaoIsAI/SerialRUN/tree/master/plugins/serialrun-example-plugin",
-  "usage": "## Example Plugin\n\nA reference plugin demonstrating the SerialRUN plugin API.\n\n### Commands\n\n- **echo** — Echoes input text back. Parameter: `{\"text\": \"hello\"}`\n- **timestamp** — Returns the current UTC timestamp.\n- **add** — Adds two numbers. Parameter: `{\"a\": 5, \"b\": 3}`\n\n### Usage\n\n1. Open the Plugins panel in SerialRUN\n2. Find \"Example Plugin\" in the list and click **Open**\n3. Select a command from the dropdown\n4. Enter JSON parameters if required\n5. Click **Run Command** to execute\n\n### For Developers\n\nThis plugin serves as a template for building your own plugins. It demonstrates:\n- All required FFI functions (`plugin_get_info`, `plugin_get_commands`, `plugin_execute`, `plugin_free_string`)\n- Optional FFI functions (`plugin_get_capabilities`, `plugin_init`, `plugin_cleanup`)\n- Thread-safe callback storage with `OnceLock<Mutex>`\n- Proper memory management with `CString` and `plugin_free_string`"
+  "usage": "## Example Plugin\n\nA reference plugin demonstrating ALL SerialRUN plugin API features.\n\n### Commands\n\n- **echo** — Echoes input text. Parameter: `{\"data\": \"hello\"}`\n- **serial_send** — Sends hex data to serial port. Parameters: `{\"data\": \"48656C6C6F\", \"timeout_ms\": 1000}`\n- **add** — Adds two numbers. Parameters: `{\"a\": 5, \"b\": 3}`\n- **demo_progress** — Shows progress bar during a simulated task\n- **open_file** — Opens file dialog and reads selected file\n- **get_setting** / **set_setting** — Persistent config storage\n\n### For Developers\n\nThis plugin is the recommended starting point for new plugins. Copy this directory, rename, and modify.",
+  "toolbar": {
+    "icon": "🔧",
+    "label": "Example",
+    "tooltip": "Example Plugin — demonstrates all API features",
+    "position": "plugins"
+  },
+  "window": {
+    "title": "Example Plugin",
+    "default_width": 600,
+    "default_height": 400,
+    "resizable": true,
+    "min_width": 400,
+    "min_height": 300
+  }
 }

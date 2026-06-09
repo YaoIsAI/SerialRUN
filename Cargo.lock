@@ -4212,6 +4212,7 @@ name = "serialrun-example-plugin"
 version = "0.4.0"
 dependencies = [
  "chrono",
+ "hex",
  "serde",
  "serde_json",
  "serialrun-plugin-api",

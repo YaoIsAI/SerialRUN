@@ -12,4 +12,5 @@ crate-type = ["cdylib"]
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
+hex = { workspace = true }
 serialrun-plugin-api = { path = "../../crates/serialrun-plugin-api" }
