@@ -134,8 +134,9 @@ pub fn render_dynamic_ui(
     render_generic_plugin_ui(ui, layout, name);
 }
 
-    // ── Generic plugin UI renderer ──
-}
+// ============================================================================
+// Generic plugin UI renderer
+// ============================================================================
 
 /// Render generic plugin UI with ButtonGroup support
 fn render_generic_plugin_ui(ui: &mut egui::Ui, layout: &UiLayoutNode, plugin_name: &str) {
@@ -256,9 +257,11 @@ fn render_button_group(ui: &mut egui::Ui, buttons: &[UiButton], direction: &str,
                 .rounding(4.0)
                 .min_size(Vec2::new(80.0, 28.0)));
 
-            if let Some(tooltip) = &button.tooltip {
-                btn.on_hover_text(tooltip);
-            }
+            let btn = if let Some(tooltip) = &button.tooltip {
+                btn.on_hover_text(tooltip)
+            } else {
+                btn
+            };
 
             if btn.clicked() {
                 let params = button.params.as_deref().unwrap_or("{}");
