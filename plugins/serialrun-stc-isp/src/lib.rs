@@ -10,9 +10,25 @@ use chip::{ChipInfo, parse_hex_file};
 use protocol::*;
 use serialrun_plugin_api::{PluginCapability, PluginCallbacks, PluginInfo, PluginCommand, PluginParameter, PluginResult, PluginStatus, serialize_capabilities};
 use std::ffi::{c_char, CStr, CString};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{Mutex, OnceLock};
 
 static CALLBACKS: OnceLock<Mutex<Option<PluginCallbacks>>> = OnceLock::new();
+
+// ============================================================================
+// Panic-safe wrapper
+// ============================================================================
+
+fn catch_plugin_panic<F: FnOnce() -> *mut c_char + std::panic::UnwindSafe>(f: F) -> *mut c_char {
+    match catch_unwind(f) {
+        Ok(ptr) => ptr,
+        Err(_) => {
+            let err = PluginResult::error("Plugin panicked internally");
+            let json = serde_json::to_string(&err).unwrap_or_default();
+            CString::new(json).unwrap_or_default().into_raw()
+        }
+    }
+}
 
 // ============================================================================
 // FFI Functions (Required)
@@ -20,76 +36,82 @@ static CALLBACKS: OnceLock<Mutex<Option<PluginCallbacks>>> = OnceLock::new();
 
 #[no_mangle]
 pub extern "C" fn plugin_get_info() -> *mut c_char {
-    let info = PluginInfo {
-        name: "STC ISP Flasher".to_string(),
-        version: "0.1.0".to_string(),
-        description: "Flash STC series MCU via ISP protocol".to_string(),
-        author: "SerialRUN".to_string(),
-    };
-    CString::new(serde_json::to_string(&info).unwrap()).unwrap().into_raw()
+    catch_plugin_panic(|| {
+        let info = PluginInfo {
+            name: "STC ISP Flasher".to_string(),
+            version: "0.1.0".to_string(),
+            description: "Flash STC series MCU via ISP protocol".to_string(),
+            author: "SerialRUN".to_string(),
+        };
+        CString::new(serde_json::to_string(&info).unwrap()).unwrap().into_raw()
+    })
 }
 
 #[no_mangle]
 pub extern "C" fn plugin_get_commands() -> *mut c_char {
-    let commands = vec![
-        PluginCommand {
-            name: "flash".to_string(),
-            description: "Flash firmware to STC MCU".to_string(),
-            parameters: vec![
-                PluginParameter {
-                    name: "firmware_path".to_string(),
-                    description: "Path to HEX/BIN firmware file".to_string(),
-                    required: true,
-                    param_type: "string".to_string(),
-                },
-                PluginParameter {
-                    name: "baud_rate".to_string(),
-                    description: "Baud rate for ISP communication (default: 115200)".to_string(),
-                    required: false,
-                    param_type: "number".to_string(),
-                },
-            ],
-        },
-        PluginCommand {
-            name: "detect".to_string(),
-            description: "Detect connected STC MCU".to_string(),
-            parameters: vec![
-                PluginParameter {
-                    name: "baud_rate".to_string(),
-                    description: "Baud rate for detection (default: 9600)".to_string(),
-                    required: false,
-                    param_type: "number".to_string(),
-                },
-            ],
-        },
-    ];
-    CString::new(serde_json::to_string(&commands).unwrap()).unwrap().into_raw()
+    catch_plugin_panic(|| {
+        let commands = vec![
+            PluginCommand {
+                name: "flash".to_string(),
+                description: "Flash firmware to STC MCU".to_string(),
+                parameters: vec![
+                    PluginParameter {
+                        name: "firmware_path".to_string(),
+                        description: "Path to HEX/BIN firmware file".to_string(),
+                        required: true,
+                        param_type: "string".to_string(),
+                    },
+                    PluginParameter {
+                        name: "baud_rate".to_string(),
+                        description: "Baud rate for ISP communication (default: 115200)".to_string(),
+                        required: false,
+                        param_type: "number".to_string(),
+                    },
+                ],
+            },
+            PluginCommand {
+                name: "detect".to_string(),
+                description: "Detect connected STC MCU".to_string(),
+                parameters: vec![
+                    PluginParameter {
+                        name: "baud_rate".to_string(),
+                        description: "Baud rate for detection (default: 9600)".to_string(),
+                        required: false,
+                        param_type: "number".to_string(),
+                    },
+                ],
+            },
+        ];
+        CString::new(serde_json::to_string(&commands).unwrap()).unwrap().into_raw()
+    })
 }
 
 #[no_mangle]
 pub extern "C" fn plugin_execute(command: *const c_char, params: *const c_char) -> *mut c_char {
-    let cmd = unsafe {
-        if command.is_null() {
-            return CString::new(r#"{"success":false,"error":"Null command"}"#).unwrap().into_raw();
-        }
-        CStr::from_ptr(command).to_string_lossy().to_string()
-    };
+    catch_plugin_panic(AssertUnwindSafe(|| {
+        let cmd = unsafe {
+            if command.is_null() {
+                return CString::new(r#"{"success":false,"error":"Null command"}"#).unwrap().into_raw();
+            }
+            CStr::from_ptr(command).to_string_lossy().to_string()
+        };
 
-    let params: serde_json::Value = unsafe {
-        if params.is_null() {
-            serde_json::json!({})
-        } else {
-            serde_json::from_str(&CStr::from_ptr(params).to_string_lossy()).unwrap_or_default()
-        }
-    };
+        let params: serde_json::Value = unsafe {
+            if params.is_null() {
+                serde_json::json!({})
+            } else {
+                serde_json::from_str(&CStr::from_ptr(params).to_string_lossy()).unwrap_or_default()
+            }
+        };
 
-    let result = match cmd.as_str() {
-        "flash" => handle_flash(&params),
-        "detect" => handle_detect(&params),
-        _ => PluginResult::error(format!("Unknown command: {}", cmd)),
-    };
+        let result = match cmd.as_str() {
+            "flash" => handle_flash(&params),
+            "detect" => handle_detect(&params),
+            _ => PluginResult::error(format!("Unknown command: {}", cmd)),
+        };
 
-    CString::new(serde_json::to_string(&result).unwrap()).unwrap().into_raw()
+        CString::new(serde_json::to_string(&result).unwrap()).unwrap().into_raw()
+    }))
 }
 
 #[no_mangle]
@@ -100,39 +122,52 @@ pub extern "C" fn plugin_free_string(s: *mut c_char) {
 }
 
 // ============================================================================
-// Optional FFI Functions (Phase 1 API)
+// Optional FFI Functions
 // ============================================================================
 
 #[no_mangle]
 pub extern "C" fn plugin_get_capabilities() -> *mut c_char {
-    let caps = vec![PluginCapability::SerialPort, PluginCapability::Progress, PluginCapability::Logging];
-    CString::new(serialize_capabilities(&caps).unwrap()).unwrap().into_raw()
+    catch_plugin_panic(|| {
+        let caps = vec![PluginCapability::SerialPort, PluginCapability::Progress, PluginCapability::Logging];
+        CString::new(serialize_capabilities(&caps).unwrap()).unwrap().into_raw()
+    })
 }
 
 #[no_mangle]
 pub extern "C" fn plugin_init(callbacks: *const PluginCallbacks) -> bool {
-    if callbacks.is_null() {
-        return false;
-    }
-    let cbs = unsafe { *callbacks };
-    let store = CALLBACKS.get_or_init(|| Mutex::new(None));
-    if let Ok(mut guard) = store.lock() {
-        *guard = Some(cbs);
+    catch_unwind(AssertUnwindSafe(|| {
+        if callbacks.is_null() {
+            return false;
+        }
+        let cbs = unsafe { *callbacks };
+        let store = CALLBACKS.get_or_init(|| Mutex::new(None));
+        match store.lock() {
+            Ok(mut guard) => {
+                *guard = Some(cbs);
+            }
+            Err(poisoned) => {
+                let mut guard = poisoned.into_inner();
+                *guard = Some(cbs);
+            }
+        }
         if let Some(log) = cbs.log_info {
             let msg = CString::new("STC ISP Flasher plugin initialized").unwrap();
             log(msg.as_ptr());
         }
-    }
-    true
+        true
+    }))
+    .unwrap_or(false)
 }
 
 #[no_mangle]
 pub extern "C" fn plugin_cleanup() {
-    if let Some(store) = CALLBACKS.get() {
-        if let Ok(mut guard) = store.lock() {
-            *guard = None;
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        if let Some(store) = CALLBACKS.get() {
+            if let Ok(mut guard) = store.lock() {
+                *guard = None;
+            }
         }
-    }
+    }));
 }
 
 // ============================================================================
@@ -140,7 +175,14 @@ pub extern "C" fn plugin_cleanup() {
 // ============================================================================
 
 fn get_callbacks() -> Option<PluginCallbacks> {
-    CALLBACKS.get()?.lock().ok()?.clone()
+    let mutex = CALLBACKS.get()?;
+    match mutex.lock() {
+        Ok(guard) => guard.clone(),
+        Err(poisoned) => {
+            log::warn!("Mutex poisoned in stc-isp, recovering");
+            poisoned.into_inner().clone()
+        }
+    }
 }
 
 fn log_info(msg: &str) {

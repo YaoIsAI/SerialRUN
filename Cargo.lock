@@ -4213,6 +4213,7 @@ version = "0.4.0"
 dependencies = [
  "chrono",
  "hex",
+ "log",
  "serde",
  "serde_json",
  "serialrun-plugin-api",
@@ -4262,6 +4263,7 @@ dependencies = [
 name = "serialrun-mpy-ide"
 version = "0.4.0"
 dependencies = [
+ "log",
  "serde",
  "serde_json",
  "serialrun-plugin-api",
@@ -4279,6 +4281,7 @@ dependencies = [
 name = "serialrun-stc-isp"
 version = "0.4.0"
 dependencies = [
+ "log",
  "serde",
  "serde_json",
  "serialrun-plugin-api",

@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use serialrun_plugin_api::manifest::{PluginManifest, current_platform, supports_current_platform};
-use crate::plugin::{LoadedPlugin, PluginError, PluginResult};
+use crate::plugin::{LoadedPlugin, PluginError, CoreResult};
 
 /// Plugin installation state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -74,7 +74,7 @@ impl PluginManager {
     }
 
     /// Install a plugin from a zip file using Rust native zip extraction
-    pub fn install_from_zip(&mut self, zip_path: &Path) -> PluginResult<String> {
+    pub fn install_from_zip(&mut self, zip_path: &Path) -> CoreResult<String> {
         log::info!("Installing plugin from: {}", zip_path.display());
 
         // Create unique temp directory per install
@@ -179,7 +179,7 @@ impl PluginManager {
     }
 
     /// Install a plugin from a directory (for development)
-    pub fn install_from_dir(&mut self, dir: &Path) -> PluginResult<String> {
+    pub fn install_from_dir(&mut self, dir: &Path) -> CoreResult<String> {
         let manifest_path = dir.join("plugin.json");
         if !manifest_path.exists() {
             return Err(PluginError::PluginError("No plugin.json found".to_string()));
@@ -211,7 +211,7 @@ impl PluginManager {
     }
 
     /// Uninstall a plugin
-    pub fn uninstall(&mut self, name: &str) -> PluginResult<()> {
+    pub fn uninstall(&mut self, name: &str) -> CoreResult<()> {
         let plugin = self.installed.remove(name)
             .ok_or_else(|| PluginError::PluginError(format!("Plugin '{}' not found", name)))?;
 

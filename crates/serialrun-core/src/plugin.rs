@@ -4,7 +4,7 @@ use std::ffi::{CStr, CString};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
-pub use serialrun_plugin_api::{PluginCapability, PluginCallbacks, PluginStatus};
+pub use serialrun_plugin_api::{PluginCapability, PluginCallbacks, PluginResult, PluginStatus};
 
 #[derive(Error, Debug)]
 pub enum PluginError {
@@ -20,7 +20,7 @@ pub enum PluginError {
     JsonError(#[from] serde_json::Error),
 }
 
-pub type PluginResult<T> = Result<T, PluginError>;
+pub type CoreResult<T> = Result<T, PluginError>;
 
 /// Information about a loaded plugin.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -46,14 +46,6 @@ pub struct PluginParameter {
     pub description: String,
     pub required: bool,
     pub param_type: String,
-}
-
-/// Result of executing a plugin command.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct PluginResultData {
-    pub success: bool,
-    pub result: Option<serde_json::Value>,
-    pub error: Option<String>,
 }
 
 // FFI function signatures (required)
@@ -100,7 +92,7 @@ impl Drop for LoadedPlugin {
 
 impl LoadedPlugin {
     /// Load a plugin from a dynamic library file.
-    pub fn load(path: &Path) -> PluginResult<Self> {
+    pub fn load(path: &Path) -> CoreResult<Self> {
         unsafe {
             let library = libloading::Library::new(path).map_err(|e| {
                 PluginError::LoadError(format!("Failed to load {}: {}", path.display(), e))
@@ -278,7 +270,7 @@ impl LoadedPlugin {
     }
 
     /// Execute a command on this plugin.
-    pub fn execute_command(&self, command: &str, params: &str) -> PluginResult<PluginResultData> {
+    pub fn execute_command(&self, command: &str, params: &str) -> CoreResult<PluginResult> {
         if !self.is_enabled {
             return Err(PluginError::PluginError(
                 "Plugin is disabled".to_string(),
@@ -302,7 +294,7 @@ impl LoadedPlugin {
         unsafe {
             let result_ptr = (self.fn_execute)(cmd_c.as_ptr(), params_c.as_ptr());
             if result_ptr.is_null() {
-                return Ok(PluginResultData {
+                return Ok(PluginResult {
                     success: false,
                     result: None,
                     error: Some("Plugin returned null".to_string()),
@@ -312,10 +304,10 @@ impl LoadedPlugin {
             let result_str = CStr::from_ptr(result_ptr).to_string_lossy().to_string();
             (self.fn_free_string)(result_ptr);
 
-            // BUG 10 FIX: Deserialize directly into PluginResultData
-            match serde_json::from_str::<PluginResultData>(&result_str) {
+            // BUG 10 FIX: Deserialize directly into PluginResult
+            match serde_json::from_str::<PluginResult>(&result_str) {
                 Ok(data) => Ok(data),
-                Err(e) => Ok(PluginResultData {
+                Err(e) => Ok(PluginResult {
                     success: false,
                     result: None,
                     error: Some(format!("Failed to parse plugin result: {}", e)),
@@ -369,13 +361,13 @@ mod tests {
 
     #[test]
     fn test_plugin_result_data_serde() {
-        let result = PluginResultData {
+        let result = PluginResult {
             success: true,
             result: Some(serde_json::json!({"value": 42})),
             error: None,
         };
         let json = serde_json::to_string(&result).unwrap();
-        let parsed: PluginResultData = serde_json::from_str(&json).unwrap();
+        let parsed: PluginResult = serde_json::from_str(&json).unwrap();
         assert!(parsed.success);
     }
 }
