@@ -78,6 +78,39 @@ fn get_callbacks() -> Option<PluginCallbacks> {
 }
 ```
 
+## UI Layout — ButtonGroup (One-Click Send)
+
+```json
+{
+  "type": "panel", "id": "actions", "title": "Actions",
+  "content": {
+    "type": "button_group",
+    "buttons": [
+      { "id": "start", "label": "Start", "icon": "▶️", "command": "device_start", "style": "primary" },
+      { "id": "stop", "label": "Stop", "icon": "⏹️", "command": "device_stop", "style": "danger" }
+    ]
+  }
+}
+```
+
+**Button styles:** `primary` (blue), `success` (green), `danger` (red), `secondary` (gray)
+
+## UI Layout — Input Field
+
+```json
+{
+  "type": "panel", "id": "send", "title": "Send",
+  "content": {
+    "type": "input",
+    "placeholder": "Enter hex data...",
+    "command": "serial_send",
+    "button_label": "Send"
+  }
+}
+```
+
+**Submit params:** `{"text": "user input"}`
+
 ## Cargo.toml Template
 
 ```toml

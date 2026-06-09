@@ -19,7 +19,6 @@
 /// 5. Install: cp target/release/libyour_plugin.dylib ~/.serialrun/plugins/your-plugin/
 
 use serialrun_plugin_api::*;
-use std::any::Any;
 use std::ffi::{c_char, CStr, CString};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{Mutex, OnceLock};
@@ -39,18 +38,6 @@ fn catch_plugin_panic<F: FnOnce() -> *mut c_char + std::panic::UnwindSafe>(f: F)
             let json = serde_json::to_string(&err).unwrap_or_else(|_| {
                 r#"{"success":false,"error":"Plugin panicked and JSON serialization failed"}"#.to_string()
             });
-            CString::new(json).unwrap_or_default().into_raw()
-        }
-    }
-}
-
-/// Safely convert a Result to a C string pointer, handling all error cases.
-fn result_to_ptr(result: Result<String, Box<dyn Any + Send>>) -> *mut c_char {
-    match result {
-        Ok(json) => CString::new(json).unwrap_or_default().into_raw(),
-        Err(_) => {
-            let err = PluginResult::error("Plugin panicked internally");
-            let json = serde_json::to_string(&err).unwrap_or_default();
             CString::new(json).unwrap_or_default().into_raw()
         }
     }

@@ -130,5 +130,25 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+
+  "$defs": {
+    "UiButton": {
+      "type": "object",
+      "required": ["id", "label", "command"],
+      "properties": {
+        "id": { "type": "string", "description": "Unique button ID" },
+        "label": { "type": "string", "description": "Button text" },
+        "icon": { "type": "string", "description": "Icon (emoji)" },
+        "command": { "type": "string", "description": "Command to execute on click" },
+        "params": { "type": "string", "description": "JSON parameters for the command" },
+        "style": { "type": "string", "enum": ["primary", "success", "danger", "secondary"], "default": "primary" },
+        "tooltip": { "type": "string", "description": "Hover tooltip" }
+      }
+    },
+    "ButtonStyle": {
+      "type": "string",
+      "enum": ["primary", "success", "danger", "secondary"]
+    }
+  }
 }

@@ -431,32 +431,37 @@ progress_is_cancelled() -> bool             // 检查是否取消
 
 ```json
 {
-  "type": "split_horizontal",
+  "type": "split_vertical",
   "ratio": 0.3,
   "children": [
     {
       "type": "panel",
-      "id": "file_browser",
-      "title": "📁 Files",
-      "content": { "type": "tree_view" }
+      "id": "actions",
+      "title": "⚡ 快捷操作",
+      "content": {
+        "type": "button_group",
+        "buttons": [
+          { "id": "start", "label": "启动", "icon": "▶️", "command": "device_start", "style": "primary" },
+          { "id": "stop", "label": "停止", "icon": "⏹️", "command": "device_stop", "style": "danger" }
+        ]
+      }
     },
     {
-      "type": "split_vertical",
-      "ratio": 0.6,
-      "children": [
-        {
-          "type": "panel",
-          "id": "editor",
-          "title": "📝 Editor",
-          "content": { "type": "code_editor", "language": "python" }
-        },
-        {
-          "type": "panel",
-          "id": "repl",
-          "title": "💬 REPL",
-          "content": { "type": "terminal" }
-        }
-      ]
+      "type": "panel",
+      "id": "send",
+      "title": "🔌 发送",
+      "content": {
+        "type": "input",
+        "placeholder": "输入数据...",
+        "command": "serial_send",
+        "button_label": "发送"
+      }
+    },
+    {
+      "type": "panel",
+      "id": "log",
+      "title": "📋 日志",
+      "content": { "type": "terminal" }
     }
   ]
 }
@@ -466,11 +471,182 @@ progress_is_cancelled() -> bool             // 检查是否取消
 
 | 类型 | 说明 |
 |------|------|
+| `button_group` | **按钮组** — 一键发送命令（见下方详解） |
+| `input` | **输入框** — 用户输入数据并提交 |
 | `tree_view` | 树形文件浏览器 |
 | `code_editor` | 代码编辑器（支持 `language` 参数） |
 | `terminal` | 终端/控制台 |
 | `text` | 纯文本 |
 | `html` | HTML 内容 |
+
+### ButtonGroup 详解
+
+ButtonGroup 让插件可以在窗口中声明按钮，用户点击即执行命令。
+
+```json
+{
+  "type": "button_group",
+  "direction": "horizontal",
+  "buttons": [
+    {
+      "id": "btn1",
+      "label": "一键启动",
+      "icon": "▶️",
+      "command": "device_start",
+      "params": "{\"mode\": \"auto\"}",
+      "style": "primary",
+      "tooltip": "启动设备"
+    }
+  ]
+}
+```
+
+**按钮字段：**
+
+| 字段 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `id` | string | ✅ | 按钮唯一 ID |
+| `label` | string | ✅ | 按钮显示文字 |
+| `icon` | string | ❌ | 图标（emoji） |
+| `command` | string | ✅ | 点击时执行的命令 |
+| `params` | string | ❌ | 命令参数（JSON 字符串） |
+| `style` | string | ❌ | 样式：`primary`(蓝), `success`(绿), `danger`(红), `secondary`(灰) |
+| `tooltip` | string | ❌ | 鼠标悬停提示 |
+
+**direction 字段：** `"horizontal"`（默认）或 `"vertical"`
+
+### Input 详解
+
+Input 让插件可以接收用户输入并提交命令。
+
+```json
+{
+  "type": "input",
+  "placeholder": "输入十六进制数据...",
+  "command": "serial_send",
+  "button_label": "发送"
+}
+```
+
+**字段：**
+
+| 字段 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `placeholder` | string | ❌ | 占位文字 |
+| `command` | string | ✅ | 提交时执行的命令 |
+| `button_label` | string | ❌ | 提交按钮文字（为空则按 Enter 提交） |
+
+**提交的参数格式：** `{"text": "用户输入的内容"}`
+
+### 完整客户插件示例
+
+```json
+{
+  "name": "customer-device",
+  "version": "1.0.0",
+  "description": "客户设备控制插件",
+  "author": "Customer",
+  "toolbar": { "icon": "🏭", "label": "设备控制" },
+  "window": { "title": "设备控制面板", "default_width": 500, "default_height": 400 }
+}
+```
+
+```rust
+use serialrun_plugin_api::*;
+use std::ffi::{c_char, CStr, CString};
+use std::sync::{Mutex, OnceLock};
+
+static CALLBACKS: OnceLock<Mutex<Option<PluginCallbacks>>> = OnceLock::new();
+
+fn get_callbacks() -> Option<PluginCallbacks> {
+    CALLBACKS.get()?.lock().ok()?.clone()
+}
+
+#[no_mangle]
+pub extern "C" fn plugin_get_info() -> *mut c_char {
+    let info = PluginInfo {
+        name: "customer-device".to_string(),
+        version: "1.0.0".to_string(),
+        description: "客户设备控制插件".to_string(),
+        author: "Customer".to_string(),
+    };
+    CString::new(serde_json::to_string(&info).unwrap()).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn plugin_get_commands() -> *mut c_char {
+    let commands = vec![
+        PluginCommand { name: "device_start".to_string(), description: "启动设备".to_string(), parameters: vec![] },
+        PluginCommand { name: "device_stop".to_string(), description: "停止设备".to_string(), parameters: vec![] },
+        PluginCommand { name: "read_status".to_string(), description: "读取状态".to_string(), parameters: vec![] },
+        PluginCommand { name: "serial_send".to_string(), description: "发送数据".to_string(), parameters: vec![
+            PluginParameter { name: "text".to_string(), description: "十六进制数据".to_string(), required: true, param_type: "string".to_string() },
+        ]},
+    ];
+    CString::new(serde_json::to_string(&commands).unwrap()).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn plugin_execute(command: *const c_char, params: *const c_char) -> *mut c_char {
+    let cmd = unsafe { CStr::from_ptr(command).to_string_lossy() };
+    let params_str = unsafe { if params.is_null() { "{}".to_string() } else { CStr::from_ptr(params).to_string_lossy().to_string() } };
+    let params: serde_json::Value = serde_json::from_str(&params_str).unwrap_or_default();
+
+    let cb = get_callbacks().unwrap();
+    let write = cb.serial_write.unwrap();
+
+    let result = match cmd.as_ref() {
+        "device_start" => {
+            let cmd_bytes = hex::decode("01 03 00 00 00 0A C5 CD").unwrap();
+            write(cmd_bytes.as_ptr(), cmd_bytes.len() as u32);
+            PluginResult::success(serde_json::json!({"status": "started"}))
+        }
+        "device_stop" => {
+            let cmd_bytes = hex::decode("01 03 00 01 00 01 D5 CD").unwrap();
+            write(cmd_bytes.as_ptr(), cmd_bytes.len() as u32);
+            PluginResult::success(serde_json::json!({"status": "stopped"}))
+        }
+        "read_status" => {
+            let cmd_bytes = hex::decode("01 03 00 02 00 02 E5 CD").unwrap();
+            write(cmd_bytes.as_ptr(), cmd_bytes.len() as u32);
+            PluginResult::success(serde_json::json!({"status": "reading"}))
+        }
+        "serial_send" => {
+            let hex_str = params.get("text").and_then(|v| v.as_str()).unwrap_or("");
+            match hex::decode(hex_str) {
+                Ok(data) => { write(data.as_ptr(), data.len() as u32); PluginResult::success(serde_json::json!({"sent": data.len()})) }
+                Err(e) => PluginResult::error(format!("Invalid hex: {}", e)),
+            }
+        }
+        _ => PluginResult::error(format!("Unknown command: {}", cmd)),
+    };
+
+    CString::new(serde_json::to_string(&result).unwrap()).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn plugin_free_string(s: *mut c_char) {
+    if !s.is_null() { unsafe { let _ = CString::from_raw(s); } }
+}
+
+#[no_mangle]
+pub extern "C" fn plugin_get_capabilities() -> *mut c_char {
+    let caps = vec![PluginCapability::SerialPort, PluginCapability::Logging];
+    CString::new(serialize_capabilities(&caps).unwrap()).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn plugin_init(callbacks: *const PluginCallbacks) -> bool {
+    if callbacks.is_null() { return false; }
+    unsafe { *CALLBACKS.get_or_init(|| Mutex::new(None)).lock().unwrap() = Some(*callbacks); }
+    true
+}
+
+#[no_mangle]
+pub extern "C" fn plugin_cleanup() {
+    if let Some(s) = CALLBACKS.get() { if let Ok(mut g) = s.lock() { *g = None; } }
+}
+```
 
 ---
 
