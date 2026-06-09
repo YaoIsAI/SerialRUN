@@ -370,4 +370,117 @@ mod tests {
         let parsed: PluginResult = serde_json::from_str(&json).unwrap();
         assert!(parsed.success);
     }
+
+    #[test]
+    fn test_plugin_result_error_serde() {
+        let result = PluginResult::error("something went wrong");
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(json.contains("something went wrong"));
+        assert!(!result.success);
+        assert!(result.result.is_none());
+        assert!(result.error.is_some());
+    }
+
+    #[test]
+    fn test_plugin_result_success_serde() {
+        let result = PluginResult::success(serde_json::json!({"key": "value"}));
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(json.contains("key"));
+        assert!(result.success);
+        assert!(result.result.is_some());
+        assert!(result.error.is_none());
+    }
+
+    #[test]
+    fn test_plugin_result_null_fields_omitted() {
+        let result = PluginResult::success(serde_json::json!(42));
+        let json = serde_json::to_string(&result).unwrap();
+        // With skip_serializing_if, null fields should be omitted
+        assert!(!json.contains("error"));
+        assert!(json.contains("success"));
+        assert!(json.contains("42"));
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn test_load_example_plugin() {
+        // This test requires the example plugin to be built
+        let plugin_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../target/release/libserialrun_example_plugin.dylib");
+
+        if !plugin_path.exists() {
+            eprintln!("Skipping integration test: plugin not built at {}", plugin_path.display());
+            return;
+        }
+
+        let result = LoadedPlugin::load(&plugin_path);
+        assert!(result.is_ok(), "Failed to load plugin: {:?}", result.err());
+
+        let mut plugin = result.unwrap();
+        assert_eq!(plugin.info().name, "serialrun-example-plugin");
+        assert_eq!(plugin.info().version, "0.1.0");
+        assert!(!plugin.commands().is_empty());
+
+        // Note: plugin_init returns false for null callbacks, which is expected.
+        // In production, the host provides real callbacks.
+        // For testing, we mark initialized manually.
+        plugin.initialized = true;
+
+        // Test execute_command
+        let result = plugin.execute_command("echo", r#"{"data": "hello"}"#);
+        assert!(result.is_ok());
+        let plugin_result = result.unwrap();
+        assert!(plugin_result.success);
+        assert_eq!(plugin_result.result.unwrap(), serde_json::json!("hello"));
+
+        // Test unknown command
+        let result = plugin.execute_command("unknown", "{}");
+        assert!(result.is_ok());
+        let plugin_result = result.unwrap();
+        assert!(!plugin_result.success);
+
+        // Test cleanup
+        plugin.cleanup();
+        assert!(!plugin.is_initialized());
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn test_plugin_execute_disabled() {
+        let plugin_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../target/release/libserialrun_example_plugin.dylib");
+
+        if !plugin_path.exists() {
+            return;
+        }
+
+        let mut plugin = LoadedPlugin::load(&plugin_path).unwrap();
+        plugin.set_enabled(false);
+
+        let result = plugin.execute_command("echo", "{}");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn test_plugin_execute_not_initialized() {
+        let plugin_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../target/release/libserialrun_example_plugin.dylib");
+
+        if !plugin_path.exists() {
+            return;
+        }
+
+        let mut plugin = LoadedPlugin::load(&plugin_path).unwrap();
+        plugin.initialized = false;
+
+        let result = plugin.execute_command("echo", "{}");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_plugin_load_nonexistent() {
+        let result = LoadedPlugin::load(std::path::Path::new("/nonexistent/path.dylib"));
+        assert!(result.is_err());
+    }
 }

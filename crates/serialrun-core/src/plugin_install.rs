@@ -528,4 +528,59 @@ mod tests {
         // Cleanup
         let _ = fs::remove_dir_all(&test_dir);
     }
+
+    #[test]
+    fn test_zip_path_traversal_blocked() {
+        use std::io::Write;
+
+        let test_dir = test_plugin_dir("zip_traversal");
+        let plugins_dir = test_dir.join("plugins");
+        let mut mgr = PluginManager::with_dir(plugins_dir.clone());
+
+        // Create a malicious zip with path traversal
+        let zip_path = test_dir.join("malicious.zip");
+        fs::create_dir_all(&test_dir).unwrap();
+
+        {
+            let zip_file = fs::File::create(&zip_path).unwrap();
+            let mut zip = zip::ZipWriter::new(zip_file);
+            let options = zip::write::SimpleFileOptions::default()
+                .compression_method(zip::CompressionMethod::Stored);
+
+            // Try to write outside the target directory
+            zip.start_file("../../../etc/passwd", options).unwrap();
+            zip.write_all(b"malicious content").unwrap();
+
+            // Also include a valid plugin.json
+            zip.start_file("plugin.json", options).unwrap();
+            let manifest = PluginManifest::from_info(
+                "evil-plugin".to_string(),
+                "1.0.0".to_string(),
+                "Evil plugin".to_string(),
+                "Attacker".to_string(),
+            );
+            zip.write_all(manifest.to_json().unwrap().as_bytes()).unwrap();
+
+            zip.finish().unwrap();
+        }
+
+        // Try to install the malicious zip
+        let result = mgr.install_from_zip(&zip_path);
+
+        // The install should either fail or the path traversal should be blocked
+        // by the zip crate's mangled_name() function
+        if result.is_ok() {
+            // If install succeeded, verify no files were written outside the plugin dir
+            let plugin_dir = plugins_dir.join("evil-plugin");
+            assert!(plugin_dir.exists(), "Plugin dir should exist");
+
+            // Check that no traversal occurred
+            let escaped = test_dir.join("../../../etc/passwd");
+            assert!(!escaped.exists() || !escaped.to_string_lossy().contains("etc"),
+                "Path traversal should be blocked");
+        }
+
+        // Cleanup
+        let _ = fs::remove_dir_all(&test_dir);
+    }
 }
