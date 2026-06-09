@@ -301,18 +301,73 @@ pub extern "C" fn plugin_cleanup() {
 }
 
 /// Return UI layout as JSON.
+/// Demonstrates ButtonGroup component for one-click command execution.
 #[no_mangle]
 pub extern "C" fn plugin_get_ui_layout() -> *mut c_char {
     catch_plugin_panic(|| {
         let layout = UiLayoutNode::SplitVertical {
             children: vec![
+                // Button panel — one-click actions
                 UiLayoutNode::Panel {
-                    id: "commands".to_string(),
-                    title: "📋 Commands".to_string(),
-                    content: UiContent::Text,
+                    id: "actions".to_string(),
+                    title: "⚡ Quick Actions".to_string(),
+                    content: UiContent::ButtonGroup {
+                        buttons: vec![
+                            UiButton {
+                                id: "echo".to_string(),
+                                label: "Echo".to_string(),
+                                icon: Some("📢".to_string()),
+                                command: "echo".to_string(),
+                                params: Some(r#"{"data": "Hello from plugin!"}"#.to_string()),
+                                style: ButtonStyle::Primary,
+                                tooltip: Some("Echo test data".to_string()),
+                            },
+                            UiButton {
+                                id: "add".to_string(),
+                                label: "Add 3+4".to_string(),
+                                icon: Some("🔢".to_string()),
+                                command: "add".to_string(),
+                                params: Some(r#"{"a": 3, "b": 4}"#.to_string()),
+                                style: ButtonStyle::Success,
+                                tooltip: Some("Calculate 3 + 4".to_string()),
+                            },
+                            UiButton {
+                                id: "progress".to_string(),
+                                label: "Demo Progress".to_string(),
+                                icon: Some("📊".to_string()),
+                                command: "demo_progress".to_string(),
+                                params: None,
+                                style: ButtonStyle::Secondary,
+                                tooltip: Some("Run a task with progress bar".to_string()),
+                            },
+                            UiButton {
+                                id: "file".to_string(),
+                                label: "Open File".to_string(),
+                                icon: Some("📂".to_string()),
+                                command: "open_file".to_string(),
+                                params: None,
+                                style: ButtonStyle::Secondary,
+                                tooltip: Some("Open a file dialog".to_string()),
+                            },
+                        ],
+                        direction: "horizontal".to_string(),
+                    },
                     width: None,
-                    height: Some(200.0),
+                    height: Some(80.0),
                 },
+                // Serial port quick send panel
+                UiLayoutNode::Panel {
+                    id: "serial_send".to_string(),
+                    title: "🔌 Serial Port Quick Send".to_string(),
+                    content: UiContent::Input {
+                        placeholder: "Enter hex data (e.g., 48656C6C6F)".to_string(),
+                        command: "serial_send".to_string(),
+                        button_label: "Send".to_string(),
+                    },
+                    width: None,
+                    height: Some(60.0),
+                },
+                // Output panel
                 UiLayoutNode::Panel {
                     id: "output".to_string(),
                     title: "💬 Output".to_string(),
@@ -637,7 +692,21 @@ mod tests {
         let layout = parse_ui_layout(&json_str).unwrap();
         match layout {
             UiLayoutNode::SplitVertical { children, .. } => {
-                assert_eq!(children.len(), 2);
+                assert_eq!(children.len(), 3); // buttons, serial send, output
+                // Verify first panel has ButtonGroup
+                if let UiLayoutNode::Panel { content: UiContent::ButtonGroup { buttons, .. }, .. } = &children[0] {
+                    assert_eq!(buttons.len(), 4);
+                    assert_eq!(buttons[0].command, "echo");
+                    assert_eq!(buttons[1].command, "add");
+                } else {
+                    panic!("Expected ButtonGroup in first panel");
+                }
+                // Verify second panel has Input
+                if let UiLayoutNode::Panel { content: UiContent::Input { command, .. }, .. } = &children[1] {
+                    assert_eq!(command, "serial_send");
+                } else {
+                    panic!("Expected Input in second panel");
+                }
             }
             _ => panic!("Expected SplitVertical"),
         }

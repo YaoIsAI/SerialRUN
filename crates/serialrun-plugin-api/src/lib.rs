@@ -291,6 +291,73 @@ pub enum UiContent {
     /// Custom HTML content
     #[serde(rename = "html")]
     Html,
+    /// Button group — declares a set of action buttons.
+    /// Each button triggers a command via plugin_execute().
+    #[serde(rename = "button_group")]
+    ButtonGroup {
+        #[serde(default)]
+        buttons: Vec<UiButton>,
+        /// Layout direction: "horizontal" (default) or "vertical"
+        #[serde(default = "default_direction")]
+        direction: String,
+    },
+    /// Input field — lets user type text, sends command on Enter or button click.
+    #[serde(rename = "input")]
+    Input {
+        /// Placeholder text
+        #[serde(default)]
+        placeholder: String,
+        /// Command to execute when user submits (Enter or button)
+        command: String,
+        /// Label for the submit button (if empty, submit on Enter only)
+        #[serde(default)]
+        button_label: String,
+    },
+}
+
+/// A button in a ButtonGroup.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UiButton {
+    /// Unique button ID
+    pub id: String,
+    /// Button label text
+    pub label: String,
+    /// Optional icon (emoji)
+    #[serde(default)]
+    pub icon: Option<String>,
+    /// Command to execute when clicked (passed to plugin_execute)
+    pub command: String,
+    /// Optional JSON parameters for the command
+    #[serde(default)]
+    pub params: Option<String>,
+    /// Button style
+    #[serde(default = "default_button_style")]
+    pub style: ButtonStyle,
+    /// Tooltip text on hover
+    #[serde(default)]
+    pub tooltip: Option<String>,
+}
+
+/// Button visual style.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ButtonStyle {
+    /// Primary action (blue)
+    Primary,
+    /// Success action (green)
+    Success,
+    /// Danger/warning action (red)
+    Danger,
+    /// Secondary/neutral action (gray)
+    Secondary,
+}
+
+fn default_button_style() -> ButtonStyle {
+    ButtonStyle::Primary
+}
+
+fn default_direction() -> String {
+    "horizontal".to_string()
 }
 
 fn default_language() -> String {
@@ -468,5 +535,87 @@ mod tests {
 
         let parsed = parse_ui_layout(&json).unwrap();
         assert!(parsed.to_json().unwrap().contains("split_horizontal"));
+    }
+
+    #[test]
+    fn test_button_group_serde() {
+        let layout = UiLayoutNode::Panel {
+            id: "actions".to_string(),
+            title: "Actions".to_string(),
+            content: UiContent::ButtonGroup {
+                buttons: vec![
+                    UiButton {
+                        id: "start".to_string(),
+                        label: "Start".to_string(),
+                        icon: Some("▶️".to_string()),
+                        command: "device_start".to_string(),
+                        params: None,
+                        style: ButtonStyle::Primary,
+                        tooltip: Some("Start device".to_string()),
+                    },
+                    UiButton {
+                        id: "stop".to_string(),
+                        label: "Stop".to_string(),
+                        icon: Some("⏹️".to_string()),
+                        command: "device_stop".to_string(),
+                        params: None,
+                        style: ButtonStyle::Danger,
+                        tooltip: None,
+                    },
+                ],
+                direction: "horizontal".to_string(),
+            },
+            width: None,
+            height: None,
+        };
+
+        let json = serialize_ui_layout(&layout).unwrap();
+        assert!(json.contains("button_group"));
+        assert!(json.contains("device_start"));
+        assert!(json.contains("primary"));
+        assert!(json.contains("danger"));
+
+        let parsed = parse_ui_layout(&json).unwrap();
+        match parsed {
+            UiLayoutNode::Panel { content: UiContent::ButtonGroup { buttons, .. }, .. } => {
+                assert_eq!(buttons.len(), 2);
+                assert_eq!(buttons[0].command, "device_start");
+                assert_eq!(buttons[1].style, ButtonStyle::Danger);
+            }
+            _ => panic!("Expected Panel with ButtonGroup"),
+        }
+    }
+
+    #[test]
+    fn test_button_group_json_parse() {
+        let json = r#"{
+            "type": "panel",
+            "id": "toolbar",
+            "title": "Toolbar",
+            "content": {
+                "type": "button_group",
+                "buttons": [
+                    {
+                        "id": "btn1",
+                        "label": "Send",
+                        "command": "send_data",
+                        "params": "{\"hex\": true}",
+                        "style": "success"
+                    }
+                ],
+                "direction": "vertical"
+            }
+        }"#;
+
+        let layout: UiLayoutNode = serde_json::from_str(json).unwrap();
+        match layout {
+            UiLayoutNode::Panel { content: UiContent::ButtonGroup { buttons, direction }, .. } => {
+                assert_eq!(buttons.len(), 1);
+                assert_eq!(buttons[0].label, "Send");
+                assert_eq!(buttons[0].params, Some(r#"{"hex": true}"#.to_string()));
+                assert_eq!(direction, "vertical");
+            }
+            _ => panic!("Expected Panel with ButtonGroup"),
+        }
     }
 }

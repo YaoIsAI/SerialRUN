@@ -1,8 +1,10 @@
 /// MicroPython IDE — Full-featured Thonny-style implementation
 /// All menus, toolbar buttons, and core functions implemented
+///
+/// Also provides generic plugin UI rendering for ButtonGroup and other layouts.
 
 use egui::{self, Color32, RichText, Stroke, Vec2, Margin, Rounding};
-use serialrun_plugin_api::{UiLayoutNode, UiContent};
+use serialrun_plugin_api::{UiLayoutNode, UiContent, UiButton, ButtonStyle};
 use std::sync::{Arc, Mutex, OnceLock};
 
 // ============================================================================
@@ -118,15 +120,185 @@ fn async_result() -> Arc<Mutex<Option<String>>> {
 // ============================================================================
 
 pub fn render_dynamic_ui(
-    ui: &mut egui::Ui, _layout: &UiLayoutNode, name: &str,
+    ui: &mut egui::Ui, layout: &UiLayoutNode, name: &str,
     repl: &mut String, input: &mut String, _files: &mut Vec<FileEntry>,
     code: &mut String, file: &mut Option<String>,
 ) {
-    if name != "serialrun-mpy-ide" {
-        ui.label(RichText::new("No UI layout").color(Color32::from_rgb(120, 120, 130)));
+    // MicroPython IDE has its own custom UI
+    if name == "serialrun-mpy-ide" {
+        render_mpy_ide_ui(ui, layout, repl, input, _files, code, file);
         return;
     }
 
+    // Generic plugin: render layout tree with ButtonGroup support
+    render_generic_plugin_ui(ui, layout, name);
+}
+
+    // ── Generic plugin UI renderer ──
+}
+
+/// Render generic plugin UI with ButtonGroup support
+fn render_generic_plugin_ui(ui: &mut egui::Ui, layout: &UiLayoutNode, plugin_name: &str) {
+    let is_dark = ui.visuals().dark_mode;
+    let t = if is_dark { T::dark() } else { T::light() };
+
+    ui.label(RichText::new(plugin_name).strong().size(14.0).color(t.text));
+    ui.separator();
+
+    render_layout_node(ui, layout, plugin_name, &t);
+}
+
+/// Recursively render a UI layout node
+fn render_layout_node(ui: &mut egui::Ui, node: &UiLayoutNode, plugin_name: &str, t: &T) {
+    match node {
+        UiLayoutNode::SplitHorizontal { children, ratio } => {
+            let total_width = ui.available_width();
+            let split_width = total_width * ratio;
+
+            ui.horizontal(|ui| {
+                ui.allocate_ui(Vec2::new(split_width, ui.available_height()), |ui| {
+                    if let Some(child) = children.first() {
+                        render_layout_node(ui, child, plugin_name, t);
+                    }
+                });
+                ui.separator();
+                ui.allocate_ui(Vec2::new(total_width - split_width - 4.0, ui.available_height()), |ui| {
+                    if let Some(child) = children.get(1) {
+                        render_layout_node(ui, child, plugin_name, t);
+                    }
+                });
+            });
+        }
+        UiLayoutNode::SplitVertical { children, ratio } => {
+            let total_height = ui.available_height();
+            let split_height = total_height * ratio;
+
+            ui.allocate_ui(Vec2::new(ui.available_width(), split_height), |ui| {
+                if let Some(child) = children.first() {
+                    render_layout_node(ui, child, plugin_name, t);
+                }
+            });
+            ui.separator();
+            ui.allocate_ui(Vec2::new(ui.available_width(), total_height - split_height - 4.0), |ui| {
+                if let Some(child) = children.get(1) {
+                    render_layout_node(ui, child, plugin_name, t);
+                }
+            });
+        }
+        UiLayoutNode::Panel { id, title, content, .. } => {
+            egui::Frame::none()
+                .fill(t.surface)
+                .stroke(Stroke::new(1.0, t.border))
+                .rounding(Rounding::same(4.0))
+                .inner_margin(Margin::same(8.0))
+                .show(ui, |ui| {
+                    ui.label(RichText::new(title).strong().size(12.0).color(t.text));
+                    ui.separator();
+                    render_content(ui, content, plugin_name, id, t);
+                });
+        }
+    }
+}
+
+/// Render content inside a panel
+fn render_content(ui: &mut egui::Ui, content: &UiContent, plugin_name: &str, panel_id: &str, t: &T) {
+    match content {
+        UiContent::ButtonGroup { buttons, direction } => {
+            render_button_group(ui, buttons, direction, plugin_name, t);
+        }
+        UiContent::Input { placeholder, command, button_label } => {
+            render_input_field(ui, placeholder, command, button_label, plugin_name, t);
+        }
+        UiContent::Terminal => {
+            ui.label(RichText::new("[Terminal]").color(t.muted).size(11.0));
+        }
+        UiContent::Text => {
+            ui.label(RichText::new("[Text Panel]").color(t.muted).size(11.0));
+        }
+        UiContent::CodeEditor { language } => {
+            ui.label(RichText::new(format!("[Code Editor: {}]", language)).color(t.muted).size(11.0));
+        }
+        UiContent::TreeView => {
+            ui.label(RichText::new("[File Browser]").color(t.muted).size(11.0));
+        }
+        UiContent::Html => {
+            ui.label(RichText::new("[HTML Content]").color(t.muted).size(11.0));
+        }
+    }
+}
+
+/// Render a button group
+fn render_button_group(ui: &mut egui::Ui, buttons: &[UiButton], direction: &str, plugin_name: &str, t: &T) {
+    let layout = if direction == "vertical" {
+        egui::Layout::top_down(egui::Align::LEFT)
+    } else {
+        egui::Layout::left_to_right(egui::Align::Center)
+    };
+
+    ui.with_layout(layout, |ui| {
+        for button in buttons {
+            let fill = match button.style {
+                ButtonStyle::Primary => Color32::from_rgb(59, 130, 246),    // Blue
+                ButtonStyle::Success => Color32::from_rgb(34, 197, 94),    // Green
+                ButtonStyle::Danger => Color32::from_rgb(239, 68, 68),     // Red
+                ButtonStyle::Secondary => Color32::from_rgb(107, 114, 128), // Gray
+            };
+
+            let label = match &button.icon {
+                Some(icon) => format!("{} {}", icon, button.label),
+                None => button.label.clone(),
+            };
+
+            let btn = ui.add(egui::Button::new(
+                RichText::new(&label).size(12.0).color(Color32::WHITE).strong()
+            )
+                .fill(fill)
+                .rounding(4.0)
+                .min_size(Vec2::new(80.0, 28.0)));
+
+            if let Some(tooltip) = &button.tooltip {
+                btn.on_hover_text(tooltip);
+            }
+
+            if btn.clicked() {
+                let params = button.params.as_deref().unwrap_or("{}");
+                execute_plugin_cmd_async(plugin_name, &button.command, params);
+            }
+
+            ui.add_space(4.0);
+        }
+    });
+}
+
+/// Render an input field with optional submit button
+fn render_input_field(ui: &mut egui::Ui, placeholder: &str, command: &str, button_label: &str, plugin_name: &str, t: &T) {
+    let mut text = String::new();
+    ui.horizontal(|ui| {
+        let resp = ui.add(egui::TextEdit::singleline(&mut text)
+            .hint_text(placeholder)
+            .desired_width(ui.available_width() - 100.0));
+
+        if !button_label.is_empty() {
+            if ui.button(button_label).clicked() && !text.is_empty() {
+                let params = format!(r#"{{"text": "{}"}}"#, text.replace('"', "\\\""));
+                execute_plugin_cmd_async(plugin_name, command, &params);
+            }
+        } else if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) && !text.is_empty() {
+            let params = format!(r#"{{"text": "{}"}}"#, text.replace('"', "\\\""));
+            execute_plugin_cmd_async(plugin_name, command, &params);
+        }
+    });
+}
+
+// ============================================================================
+// MicroPython IDE UI (existing implementation, renamed)
+// ============================================================================
+
+fn render_mpy_ide_ui(
+    ui: &mut egui::Ui, _layout: &UiLayoutNode,
+    repl: &mut String, input: &mut String, _files: &mut Vec<FileEntry>,
+    code: &mut String, file: &mut Option<String>,
+) {
     let is_dark = ui.visuals().dark_mode;
     let t = if is_dark { T::dark() } else { T::light() };
     let avail = ui.available_size();
