@@ -12,6 +12,7 @@ path = "src/main.rs"
 [dependencies]
 serialrun-core = { path = "../serialrun-core" }
 serialrun-plugin-api = { path = "../serialrun-plugin-api" }
+clap = { workspace = true }
 eframe = { workspace = true }
 egui = { workspace = true }
 egui_extras = { workspace = true }

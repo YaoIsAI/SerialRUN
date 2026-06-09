@@ -2,6 +2,7 @@
 
 mod app;
 mod async_utils;
+pub mod cli;
 mod icon;
 mod mcp_server;
 mod plc_presets;
@@ -12,10 +13,33 @@ pub mod theme;
 mod ui;
 pub mod util;
 
+use clap::Parser;
 use eframe::egui;
 
 fn main() -> eframe::Result<()> {
+    // Check if CLI arguments are provided
+    let args: Vec<String> = std::env::args().collect();
 
+    // Known CLI subcommands
+    let cli_commands = [
+        "interactive", "list-ports", "connect", "disconnect",
+        "send", "read", "send-command", "modbus-read", "modbus-write",
+        "status", "plugin",
+    ];
+
+    // Check if first arg is a known subcommand (not starting with -)
+    let is_cli = args.len() > 1
+        && !args[1].starts_with('-')
+        && cli_commands.contains(&args[1].as_str());
+
+    if is_cli {
+        // CLI mode
+        let cli = cli::Cli::parse();
+        cli::run_cli(cli, None);
+        return Ok(());
+    }
+
+    // GUI mode
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
