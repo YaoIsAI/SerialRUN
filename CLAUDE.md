@@ -189,9 +189,10 @@ make install   # Install to /Applications
 2. Edit `plugin.json` (name, version, description, author)
 3. Edit `src/lib.rs` — implement commands in `plugin_execute()`
 4. Add to workspace `Cargo.toml` members list
-5. Build: `cargo build --release -p <plugin-name>`
-6. Install: `cp target/release/lib<name>.dylib ~/.serialrun/plugins/<name>/`
-7. Validate: `serialrun plugin validate ~/.serialrun/plugins/<name>/`
+5. Build & install: `serialrun plugin build plugins/<name>`
+6. Test: `serialrun plugin test plugins/<name>`
+7. Package: `serialrun plugin package plugins/<name>`
+8. Validate: `serialrun plugin validate ~/.serialrun/plugins/<name>/`
 
 **FFI contract (4 required + 4 optional functions):**
 - Required: `plugin_get_info`, `plugin_get_commands`, `plugin_execute`, `plugin_free_string`
@@ -204,6 +205,9 @@ make install   # Install to /Applications
 serialrun plugin validate <dir>   # Check plugin.json format
 serialrun plugin info <dir>       # Show plugin details
 serialrun plugin list             # List installed plugins
+serialrun plugin build <dir>      # Build + install to local plugins dir
+serialrun plugin test <dir>       # Run plugin unit tests
+serialrun plugin package <dir>    # Package into distributable ZIP
 ```
 
 ### Known Bug Patterns
