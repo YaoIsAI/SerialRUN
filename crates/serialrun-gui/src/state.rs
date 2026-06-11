@@ -1037,6 +1037,17 @@ impl T {
     pub fn can_tip_data(l: Language) -> &'static str { match l { Language::English => "Frame data in hexadecimal, up to 8 bytes. Separate bytes with spaces, e.g. '01 02 03 04'.", Language::Chinese => "帧数据（十六进制），最多 8 字节。字节间用空格分隔，如 '01 02 03 04'。" } }
     pub fn can_tip_fmt(l: Language) -> &'static str { match l { Language::English => "Standard (11-bit ID, max 0x7FF) or Extended (29-bit ID, max 0x1FFFFFFF).", Language::Chinese => "标准帧 (11位ID, 最大 0x7FF) 或 扩展帧 (29位ID, 最大 0x1FFFFFFF)。" } }
     pub fn can_tip_type(l: Language) -> &'static str { match l { Language::English => "Data frame: carries actual data. Remote frame (RTR): requests data from another node, no data payload.", Language::Chinese => "数据帧: 携带实际数据。远程帧 (RTR): 向其他节点请求数据，无数据负载。" } }
+    // CANalyst-II
+    pub fn can_mode_label(l: Language) -> &'static str { match l { Language::English => "Mode:", Language::Chinese => "模式:" } }
+    pub fn can_scan_devices(l: Language) -> &'static str { match l { Language::English => "Scan Devices", Language::Chinese => "扫描设备" } }
+    pub fn can_device_label(l: Language) -> &'static str { match l { Language::English => "Device:", Language::Chinese => "设备:" } }
+    pub fn can_work_mode(l: Language) -> &'static str { match l { Language::English => "Work Mode:", Language::Chinese => "工作模式:" } }
+    pub fn can_normal_mode(l: Language) -> &'static str { match l { Language::English => "Normal", Language::Chinese => "正常" } }
+    pub fn can_listen_mode(l: Language) -> &'static str { match l { Language::English => "Listen-only", Language::Chinese => "只听" } }
+    pub fn can_loopback_mode(l: Language) -> &'static str { match l { Language::English => "Loopback", Language::Chinese => "回环" } }
+    pub fn can_board_info(l: Language) -> &'static str { match l { Language::English => "Board Info:", Language::Chinese => "设备信息:" } }
+    pub fn can_no_device(l: Language) -> &'static str { match l { Language::English => "No CANalyst-II device found", Language::Chinese => "未找到 CANalyst-II 设备" } }
+    pub fn can_dll_not_found(l: Language) -> &'static str { match l { Language::English => "ControlCAN library not found", Language::Chinese => "未找到 ControlCAN 库文件" } }
 
     // ── PLC ──
     pub fn once_btn(l: Language) -> &'static str { match l { Language::English => "Once", Language::Chinese => "单次" } }
@@ -1200,6 +1211,25 @@ pub struct SimulatorLogEntry { pub timestamp: i64, pub direction: String, pub he
 pub struct CanFrameData { pub timestamp: i64, pub id: u32, pub is_ext: bool, pub dlc: u8, pub data: Vec<u8>, pub is_error: bool, pub is_tx: bool, pub channel: u8 }
 #[derive(Clone, Default)]
 pub struct CanStats { pub total_frames: u64, pub error_frames: u64, pub max_id: u32, pub ids_seen: std::collections::HashSet<u32> }
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CanConnectionMode { Slcan, Canalyst }
+impl CanConnectionMode {
+    pub fn label(&self, lang: Language) -> &'static str {
+        match (self, lang) {
+            (Self::Slcan, Language::Chinese) => "SLCAN (串口)",
+            (Self::Slcan, _) => "SLCAN (Serial)",
+            (Self::Canalyst, Language::Chinese) => "CANalyst-II (USB)",
+            (Self::Canalyst, _) => "CANalyst-II (USB)",
+        }
+    }
+    pub fn all() -> &'static [CanConnectionMode] {
+        // On non-Windows/Linux, only Slcan is available
+        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        { &[CanConnectionMode::Slcan, CanConnectionMode::Canalyst] }
+        #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+        { &[CanConnectionMode::Slcan] }
+    }
+}
 
 // ── I2C/SPI types ──
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -1371,6 +1401,14 @@ pub struct AppState {
     pub can_tx_periodic: bool,      // Periodic send active
     pub can_tx_sent_count: u32,     // Frames sent so far
     pub can_tx_next_time: i64,      // Next send timestamp (millis)
+    // CANalyst-II
+    pub can_connection_mode: CanConnectionMode,
+    pub canalyst_device_index: u32,
+    pub canalyst_channel: u8,       // 0=CAN1, 1=CAN2
+    pub canalyst_work_mode: u8,     // 0=normal, 1=listen, 2=loopback
+    pub canalyst_board_info: Option<String>,
+    pub canalyst_device_list: Vec<String>, // serial numbers found
+    pub canalyst_write_tx: Option<std::sync::mpsc::Sender<CanFrameData>>,
     // I2C/SPI
     pub i2c_mode: I2cMode,
     pub i2c_address: String,
@@ -1721,6 +1759,10 @@ impl AppState {
             can_tx_ext: false, can_tx_remote: false, can_tx_channel: 1,
             can_tx_count: 1, can_tx_period_ms: 100, can_tx_id_increment: false, can_tx_data_increment: false,
             can_tx_periodic: false, can_tx_sent_count: 0, can_tx_next_time: 0,
+            can_connection_mode: CanConnectionMode::Slcan,
+            canalyst_device_index: 0, canalyst_channel: 0, canalyst_work_mode: 0,
+            canalyst_board_info: None, canalyst_device_list: Vec::new(),
+            canalyst_write_tx: None,
             i2c_mode: I2cMode::I2C, i2c_address: "68".into(), i2c_register: "00".into(), i2c_data: String::new(), i2c_result: String::new(),
             scope_capturing: false, scope_data: Vec::new(), scope_timebase_ms: 100.0,
             flasher_mcu: McuType::Stm32, flasher_file: String::new(), flasher_progress: 0.0, flasher_log: VecDeque::new(),

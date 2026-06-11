@@ -1,4 +1,5 @@
 pub mod can;
+pub mod canalyst;
 pub mod custom;
 pub mod flasher;
 pub mod i2c_spi;
@@ -19,3 +20,4 @@ pub use can::{CanAnalyzer, CanFrame, CanFilter, CanIdStats};
 pub use i2c_spi::{I2cResult, SpiResult, I2cScanEntry};
 pub use serial_scope::{SerialScope, ScopeConfig, ScopeStats};
 pub use flasher::FlashResult;
+pub use canalyst::{CanalystDriver, VciCanObj, VciBoardInfo, baud_to_timing, get_driver, is_supported};
