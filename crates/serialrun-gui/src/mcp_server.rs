@@ -1154,6 +1154,7 @@ fn handle_request(
                     }
                 }
                 "clear_buffers" => {
+                    // Clear buffers via SetConfig with a special key that the GUI handles
                     let tx = {
                         let sh = match shared.lock() {
                             Ok(sh) => sh,
@@ -1164,16 +1165,22 @@ fn handle_request(
                             None => return McpResponse::error(request.id, -1, "Not connected to serial port".into()),
                         }
                     };
+                    // Use GetConfig with a dummy key to get the port_owner, then clear via SetConfig
+                    // Actually, we need to send a ClearBuffers command directly.
+                    // The simplest approach: send a SetConfig for a synthetic "clear_buffers" key
+                    // that the GUI's apply_config handles.
                     let (resp_tx, resp_rx) = mpsc::channel();
-                    let _ = tx.send(McpSerialRequest::SendRead { data: vec![], timeout_ms: 50, resp: resp_tx });
-                    // Send ClearBuffers via a special zero-length write trick —
-                    // actually we need to send the command directly.
-                    // Since ClearBuffers is a PortCommand, we use the connect/disconnect path.
-                    // For now, just flush by reading all pending data.
+                    let _ = tx.send(McpSerialRequest::SetConfig {
+                        key: "clear_buffers".to_string(),
+                        value: serde_json::json!(true),
+                        resp: resp_tx,
+                    });
                     match resp_rx.recv_timeout(Duration::from_secs(2)) {
-                        _ => McpResponse::success(request.id, serde_json::json!({
-                            "content": [{ "type": "text", "text": String::from("Buffers cleared") }]
-                        }))
+                        Ok(Ok(msg)) => McpResponse::success(request.id, serde_json::json!({
+                            "content": [{ "type": "text", "text": msg }]
+                        })),
+                        Ok(Err(e)) => McpResponse::error(request.id, -1, e),
+                        Err(_) => McpResponse::error(request.id, -1, "Timeout".into()),
                     }
                 }
                 "set_dtr" => {

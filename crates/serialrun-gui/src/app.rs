@@ -43,6 +43,8 @@ pub struct SerialRunApp {
     last_prefs: crate::state::UserPrefs,
     /// Tracks which viewports are currently open (OS-level windows)
     open_viewports: std::collections::HashSet<egui::ViewportId>,
+    /// Force theme sync on first frame to override eframe's default visuals
+    first_frame: bool,
 }
 
 impl SerialRunApp {
@@ -62,7 +64,7 @@ impl SerialRunApp {
         std::thread::spawn(move || {
             mcp_serial_request_loop(mcp_serial_rx, app_state);
         });
-        Self { state: state_clone, current_theme: prefs.theme, mcp_handle, last_prefs, open_viewports: std::collections::HashSet::new() }
+        Self { state: state_clone, current_theme: prefs.theme, mcp_handle, last_prefs, open_viewports: std::collections::HashSet::new(), first_frame: true }
     }
 }
 
@@ -301,6 +303,12 @@ fn apply_config(state: &mut crate::state::AppState, key: &str, value: &serde_jso
                 po.sync_timeout(state.rx_aggregate_ms);
             }
             Ok(format!("rx_aggregate_ms = {}", state.rx_aggregate_ms))
+        }
+        "clear_buffers" => {
+            if let Some(ref po) = state.port_owner {
+                po.send(crate::port_owner::PortCommand::ClearBuffers);
+            }
+            Ok("Buffers cleared".to_string())
         }
         _ => Err(format!("Unknown key: {}", key)),
     }
@@ -829,6 +837,11 @@ impl eframe::App for SerialRunApp {
         let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
 
         // --- Background processing ---
+        // Force theme sync on first frame to override eframe's default visuals
+        if self.first_frame {
+            self.current_theme = match state.theme { Theme::Dark => Theme::Light, Theme::Light => Theme::Dark };
+            self.first_frame = false;
+        }
         sync_theme_visuals(ctx, state.theme, &mut self.current_theme);
 
         {
@@ -904,6 +917,10 @@ impl eframe::App for SerialRunApp {
                             let old_port = state.selected_port.clone().unwrap_or_default();
                             let old_baud = state.config.baud_rate;
                             state.stc_log.push(format!("[STC] Temporarily disconnecting ({} @ {} baud)...", old_port, old_baud));
+                            // Explicitly close the port before dropping the handle
+                            if let Some(ref po) = state.port_owner {
+                                po.send(crate::port_owner::PortCommand::Close);
+                            }
                             state.port_owner = None;
                             state.is_connected = false;
                         }
@@ -966,6 +983,10 @@ impl eframe::App for SerialRunApp {
                         // Restore original connection if we had one
                         if orig_port.is_some() {
                             let mut state = state_arc.lock().unwrap_or_else(|e| e.into_inner());
+                            // Explicitly close the STC port before restoring
+                            if let Some(ref po) = state.port_owner {
+                                po.send(crate::port_owner::PortCommand::Close);
+                            }
                             state.port_owner = None;
                             state.is_connected = false;
 

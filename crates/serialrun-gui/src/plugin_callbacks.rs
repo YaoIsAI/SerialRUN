@@ -476,7 +476,7 @@ extern "C" fn callback_execute_async(
     if command.is_null() {
         return;
     }
-    let cmd_str = unsafe { CStr::from_ptr(command).to_string_lossy() };
+    let cmd_str = unsafe { CStr::from_ptr(command).to_string_lossy().to_string() };
     let params_str = if params.is_null() {
         "{}".to_string()
     } else {
@@ -494,7 +494,10 @@ extern "C" fn callback_execute_async(
             "result": format!("Async command '{}' executed", cmd_str)
         });
         let result_str = serde_json::to_string(&result).unwrap_or_default();
+        // Safety: CString must outlive the callback call. Since callback is synchronous
+        // and returns before c_result is dropped, this is safe.
         let c_result = CString::new(result_str).unwrap_or_default();
         callback(c_result.as_ptr());
+        // c_result is dropped here, AFTER callback has returned
     });
 }

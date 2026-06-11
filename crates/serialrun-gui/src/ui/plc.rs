@@ -31,13 +31,17 @@ pub fn render_plc_panel(ui: &mut egui::Ui, state: &mut AppState) {
                 let label = if is_terminal && is_plc {
                     format!("{} ({})", name, T::port_both(lang))
                 } else if is_terminal {
-                    format!("{} ({})", name, T::port_terminal(lang))
+                    format!("\u{1f50c} {} ({})", name, T::port_terminal(lang))
                 } else if is_plc {
                     format!("{} ({})", name, T::port_plc(lang))
                 } else {
                     name.clone()
                 };
-                ui.selectable_value(&mut state.plc_selected_port, Some(name), label);
+                if is_terminal {
+                    ui.add_enabled(false, egui::SelectableLabel::new(false, label));
+                } else {
+                    ui.selectable_value(&mut state.plc_selected_port, Some(name), label);
+                }
             }
         });
 

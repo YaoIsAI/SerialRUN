@@ -244,9 +244,16 @@ impl PluginRegistry {
         let resp = self.client.get(&asset.download_url).send().await?;
         let bytes = resp.bytes().await?;
 
+        // Use PID + timestamp + random to make temp file name unpredictable
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
         let temp_zip = std::env::temp_dir().join(format!(
-            "serialrun_plugin_download_{}.zip",
-            std::process::id()
+            "serialrun_plugin_download_{}_{}_{}.zip",
+            std::process::id(),
+            nonce,
+            bytes.len()
         ));
         std::fs::write(&temp_zip, &bytes)?;
 

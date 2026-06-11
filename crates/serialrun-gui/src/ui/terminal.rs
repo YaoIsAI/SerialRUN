@@ -327,15 +327,21 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
             egui::ScrollArea::horizontal().max_height(22.0).show(ui, |ui| {
                 ui.horizontal(|ui| {
                     for (idx, qc) in qc_snapshot.iter().enumerate() {
+                        let mode_color = if qc.is_hex { egui::Color32::from_rgb(255, 152, 0) } else { egui::Color32::from_rgb(76, 175, 80) };
+                        let mut job = egui::text::LayoutJob::default();
+                        let dot = "\u{25CF} ";
+                        job.append(dot, 0.0, egui::TextFormat::simple(egui::FontId::proportional(10.0), mode_color));
+                        job.append(&qc.name, 0.0, egui::TextFormat::simple(egui::FontId::proportional(10.0), btn_text_color));
                         let resp = ui.add(egui::Button::new(
-                            egui::RichText::new(&qc.name).size(10.0).color(btn_text_color)
+                            job
                         ).fill(btn_color).rounding(3.0).min_size(egui::vec2(0.0, 20.0)));
                         let is_hovered = resp.hovered();
                         let is_clicked = resp.clicked();
+                        let mode_label = if qc.is_hex { "HEX" } else { "TXT" };
                         resp.context_menu(|ui| {
                             if ui.button("删除").clicked() { qc_delete_idx = Some(idx); ui.close_menu(); }
                         });
-                        if is_hovered { resp.on_hover_text(&qc.data); }
+                        if is_hovered { resp.on_hover_text(format!("[{}] {}", mode_label, &qc.data)); }
                         if is_clicked && state.port_owner.is_some() { qc_clicked_idx = Some(idx); }
                     }
                 });
@@ -351,8 +357,14 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
                 let le = if qc.line_ending.is_empty() { state.line_ending } else {
                     match qc.line_ending.as_str() { "CR" => LineEnding::CR, "LF" => LineEnding::LF, "CRLF" => LineEnding::CRLF, _ => LineEnding::None }
                 };
-                let mut bytes = if is_hex { match parse_hex(&data) { Some(b) => b, None => return } }
-                else { let mut b = data.as_bytes().to_vec(); b.extend_from_slice(le.suffix()); b };
+                let mut bytes = if is_hex {
+                    parse_hex(&data).unwrap_or_else(|| {
+                        // Fallback: hex parse failed, treat as text
+                        let mut b = data.as_bytes().to_vec();
+                        b.extend_from_slice(le.suffix());
+                        b
+                    })
+                } else { let mut b = data.as_bytes().to_vec(); b.extend_from_slice(le.suffix()); b };
                 bytes = state.terminal_checksum_mode.append_checksum(&bytes);
                 let display = if is_hex { data } else { data.replace("\r", "\\r").replace("\n", "\\n") };
                 state.tx_count += bytes.len() as u64;

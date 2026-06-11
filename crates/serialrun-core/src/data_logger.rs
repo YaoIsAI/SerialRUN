@@ -132,6 +132,15 @@ impl DataLogger {
         self.log(entry)
     }
 
+    /// Escape a CSV field: wrap in quotes if it contains comma, quote, or newline.
+    fn escape_csv_field(field: &str) -> String {
+        if field.contains(',') || field.contains('"') || field.contains('\n') || field.contains('\r') {
+            format!("\"{}\"", field.replace('"', "\"\""))
+        } else {
+            field.to_string()
+        }
+    }
+
     /// Flush all buffered entries to disk.
     pub fn flush(&mut self) -> LoggerResult<()> {
         if let Some(writer) = self.writer.as_mut() {
@@ -139,11 +148,11 @@ impl DataLogger {
                 writeln!(
                     writer,
                     "{},{},{},{},{}",
-                    entry.timestamp,
-                    entry.source,
-                    entry.raw_value,
-                    entry.scaled_value,
-                    entry.unit,
+                    Self::escape_csv_field(&entry.timestamp),
+                    Self::escape_csv_field(&entry.source),
+                    Self::escape_csv_field(&entry.raw_value),
+                    Self::escape_csv_field(&entry.scaled_value),
+                    Self::escape_csv_field(&entry.unit),
                 )?;
             }
             writer.flush()?;
