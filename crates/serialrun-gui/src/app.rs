@@ -121,7 +121,7 @@ fn poll_mcp_log(mcp_handle: &crate::mcp_server::McpHandle, state: &mut AppState)
     let mut changed = false;
     while let Some(entry) = mcp_handle.poll_log() {
         state.mcp_access_log.push_back(entry);
-        if state.mcp_access_log.len() > 1000 {
+        if state.mcp_access_log.len() > 50_000 {
             state.mcp_access_log.pop_front();
         }
         changed = true;

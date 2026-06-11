@@ -1886,7 +1886,7 @@ impl AppState {
         if self.auto_scroll {
             self.scroll_to_bottom_pending = true;
         }
-        if self.terminal_buffer.len() > 5000 {
+        if self.terminal_buffer.len() > 100_000 {
             self.terminal_buffer.pop_front();
         }
         self.terminal_dirty = true;
@@ -1905,7 +1905,7 @@ impl AppState {
         if self.auto_scroll {
             self.scroll_to_bottom_pending = true;
         }
-        if self.terminal_buffer.len() > 5000 {
+        if self.terminal_buffer.len() > 100_000 {
             self.terminal_buffer.pop_front();
         }
         self.terminal_dirty = true;
@@ -1918,7 +1918,7 @@ impl AppState {
             message: message.to_string(),
         };
         self.log_entries.push(entry);
-        if self.log_entries.len() > 2000 {
+        if self.log_entries.len() > 50_000 {
             self.log_entries.remove(0);
         }
         self.logs_dirty = true;
@@ -2000,7 +2000,7 @@ impl AppState {
             timestamp: chrono::Utc::now().timestamp_millis(),
             message: msg.to_string(),
         });
-        if self.warning_history.len() > 1000 {
+        if self.warning_history.len() > 50_000 {
             self.warning_history.pop_front();
         }
         self.save_warnings();
