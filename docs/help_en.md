@@ -211,7 +211,7 @@ CAN bus analysis tool with two connection modes:
 - **Frame List** — Timestamp, direction, ID (standard/extended), DLC, data
 - **Transmit** — Enter ID and data to send CAN frames (single or periodic burst)
 - **Filter** — Filter display by ID
-- CSV export supported, up to 5000 frames buffer
+- CSV export supported, up to 100,000 frames buffer
 
 ### I2C/SPI Debug
 

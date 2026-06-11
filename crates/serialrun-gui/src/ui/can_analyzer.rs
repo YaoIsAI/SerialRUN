@@ -21,8 +21,8 @@ pub fn render_can_analyzer_panel(ui: &mut egui::Ui, state: &mut AppState) {
     if let Some(ref reader) = state.can_reader {
         while let Some(frames) = reader.poll() {
             state.can_frames.extend(frames);
-            if state.can_frames.len() > 5000 {
-                state.can_frames.drain(..state.can_frames.len() - 5000);
+            if state.can_frames.len() > 100_000 {
+                state.can_frames.drain(..state.can_frames.len() - 100_000);
             }
         }
     }
