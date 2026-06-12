@@ -156,7 +156,10 @@ pub fn render_can_analyzer_panel(ui: &mut egui::Ui, state: &mut AppState) {
         ui.checkbox(&mut state.can_tx_id_increment, T::can_id_inc(lang));
         ui.checkbox(&mut state.can_tx_data_increment, T::can_data_inc(lang));
         ui.add_space(12.0);
-        let can_ready = state.can_connected && state.can_write_tx.is_some();
+        let can_ready = state.can_connected && match state.can_connection_mode {
+            CanConnectionMode::Slcan => state.can_write_tx.is_some(),
+            CanConnectionMode::Canalyst => state.canalyst_write_tx.is_some(),
+        };
         if state.can_tx_periodic {
             ui.label(egui::RichText::new(format!("{}/{}", state.can_tx_sent_count, state.can_tx_count))
                 .color(egui::Color32::from_rgb(251, 191, 36)));
