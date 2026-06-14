@@ -1,9 +1,17 @@
-use crate::state::{AppState, T};
+use crate::state::{AppState, T, Theme};
 use eframe::egui;
-use serialrun_core::protocol::pcap::{PcapFile, DecodedPacket};
+use serialrun_core::protocol::pcap::PcapFile;
 
 pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
+    let is_dark = state.theme == Theme::Dark;
+
+    // Theme-aware colors
+    let text_color = if is_dark { egui::Color32::from_rgb(220, 220, 230) } else { egui::Color32::from_rgb(30, 30, 50) };
+    let muted_color = if is_dark { egui::Color32::from_rgb(128, 128, 140) } else { egui::Color32::from_rgb(120, 120, 130) };
+    let header_bg = if is_dark { egui::Color32::from_rgb(40, 42, 54) } else { egui::Color32::from_rgb(235, 237, 242) };
+    let selected_bg = egui::Color32::from_rgb(67, 97, 238);
+    let selected_text = egui::Color32::WHITE;
 
     // ── Toolbar ──
     ui.horizontal(|ui| {
@@ -45,7 +53,7 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
         if !state.pcap_filename.is_empty() {
             ui.separator();
             ui.label(egui::RichText::new(&state.pcap_filename).color(egui::Color32::from_rgb(100, 160, 230)));
-            ui.label(format!("({})", state.pcap_link_type));
+            ui.label(egui::RichText::new(format!("({})", state.pcap_link_type)).color(muted_color));
         }
     });
 
@@ -54,7 +62,7 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
     if state.pcap_packets.is_empty() {
         ui.vertical_centered(|ui| {
             ui.add_space(100.0);
-            ui.label(egui::RichText::new(T::pcap_no_file(lang)).size(16.0).color(egui::Color32::from_rgb(128, 128, 128)));
+            ui.label(egui::RichText::new(T::pcap_no_file(lang)).size(16.0).color(muted_color));
         });
         return;
     }
@@ -74,9 +82,9 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
 
     // ── Status bar ──
     ui.horizontal(|ui| {
-        ui.label(format!("{} {}", T::pcap_total(lang), state.pcap_packets.len()));
+        ui.label(egui::RichText::new(format!("{} {}", T::pcap_total(lang), state.pcap_packets.len())).color(muted_color));
         ui.separator();
-        ui.label(format!("{} {}", T::pcap_shown(lang), filtered_indices.len()));
+        ui.label(egui::RichText::new(format!("{} {}", T::pcap_shown(lang), filtered_indices.len())).color(muted_color));
     });
 
     ui.add_space(2.0);
@@ -88,9 +96,7 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
     let hex_h = available * 0.25;
 
     // ── Pane 1: Packet list ──
-    ui.label(egui::RichText::new(T::pcap_title(lang)).strong());
-    let header_color = egui::Color32::from_rgb(230, 230, 240);
-    let header_text = egui::Color32::from_rgb(40, 40, 60);
+    ui.label(egui::RichText::new(T::pcap_title(lang)).strong().color(text_color));
 
     egui::ScrollArea::vertical()
         .max_height(packet_list_h)
@@ -102,12 +108,10 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
                 .min_col_width(40.0)
                 .show(ui, |ui| {
                     // Header row
-                    ui.label(egui::RichText::new(T::pcap_col_no(lang)).color(header_text).strong().size(11.0));
-                    ui.label(egui::RichText::new(T::pcap_col_time(lang)).color(header_text).strong().size(11.0));
-                    ui.label(egui::RichText::new(T::pcap_col_proto(lang)).color(header_text).strong().size(11.0));
-                    ui.label(egui::RichText::new(T::pcap_col_src(lang)).color(header_text).strong().size(11.0));
-                    ui.label(egui::RichText::new(T::pcap_col_dst(lang)).color(header_text).strong().size(11.0));
-                    ui.label(egui::RichText::new(T::pcap_col_info(lang)).color(header_text).strong().size(11.0));
+                    for h in [T::pcap_col_no(lang), T::pcap_col_time(lang), T::pcap_col_proto(lang),
+                              T::pcap_col_src(lang), T::pcap_col_dst(lang), T::pcap_col_info(lang)] {
+                        ui.label(egui::RichText::new(h).strong().size(11.0).color(text_color));
+                    }
                     ui.end_row();
 
                     for &idx in &filtered_indices {
@@ -115,38 +119,30 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
                         let decoded = &state.pcap_decoded[idx];
                         let selected = state.pcap_selected == Some(idx);
 
-                        let row_bg = if selected {
-                            egui::Color32::from_rgb(67, 97, 238)
-                        } else {
-                            let proto_color = match decoded.protocol.as_str() {
-                                "Modbus RTU" | "Modbus TCP" => egui::Color32::from_rgb(0, 180, 0),
-                                "CAN" => egui::Color32::from_rgb(200, 120, 0),
-                                "AT" => egui::Color32::from_rgb(150, 50, 200),
-                                _ => egui::Color32::from_rgb(128, 128, 128),
-                            };
-                            proto_color
+                        let proto_color = match decoded.protocol.as_str() {
+                            "Modbus RTU" | "Modbus TCP" => egui::Color32::from_rgb(46, 204, 113),
+                            "CAN" => egui::Color32::from_rgb(230, 160, 50),
+                            "AT" => egui::Color32::from_rgb(180, 100, 230),
+                            _ => muted_color,
                         };
 
-                        let text_color = if selected {
-                            egui::Color32::WHITE
-                        } else {
-                            egui::Color32::from_rgb(40, 40, 60)
-                        };
+                        let row_text = if selected { selected_text } else { text_color };
 
                         let time_str = format_timestamp(pkt.timestamp_ms);
-                        let no_response = ui.add(egui::Label::new(
-                            egui::RichText::new(format!("{}", pkt.index + 1)).size(11.0).color(text_color)
+
+                        let no_resp = ui.add(egui::Label::new(
+                            egui::RichText::new(format!("{}", pkt.index + 1)).size(11.0).color(row_text)
                         ).sense(egui::Sense::click()));
-                        ui.label(egui::RichText::new(&time_str).size(11.0).color(text_color));
-                        ui.label(egui::RichText::new(&decoded.protocol).size(11.0).color(row_bg).strong());
-                        ui.label(egui::RichText::new(&decoded.src).size(11.0).color(text_color));
-                        ui.label(egui::RichText::new(&decoded.dst).size(11.0).color(text_color));
-                        let info_response = ui.add(egui::Label::new(
-                            egui::RichText::new(&decoded.summary).size(11.0).color(text_color)
+                        ui.label(egui::RichText::new(&time_str).size(11.0).color(row_text));
+                        ui.label(egui::RichText::new(&decoded.protocol).size(11.0).color(proto_color).strong());
+                        ui.label(egui::RichText::new(&decoded.src).size(11.0).color(row_text));
+                        ui.label(egui::RichText::new(&decoded.dst).size(11.0).color(row_text));
+                        let info_resp = ui.add(egui::Label::new(
+                            egui::RichText::new(&decoded.summary).size(11.0).color(row_text)
                         ).sense(egui::Sense::click()));
                         ui.end_row();
 
-                        if no_response.clicked() || info_response.clicked() {
+                        if no_resp.clicked() || info_resp.clicked() {
                             state.pcap_selected = Some(idx);
                         }
                     }
@@ -160,23 +156,23 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
         if sel < state.pcap_decoded.len() {
             let decoded = &state.pcap_decoded[sel];
 
-            ui.label(egui::RichText::new(T::pcap_details(lang)).strong());
+            ui.label(egui::RichText::new(T::pcap_details(lang)).strong().color(text_color));
             egui::ScrollArea::vertical()
                 .max_height(details_h)
                 .show(ui, |ui| {
                     egui::CollapsingHeader::new(
-                        egui::RichText::new(format!("{} — {}", decoded.protocol, decoded.summary)).strong()
+                        egui::RichText::new(format!("{} — {}", decoded.protocol, decoded.summary)).strong().color(text_color)
                     )
                     .default_open(true)
                     .show(ui, |ui| {
                         for field in &decoded.details {
                             ui.horizontal(|ui| {
-                                ui.label(egui::RichText::new(&field.name).strong().size(12.0));
-                                ui.label(egui::RichText::new(&field.value).size(12.0).monospace());
+                                ui.label(egui::RichText::new(&field.name).strong().size(12.0).color(text_color));
+                                ui.label(egui::RichText::new(&field.value).size(12.0).monospace().color(egui::Color32::from_rgb(100, 180, 255)));
                                 if field.length > 0 {
                                     ui.label(egui::RichText::new(
                                         format!("[{}:{}]", field.offset, field.offset + field.length)
-                                    ).size(10.0).color(egui::Color32::from_rgb(128, 128, 128)));
+                                    ).size(10.0).color(muted_color));
                                 }
                             });
                         }
@@ -186,24 +182,28 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
             ui.separator();
 
             // ── Pane 3: Hex dump ──
-            ui.label(egui::RichText::new(T::pcap_hex_dump(lang)).strong());
+            ui.label(egui::RichText::new(T::pcap_hex_dump(lang)).strong().color(text_color));
             let pkt = &state.pcap_packets[sel];
             egui::ScrollArea::vertical()
                 .max_height(hex_h)
                 .show(ui, |ui| {
-                    render_hex_dump(ui, &pkt.data);
+                    render_hex_dump(ui, &pkt.data, is_dark);
                 });
         }
     } else {
         ui.vertical_centered(|ui| {
             ui.add_space(40.0);
             ui.label(egui::RichText::new("← Select a packet to view details")
-                .size(14.0).color(egui::Color32::from_rgb(128, 128, 128)));
+                .size(14.0).color(muted_color));
         });
     }
 }
 
-fn render_hex_dump(ui: &mut egui::Ui, data: &[u8]) {
+fn render_hex_dump(ui: &mut egui::Ui, data: &[u8], is_dark: bool) {
+    let offset_color = if is_dark { egui::Color32::from_rgb(100, 120, 180) } else { egui::Color32::from_rgb(80, 100, 160) };
+    let hex_color = if is_dark { egui::Color32::from_rgb(200, 200, 220) } else { egui::Color32::from_rgb(30, 30, 50) };
+    let ascii_color = if is_dark { egui::Color32::from_rgb(80, 200, 120) } else { egui::Color32::from_rgb(0, 140, 60) };
+
     for (row_idx, chunk) in data.chunks(16).enumerate() {
         let offset = row_idx * 16;
 
@@ -227,9 +227,9 @@ fn render_hex_dump(ui: &mut egui::Ui, data: &[u8]) {
         }
 
         ui.horizontal(|ui| {
-            ui.label(egui::RichText::new(format!("{:08X}", offset)).size(12.0).color(egui::Color32::from_rgb(100, 100, 150)).monospace());
-            ui.label(egui::RichText::new(hex_str).size(12.0).monospace());
-            ui.label(egui::RichText::new(format!("|{}|", ascii_str)).size(12.0).monospace().color(egui::Color32::from_rgb(0, 150, 0)));
+            ui.label(egui::RichText::new(format!("{:08X}", offset)).size(12.0).monospace().color(offset_color));
+            ui.label(egui::RichText::new(hex_str).size(12.0).monospace().color(hex_color));
+            ui.label(egui::RichText::new(format!("|{}|", ascii_str)).size(12.0).monospace().color(ascii_color));
         });
     }
 }
