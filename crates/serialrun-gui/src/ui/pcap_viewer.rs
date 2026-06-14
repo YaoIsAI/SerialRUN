@@ -126,15 +126,39 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
                             _ => muted_color,
                         };
 
-                        let row_text = if selected { selected_text } else { text_color };
+                        // Selected row: paint background, use high-contrast text
+                        let row_text = if selected {
+                            if is_dark { egui::Color32::WHITE } else { egui::Color32::from_rgb(20, 20, 40) }
+                        } else {
+                            text_color
+                        };
+                        let row_proto = if selected {
+                            if is_dark { egui::Color32::from_rgb(150, 255, 180) } else { egui::Color32::from_rgb(0, 130, 60) }
+                        } else {
+                            proto_color
+                        };
 
                         let time_str = format_timestamp(pkt.timestamp_ms);
 
                         let no_resp = ui.add(egui::Label::new(
                             egui::RichText::new(format!("{}", pkt.index + 1)).size(11.0).color(row_text)
                         ).sense(egui::Sense::click()));
+                        // Paint selected row background
+                        if selected {
+                            let rect = no_resp.rect;
+                            let row_rect = egui::Rect::from_min_max(
+                                egui::pos2(ui.min_rect().left(), rect.min.y),
+                                egui::pos2(ui.min_rect().right(), rect.max.y),
+                            );
+                            let sel_color = if is_dark {
+                                egui::Color32::from_rgba_premultiplied(67, 97, 238, 80)
+                            } else {
+                                egui::Color32::from_rgba_premultiplied(67, 97, 238, 40)
+                            };
+                            ui.painter().rect_filled(row_rect, 0.0, sel_color);
+                        }
                         ui.label(egui::RichText::new(&time_str).size(11.0).color(row_text));
-                        ui.label(egui::RichText::new(&decoded.protocol).size(11.0).color(proto_color).strong());
+                        ui.label(egui::RichText::new(&decoded.protocol).size(11.0).color(row_proto).strong());
                         ui.label(egui::RichText::new(&decoded.src).size(11.0).color(row_text));
                         ui.label(egui::RichText::new(&decoded.dst).size(11.0).color(row_text));
                         let info_resp = ui.add(egui::Label::new(
