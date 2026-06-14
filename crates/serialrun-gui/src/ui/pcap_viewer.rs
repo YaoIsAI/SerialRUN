@@ -42,6 +42,29 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
             state.pcap_selected = None;
             state.pcap_filename.clear();
             state.pcap_filter.clear();
+            state.pcap_capturing = false;
+        }
+
+        // Live capture toggle
+        ui.separator();
+        if state.pcap_capturing {
+            let btn = ui.button(egui::RichText::new("⏹ Stop Capture").color(egui::Color32::from_rgb(255, 80, 80)));
+            if btn.clicked() {
+                state.pcap_capturing = false;
+            }
+        } else {
+            let can_capture = state.is_connected;
+            let btn = ui.add_enabled(can_capture, egui::Button::new(
+                egui::RichText::new("⏺ Start Capture").color(egui::Color32::from_rgb(80, 200, 80))
+            ));
+            if btn.clicked() {
+                state.pcap_capturing = true;
+                state.pcap_filename = "Live Capture".into();
+                state.pcap_link_type = "Serial".into();
+            }
+            if !can_capture {
+                btn.on_hover_text("Connect to a serial port first");
+            }
         }
 
         ui.separator();

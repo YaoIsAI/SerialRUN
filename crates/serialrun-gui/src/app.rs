@@ -701,6 +701,17 @@ fn poll_port_events(state: &mut AppState) -> bool {
                 state.add_terminal_line(crate::state::Direction::Rx, received, is_hex_display);
                 state.add_log_entry(crate::state::LogLevel::Info, &format!("RX {} bytes: {} | {}", data.len(), hex_preview, text_preview));
                 super::ui::data_logger::log_data(state, "RX", &data);
+                // Live capture to pcap viewer
+                if state.pcap_capturing {
+                    let idx = state.pcap_packets.len() as u32;
+                    let ts = chrono::Utc::now().timestamp_millis();
+                    state.pcap_packets.push(serialrun_core::protocol::pcap::PcapPacket {
+                        index: idx, timestamp_ms: ts, data: data.clone(),
+                    });
+                    state.pcap_decoded.push(
+                        serialrun_core::protocol::pcap::PcapFile::decode_packet_static(&data)
+                    );
+                }
                 has_rx_data = true;
                 // Auto-reply
                 if state.auto_reply_enabled && !state.auto_reply_pattern.is_empty() && !state.auto_reply_response.is_empty() {

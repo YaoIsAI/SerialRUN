@@ -1434,6 +1434,7 @@ pub struct AppState {
     pub pcap_filename: String,
     pub pcap_link_type: String,
     pub show_pcap_window: bool,
+    pub pcap_capturing: bool,
     // I2C/SPI
     pub i2c_mode: I2cMode,
     pub i2c_address: String,
@@ -1790,7 +1791,7 @@ impl AppState {
             canalyst_write_tx: None,
             pcap_packets: Vec::new(), pcap_decoded: Vec::new(), pcap_selected: None,
             pcap_filter: String::new(), pcap_filename: String::new(), pcap_link_type: String::new(),
-            show_pcap_window: false,
+            show_pcap_window: false, pcap_capturing: false,
             i2c_mode: I2cMode::I2C, i2c_address: "68".into(), i2c_register: "00".into(), i2c_data: String::new(), i2c_result: String::new(),
             scope_capturing: false, scope_data: Vec::new(), scope_timebase_ms: 100.0,
             flasher_mcu: McuType::Stm32, flasher_file: String::new(), flasher_progress: 0.0, flasher_log: VecDeque::new(),

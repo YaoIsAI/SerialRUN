@@ -165,6 +165,11 @@ impl PcapFile {
             LinkType::Unknown(_) => decode_raw(&pkt.data),
         }
     }
+
+    /// Decode raw serial data (for live capture without a pcap file).
+    pub fn decode_packet_static(data: &[u8]) -> DecodedPacket {
+        decode_serial_raw(data)
+    }
 }
 
 // ── Ethernet decoder ──────────────────────────────────────────────────
