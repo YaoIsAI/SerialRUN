@@ -25,13 +25,14 @@ pub fn render_connection_panel(ui: &mut egui::Ui, state: &mut AppState, ctx: &eg
         ui.add_space(8.0);
 
         let mut toggled: Option<usize> = None;
-        let buttons: [(&str, &str, &str); 14] = [
+        let buttons: [(&str, &str, &str); 15] = [
             ("Log", "日志", "Log"), ("Chart", "图表", "Chart"),
             ("PLC", "PLC 控制", "PLC"), ("Mod", "Modbus", "Modbus"),
             ("TCP", "TCP 桥接", "TCP Bridge"), ("HMI", "HMI 模拟器", "HMI Sim"),
             ("FT", "文件传输", "File Transfer"), ("FB", "帧生成器", "Frame Builder"), ("DL", "数据记录", "Data Logger"),
             ("CAN", "CAN 总线", "CAN Bus"), ("I2C", "I2C/SPI", "I2C/SPI"),
             ("Scope", "示波器", "Oscilloscope"), ("Flash", "烧录器", "Flasher"), ("Reg", "寄存器编辑", "Reg Editor"),
+            ("Pcap", "抓包分析", "Packet Capture"),
         ];
         for (i, (label, zh, en)) in buttons.iter().enumerate() {
             if i == 2 || i == 9 { ui.separator(); }
@@ -81,6 +82,7 @@ pub fn render_connection_panel(ui: &mut egui::Ui, state: &mut AppState, ctx: &eg
                 8 => state.show_data_logger_window = !state.show_data_logger_window, 9 => state.show_can_window = !state.show_can_window,
                 10 => state.show_i2c_spi_window = !state.show_i2c_spi_window, 11 => state.show_scope_window = !state.show_scope_window,
                 12 => state.show_flasher_window = !state.show_flasher_window, 13 => state.show_register_editor_window = !state.show_register_editor_window,
+                14 => state.show_pcap_window = !state.show_pcap_window,
                 _ => {}
             }
         }

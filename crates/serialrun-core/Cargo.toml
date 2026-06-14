@@ -23,6 +23,7 @@ libloading = { workspace = true }
 zip = "2"
 reqwest = { workspace = true }
 base64 = { workspace = true }
+pcap-file = "2"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }

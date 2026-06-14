@@ -1048,6 +1048,23 @@ impl T {
     pub fn can_board_info(l: Language) -> &'static str { match l { Language::English => "Board Info:", Language::Chinese => "设备信息:" } }
     pub fn can_no_device(l: Language) -> &'static str { match l { Language::English => "No CANalyst-II device found", Language::Chinese => "未找到 CANalyst-II 设备" } }
     pub fn can_dll_not_found(l: Language) -> &'static str { match l { Language::English => "ControlCAN library not found", Language::Chinese => "未找到 ControlCAN 库文件" } }
+    // ── Pcap Viewer ──
+    pub fn pcap_title(l: Language) -> &'static str { match l { Language::English => "Packet Capture Viewer", Language::Chinese => "抓包分析器" } }
+    pub fn pcap_open(l: Language) -> &'static str { match l { Language::English => "Open File", Language::Chinese => "打开文件" } }
+    pub fn pcap_clear(l: Language) -> &'static str { match l { Language::English => "Clear", Language::Chinese => "清除" } }
+    pub fn pcap_filter_label(l: Language) -> &'static str { match l { Language::English => "Filter:", Language::Chinese => "过滤:" } }
+    pub fn pcap_export(l: Language) -> &'static str { match l { Language::English => "Export", Language::Chinese => "导出" } }
+    pub fn pcap_col_no(l: Language) -> &'static str { match l { Language::English => "No.", Language::Chinese => "序号" } }
+    pub fn pcap_col_time(l: Language) -> &'static str { match l { Language::English => "Time", Language::Chinese => "时间" } }
+    pub fn pcap_col_proto(l: Language) -> &'static str { match l { Language::English => "Protocol", Language::Chinese => "协议" } }
+    pub fn pcap_col_src(l: Language) -> &'static str { match l { Language::English => "Source", Language::Chinese => "源" } }
+    pub fn pcap_col_dst(l: Language) -> &'static str { match l { Language::English => "Dest", Language::Chinese => "目标" } }
+    pub fn pcap_col_info(l: Language) -> &'static str { match l { Language::English => "Info", Language::Chinese => "信息" } }
+    pub fn pcap_details(l: Language) -> &'static str { match l { Language::English => "Details", Language::Chinese => "详情" } }
+    pub fn pcap_hex_dump(l: Language) -> &'static str { match l { Language::English => "Hex Dump", Language::Chinese => "十六进制" } }
+    pub fn pcap_no_file(l: Language) -> &'static str { match l { Language::English => "No file loaded. Click 'Open File' to load a pcap/pcapng file.", Language::Chinese => "未加载文件。点击「打开文件」加载 pcap/pcapng 文件。" } }
+    pub fn pcap_total(l: Language) -> &'static str { match l { Language::English => "Total:", Language::Chinese => "总计:" } }
+    pub fn pcap_shown(l: Language) -> &'static str { match l { Language::English => "Shown:", Language::Chinese => "显示:" } }
 
     // ── PLC ──
     pub fn once_btn(l: Language) -> &'static str { match l { Language::English => "Once", Language::Chinese => "单次" } }
@@ -1409,6 +1426,14 @@ pub struct AppState {
     pub canalyst_board_info: Option<String>,
     pub canalyst_device_list: Vec<String>, // serial numbers found
     pub canalyst_write_tx: Option<std::sync::mpsc::Sender<CanFrameData>>,
+    // Pcap viewer
+    pub pcap_packets: Vec<serialrun_core::protocol::pcap::PcapPacket>,
+    pub pcap_decoded: Vec<serialrun_core::protocol::pcap::DecodedPacket>,
+    pub pcap_selected: Option<usize>,
+    pub pcap_filter: String,
+    pub pcap_filename: String,
+    pub pcap_link_type: String,
+    pub show_pcap_window: bool,
     // I2C/SPI
     pub i2c_mode: I2cMode,
     pub i2c_address: String,
@@ -1763,6 +1788,9 @@ impl AppState {
             canalyst_device_index: 0, canalyst_channel: 0, canalyst_work_mode: 0,
             canalyst_board_info: None, canalyst_device_list: Vec::new(),
             canalyst_write_tx: None,
+            pcap_packets: Vec::new(), pcap_decoded: Vec::new(), pcap_selected: None,
+            pcap_filter: String::new(), pcap_filename: String::new(), pcap_link_type: String::new(),
+            show_pcap_window: false,
             i2c_mode: I2cMode::I2C, i2c_address: "68".into(), i2c_register: "00".into(), i2c_data: String::new(), i2c_result: String::new(),
             scope_capturing: false, scope_data: Vec::new(), scope_timebase_ms: 100.0,
             flasher_mcu: McuType::Stm32, flasher_file: String::new(), flasher_progress: 0.0, flasher_log: VecDeque::new(),

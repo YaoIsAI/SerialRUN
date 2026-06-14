@@ -1142,6 +1142,7 @@ impl eframe::App for SerialRunApp {
         viewport_window!(state.show_i2c_spi_window, "i2c_spi", T::i2c_spi(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::i2c_spi::render_i2c_spi_panel(ui, s), 450.0, 380.0);
         viewport_window!(state.show_scope_window, "scope", T::oscilloscope(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::serial_scope::render_serial_scope_panel(ui, s), 600.0, 480.0);
         viewport_window!(state.show_flasher_window, "flasher", T::flasher(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::flasher::render_flasher_panel(ui, s), 420.0, 350.0);
+        viewport_window!(state.show_pcap_window, "pcap", T::pcap_title(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::pcap_viewer::render_pcap_viewer(ui, s), 700.0, 550.0);
         viewport_window!(state.show_register_editor_window, "reg_editor", T::register_editor(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::register_editor::render_register_editor_panel(ui, s), 500.0, 400.0);
         viewport_window!(state.show_plugin_window, "plugin", T::plugins(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::plugin::render_plugin_panel(ui, s), 480.0, 400.0);
 
