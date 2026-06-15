@@ -1065,6 +1065,8 @@ impl T {
     pub fn pcap_no_file(l: Language) -> &'static str { match l { Language::English => "No file loaded. Click 'Open File' to load a pcap/pcapng file.", Language::Chinese => "未加载文件。点击「打开文件」加载 pcap/pcapng 文件。" } }
     pub fn pcap_total(l: Language) -> &'static str { match l { Language::English => "Total:", Language::Chinese => "总计:" } }
     pub fn pcap_shown(l: Language) -> &'static str { match l { Language::English => "Shown:", Language::Chinese => "显示:" } }
+    pub fn pcap_help_title(l: Language) -> &'static str { match l { Language::English => "Packet Capture Help", Language::Chinese => "抓包分析器使用说明" } }
+    pub fn pcap_help_hint(l: Language) -> &'static str { match l { Language::English => "Usage Guide", Language::Chinese => "使用说明" } }
 
     // ── PLC ──
     pub fn once_btn(l: Language) -> &'static str { match l { Language::English => "Once", Language::Chinese => "单次" } }
@@ -1434,6 +1436,7 @@ pub struct AppState {
     pub pcap_filename: String,
     pub pcap_link_type: String,
     pub show_pcap_window: bool,
+    pub show_pcap_help: bool,
     pub pcap_capturing: bool,
     // I2C/SPI
     pub i2c_mode: I2cMode,
@@ -1791,7 +1794,7 @@ impl AppState {
             canalyst_write_tx: None,
             pcap_packets: Vec::new(), pcap_decoded: Vec::new(), pcap_selected: None,
             pcap_filter: String::new(), pcap_filename: String::new(), pcap_link_type: String::new(),
-            show_pcap_window: false, pcap_capturing: false,
+            show_pcap_window: false, show_pcap_help: false, pcap_capturing: false,
             i2c_mode: I2cMode::I2C, i2c_address: "68".into(), i2c_register: "00".into(), i2c_data: String::new(), i2c_result: String::new(),
             scope_capturing: false, scope_data: Vec::new(), scope_timebase_ms: 100.0,
             flasher_mcu: McuType::Stm32, flasher_file: String::new(), flasher_progress: 0.0, flasher_log: VecDeque::new(),

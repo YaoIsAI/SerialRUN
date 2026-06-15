@@ -6,6 +6,74 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
     let is_dark = state.theme == Theme::Dark;
 
+    // ── Help window ──
+    if state.show_pcap_help {
+        let mut open = state.show_pcap_help;
+        egui::Window::new(T::pcap_help_title(lang))
+            .open(&mut open)
+            .resizable(true)
+            .default_width(480.0)
+            .default_height(400.0)
+            .show(ui.ctx(), |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    if lang == crate::state::Language::Chinese {
+                        ui.heading("抓包分析器使用说明");
+                        ui.add_space(8.0);
+                        ui.label("抓包分析器可以导入 pcap/pcapng 文件进行协议分析，也可以实时捕获串口数据。");
+                        ui.add_space(8.0);
+
+                        ui.strong("两种模式：");
+                        ui.label("1. 文件导入：点击「打开文件」选择 .pcap 或 .pcapng 文件");
+                        ui.label("2. 实时抓包：先连接串口，再点击「⏺ 开始抓包」");
+                        ui.add_space(8.0);
+
+                        ui.strong("支持的协议（自动识别）：");
+                        ui.label("• Modbus RTU — 串口原始 Modbus 帧，自动校验 CRC");
+                        ui.label("• Modbus TCP — 以太网封装的 Modbus 协议（端口 502）");
+                        ui.label("• CAN 总线 — 标准帧（11位 ID）自动解码");
+                        ui.label("• AT 指令 — 识别 AT 命令和响应");
+                        ui.label("• Raw — 无法识别的数据显示为原始十六进制");
+                        ui.add_space(8.0);
+
+                        ui.strong("三栏视图：");
+                        ui.label("• 上方：数据包列表（序号、时间、协议、源、目标、摘要）");
+                        ui.label("• 中间：选中包的协议详情（可展开字段）");
+                        ui.label("• 下方：十六进制转储（偏移量 + HEX + ASCII）");
+                        ui.add_space(8.0);
+
+                        ui.strong("过滤：");
+                        ui.label("在过滤框输入关键字，可按协议名（Modbus、CAN、AT）或内容过滤。");
+                        ui.add_space(8.0);
+
+                        ui.strong("颜色说明：");
+                        ui.horizontal(|ui| {
+                            ui.label("•");
+                            ui.label(egui::RichText::new("绿色").color(egui::Color32::from_rgb(46, 204, 113)));
+                            ui.label(" = Modbus RTU/TCP");
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("•");
+                            ui.label(egui::RichText::new("橙色").color(egui::Color32::from_rgb(230, 160, 50)));
+                            ui.label(" = CAN 总线");
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("•");
+                            ui.label(egui::RichText::new("紫色").color(egui::Color32::from_rgb(180, 100, 230)));
+                            ui.label(" = AT 指令");
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("•");
+                            ui.label(egui::RichText::new("灰色").color(egui::Color32::from_rgb(128, 128, 140)));
+                            ui.label(" = 原始数据");
+                        });
+                    } else {
+                        heading_en(ui);
+                    }
+                });
+            });
+        state.show_pcap_help = open;
+    }
+
     // Theme-aware colors
     let text_color = if is_dark { egui::Color32::from_rgb(220, 220, 230) } else { egui::Color32::from_rgb(30, 30, 50) };
     let muted_color = if is_dark { egui::Color32::from_rgb(128, 128, 140) } else { egui::Color32::from_rgb(120, 120, 130) };
@@ -78,6 +146,16 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
             ui.label(egui::RichText::new(&state.pcap_filename).color(egui::Color32::from_rgb(100, 160, 230)));
             ui.label(egui::RichText::new(format!("({})", state.pcap_link_type)).color(muted_color));
         }
+
+        // Help button (right-aligned)
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if ui.button(egui::RichText::new("?").size(14.0).strong())
+                .on_hover_text(T::pcap_help_hint(lang))
+                .clicked()
+            {
+                state.show_pcap_help = !state.show_pcap_help;
+            }
+        });
     });
 
     ui.separator();
@@ -290,4 +368,56 @@ fn format_timestamp(ms: i64) -> String {
     let mins = total_secs / 60;
     let secs = total_secs % 60;
     format!("{:02}:{:02}.{:03}", mins, secs, millis)
+}
+
+fn heading_en(ui: &mut egui::Ui) {
+    ui.heading("Packet Capture Viewer Help");
+    ui.add_space(8.0);
+    ui.label("The Packet Capture Viewer can import pcap/pcapng files for protocol analysis, or capture live serial data in real-time.");
+    ui.add_space(8.0);
+
+    ui.strong("Two Modes:");
+    ui.label("1. File Import: Click 'Open File' to load a .pcap or .pcapng file");
+    ui.label("2. Live Capture: Connect to a serial port first, then click '⏺ Start Capture'");
+    ui.add_space(8.0);
+
+    ui.strong("Supported Protocols (auto-detected):");
+    ui.label("• Modbus RTU — Raw serial Modbus frames with CRC validation");
+    ui.label("• Modbus TCP — Ethernet-encapsulated Modbus protocol (port 502)");
+    ui.label("• CAN Bus — Standard frames (11-bit ID) auto-decoded");
+    ui.label("• AT Commands — Recognizes AT commands and responses");
+    ui.label("• Raw — Unrecognized data shown as hex dump");
+    ui.add_space(8.0);
+
+    ui.strong("Three-Pane View:");
+    ui.label("• Top: Packet list (No., Time, Protocol, Source, Destination, Summary)");
+    ui.label("• Middle: Selected packet's protocol details (expandable fields)");
+    ui.label("• Bottom: Hex dump (offset + HEX + ASCII sidebar)");
+    ui.add_space(8.0);
+
+    ui.strong("Filter:");
+    ui.label("Enter keywords in the filter box to filter by protocol name (Modbus, CAN, AT) or content.");
+    ui.add_space(8.0);
+
+    ui.strong("Color Legend:");
+    ui.horizontal(|ui| {
+        ui.label("•");
+        ui.label(egui::RichText::new("Green").color(egui::Color32::from_rgb(46, 204, 113)));
+        ui.label(" = Modbus RTU/TCP");
+    });
+    ui.horizontal(|ui| {
+        ui.label("•");
+        ui.label(egui::RichText::new("Orange").color(egui::Color32::from_rgb(230, 160, 50)));
+        ui.label(" = CAN Bus");
+    });
+    ui.horizontal(|ui| {
+        ui.label("•");
+        ui.label(egui::RichText::new("Purple").color(egui::Color32::from_rgb(180, 100, 230)));
+        ui.label(" = AT Commands");
+    });
+    ui.horizontal(|ui| {
+        ui.label("•");
+        ui.label(egui::RichText::new("Gray").color(egui::Color32::from_rgb(128, 128, 140)));
+        ui.label(" = Raw Data");
+    });
 }
