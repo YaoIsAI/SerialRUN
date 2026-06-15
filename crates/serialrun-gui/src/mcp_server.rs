@@ -72,7 +72,7 @@ pub enum McpSerialRequest {
     },
     GetPacket {
         index: usize,
-        resp: mpsc::Sender<serde_json::Value>,
+        resp: mpsc::Sender<Result<serde_json::Value, String>>,
     },
     PcapStats {
         resp: mpsc::Sender<serde_json::Value>,
@@ -1352,9 +1352,10 @@ fn handle_request(
                             let (resp_tx, resp_rx) = mpsc::channel();
                             let _ = tx.send(McpSerialRequest::GetPacket { index, resp: resp_tx });
                             match resp_rx.recv_timeout(Duration::from_secs(5)) {
-                                Ok(result) => McpResponse::success(request.id, serde_json::json!({
+                                Ok(Ok(result)) => McpResponse::success(request.id, serde_json::json!({
                                     "content": [{ "type": "text", "text": serde_json::to_string_pretty(&result).unwrap() }]
                                 })),
+                                Ok(Err(e)) => McpResponse::error(request.id, -1, e),
                                 Err(_) => McpResponse::error(request.id, -1, "Timeout getting packet".into()),
                             }
                         }

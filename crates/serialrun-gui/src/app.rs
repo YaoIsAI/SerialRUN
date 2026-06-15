@@ -688,42 +688,50 @@ fn mcp_serial_request_loop(
             crate::mcp_server::McpSerialRequest::QueryPackets { filter, limit, resp } => {
                 let result = {
                     let state = lock_state(&app_state);
-                    let filter_lower = filter.to_lowercase();
-                    let packets: Vec<serde_json::Value> = state.pcap_decoded.iter().enumerate()
-                        .filter(|(_, d)| {
-                            if filter_lower.is_empty() { return true; }
-                            d.protocol.to_lowercase().contains(&filter_lower)
-                                || d.summary.to_lowercase().contains(&filter_lower)
-                        })
-                        .take(limit)
-                        .map(|(i, d)| {
-                            serde_json::json!({
-                                "index": i,
-                                "protocol": d.protocol,
-                                "src": d.src,
-                                "dst": d.dst,
-                                "summary": d.summary,
+                    if state.pcap_packets.is_empty() {
+                        serde_json::json!({"error": "No pcap data loaded. Call load_pcap first or start a live capture.", "total": 0, "filtered": 0, "packets": []})
+                    } else {
+                        let filter_lower = filter.to_lowercase();
+                        let packets: Vec<serde_json::Value> = state.pcap_decoded.iter().enumerate()
+                            .filter(|(_, d)| {
+                                if filter_lower.is_empty() { return true; }
+                                d.protocol.to_lowercase().contains(&filter_lower)
+                                    || d.summary.to_lowercase().contains(&filter_lower)
+                                    || d.src.to_lowercase().contains(&filter_lower)
+                                    || d.dst.to_lowercase().contains(&filter_lower)
                             })
+                            .take(limit)
+                            .map(|(i, d)| {
+                                serde_json::json!({
+                                    "index": i,
+                                    "protocol": d.protocol,
+                                    "src": d.src,
+                                    "dst": d.dst,
+                                    "summary": d.summary,
+                                })
+                            })
+                            .collect();
+                        serde_json::json!({
+                            "total": state.pcap_packets.len(),
+                            "filtered": packets.len(),
+                            "packets": packets,
                         })
-                        .collect();
-                    serde_json::json!({
-                        "total": state.pcap_packets.len(),
-                        "filtered": packets.len(),
-                        "packets": packets,
-                    })
+                    }
                 };
                 let _ = resp.send(result);
             }
             crate::mcp_server::McpSerialRequest::GetPacket { index, resp } => {
                 let result = {
                     let state = lock_state(&app_state);
-                    if index >= state.pcap_packets.len() {
-                        serde_json::json!({"error": format!("Index {} out of range (total: {})", index, state.pcap_packets.len())})
+                    if state.pcap_packets.is_empty() {
+                        Err("No pcap data loaded. Call load_pcap first or start a live capture.".to_string())
+                    } else if index >= state.pcap_packets.len() {
+                        Err(format!("Index {} out of range (total: {})", index, state.pcap_packets.len()))
                     } else {
                         let pkt = &state.pcap_packets[index];
                         let decoded = &state.pcap_decoded[index];
                         let hex: Vec<String> = pkt.data.iter().map(|b| format!("{:02X}", b)).collect();
-                        serde_json::json!({
+                        Ok(serde_json::json!({
                             "index": index,
                             "protocol": decoded.protocol,
                             "src": decoded.src,
@@ -735,7 +743,7 @@ fn mcp_serial_request_loop(
                             "hex": hex.join(" "),
                             "ascii": String::from_utf8_lossy(&pkt.data).to_string(),
                             "length": pkt.data.len(),
-                        })
+                        }))
                     }
                 };
                 let _ = resp.send(result);

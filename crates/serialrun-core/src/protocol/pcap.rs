@@ -34,7 +34,12 @@ impl LinkType {
             pcap_file::DataLink::NULL => LinkType::Raw,
             pcap_file::DataLink::RAW | pcap_file::DataLink::USER0 | pcap_file::DataLink::USER1 => LinkType::Serial,
             pcap_file::DataLink::LINUX_SLL => LinkType::Raw,
-            _ => LinkType::Unknown(0),
+            _ => {
+                // Store a hash of the debug name as diagnostic info
+                let name = format!("{:?}", dlt);
+                let hash = name.bytes().fold(0u16, |acc, b| acc.wrapping_mul(31).wrapping_add(b as u16));
+                LinkType::Unknown(hash)
+            }
         }
     }
     pub fn name(&self) -> &str {
@@ -108,9 +113,8 @@ impl PcapFile {
                 }
             }
 
-            if !packets.is_empty() {
-                return Ok(PcapFile { link_type, packets, filename });
-            }
+            // Return even if empty — the file format was valid
+            return Ok(PcapFile { link_type, packets, filename });
         }
 
         // Try pcapng format
@@ -149,9 +153,8 @@ impl PcapFile {
                 }
             }
 
-            if !packets.is_empty() {
-                return Ok(PcapFile { link_type, packets, filename });
-            }
+            // Return even if empty — the file format was valid
+            return Ok(PcapFile { link_type, packets, filename });
         }
 
         Err(PcapError::InvalidFormat("Not a valid pcap or pcapng file".into()))
