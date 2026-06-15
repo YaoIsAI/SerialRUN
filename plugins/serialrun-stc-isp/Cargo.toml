@@ -1,6 +1,6 @@
 [package]
 name = "serialrun-stc-isp"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2021"
 description = "STC MCU ISP flashing plugin for SerialRUN"
 license = "BSL-1.1"

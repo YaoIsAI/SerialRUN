@@ -61,6 +61,22 @@ pub enum McpSerialRequest {
         value: serde_json::Value,
         resp: mpsc::Sender<Result<String, String>>,
     },
+    LoadPcap {
+        path: String,
+        resp: mpsc::Sender<Result<String, String>>,
+    },
+    QueryPackets {
+        filter: String,
+        limit: usize,
+        resp: mpsc::Sender<serde_json::Value>,
+    },
+    GetPacket {
+        index: usize,
+        resp: mpsc::Sender<serde_json::Value>,
+    },
+    PcapStats {
+        resp: mpsc::Sender<serde_json::Value>,
+    },
 }
 
 pub enum McpCommand {
@@ -524,6 +540,44 @@ fn handle_request(
                     {
                         "name": "get_config_keys",
                         "description": "List all available configuration keys with their types, valid values, and whether they require reconnect. Call this to discover what settings can be changed.",
+                        "inputSchema": { "type": "object", "properties": {} }
+                    },
+                    {
+                        "name": "load_pcap",
+                        "description": "Load a pcap or pcapng file into the packet capture viewer. Supports Modbus RTU/TCP, CAN, AT command auto-detection.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "path": { "type": "string", "description": "Absolute path to the pcap/pcapng file" }
+                            },
+                            "required": ["path"]
+                        }
+                    },
+                    {
+                        "name": "query_packets",
+                        "description": "Query loaded packets with optional protocol filter. Returns packet list with protocol, source, destination, and summary.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "filter": { "type": "string", "description": "Filter by protocol name (Modbus, CAN, AT) or keyword. Empty returns all." },
+                                "limit": { "type": "integer", "description": "Max packets to return (default: 50, max: 500)" }
+                            }
+                        }
+                    },
+                    {
+                        "name": "get_packet",
+                        "description": "Get detailed information of a specific packet by index, including protocol fields and hex dump.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "index": { "type": "integer", "description": "Packet index (0-based)" }
+                            },
+                            "required": ["index"]
+                        }
+                    },
+                    {
+                        "name": "pcap_stats",
+                        "description": "Get statistics of loaded pcap data: total packets, protocol distribution, time range.",
                         "inputSchema": { "type": "object", "properties": {} }
                     }
                 ]
@@ -1250,6 +1304,78 @@ fn handle_request(
                     McpResponse::success(request.id, serde_json::json!({
                         "content": [{ "type": "text", "text": serde_json::to_string_pretty(&keys_info).unwrap() }]
                     }))
+                }
+                "load_pcap" => {
+                    let path = arguments.get("path").and_then(|v| v.as_str()).unwrap_or("");
+                    if path.is_empty() {
+                        return McpResponse::error(request.id, -32602, "path is required".into());
+                    }
+                    let tx = { let sh = shared.lock().unwrap(); sh.serial_req_tx.clone() };
+                    match tx {
+                        Some(tx) => {
+                            let (resp_tx, resp_rx) = mpsc::channel();
+                            let _ = tx.send(McpSerialRequest::LoadPcap { path: path.to_string(), resp: resp_tx });
+                            match resp_rx.recv_timeout(Duration::from_secs(10)) {
+                                Ok(Ok(msg)) => McpResponse::success(request.id, serde_json::json!({
+                                    "content": [{ "type": "text", "text": msg }]
+                                })),
+                                Ok(Err(e)) => McpResponse::error(request.id, -1, e),
+                                Err(_) => McpResponse::error(request.id, -1, "Timeout loading pcap".into()),
+                            }
+                        }
+                        None => McpResponse::error(request.id, -1, "GUI not available".into()),
+                    }
+                }
+                "query_packets" => {
+                    let filter = arguments.get("filter").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let limit = arguments.get("limit").and_then(|v| v.as_u64()).unwrap_or(50).min(500) as usize;
+                    let tx = { let sh = shared.lock().unwrap(); sh.serial_req_tx.clone() };
+                    match tx {
+                        Some(tx) => {
+                            let (resp_tx, resp_rx) = mpsc::channel();
+                            let _ = tx.send(McpSerialRequest::QueryPackets { filter, limit, resp: resp_tx });
+                            match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                                Ok(result) => McpResponse::success(request.id, serde_json::json!({
+                                    "content": [{ "type": "text", "text": serde_json::to_string_pretty(&result).unwrap() }]
+                                })),
+                                Err(_) => McpResponse::error(request.id, -1, "Timeout querying packets".into()),
+                            }
+                        }
+                        None => McpResponse::error(request.id, -1, "GUI not available".into()),
+                    }
+                }
+                "get_packet" => {
+                    let index = arguments.get("index").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+                    let tx = { let sh = shared.lock().unwrap(); sh.serial_req_tx.clone() };
+                    match tx {
+                        Some(tx) => {
+                            let (resp_tx, resp_rx) = mpsc::channel();
+                            let _ = tx.send(McpSerialRequest::GetPacket { index, resp: resp_tx });
+                            match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                                Ok(result) => McpResponse::success(request.id, serde_json::json!({
+                                    "content": [{ "type": "text", "text": serde_json::to_string_pretty(&result).unwrap() }]
+                                })),
+                                Err(_) => McpResponse::error(request.id, -1, "Timeout getting packet".into()),
+                            }
+                        }
+                        None => McpResponse::error(request.id, -1, "GUI not available".into()),
+                    }
+                }
+                "pcap_stats" => {
+                    let tx = { let sh = shared.lock().unwrap(); sh.serial_req_tx.clone() };
+                    match tx {
+                        Some(tx) => {
+                            let (resp_tx, resp_rx) = mpsc::channel();
+                            let _ = tx.send(McpSerialRequest::PcapStats { resp: resp_tx });
+                            match resp_rx.recv_timeout(Duration::from_secs(5)) {
+                                Ok(result) => McpResponse::success(request.id, serde_json::json!({
+                                    "content": [{ "type": "text", "text": serde_json::to_string_pretty(&result).unwrap() }]
+                                })),
+                                Err(_) => McpResponse::error(request.id, -1, "Timeout getting stats".into()),
+                            }
+                        }
+                        None => McpResponse::error(request.id, -1, "GUI not available".into()),
+                    }
                 }
                 _ => McpResponse::error(request.id, -32601, format!("Unknown tool: {}", tool_name))
             }

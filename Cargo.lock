@@ -4203,7 +4203,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-cli"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -4217,7 +4217,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-core"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "anyhow",
  "base64",
@@ -4241,7 +4241,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-example-plugin"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "chrono",
  "serde",
@@ -4251,7 +4251,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-gui"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "anyhow",
  "arboard",
@@ -4277,7 +4277,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-mcp"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "anyhow",
  "serde",
@@ -4290,7 +4290,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-mpy-ide"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "serde",
  "serde_json",
@@ -4299,7 +4299,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-plugin-api"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "serde",
  "serde_json",
@@ -4307,7 +4307,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-stc-isp"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "serde",
  "serde_json",

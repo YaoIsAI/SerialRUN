@@ -667,6 +667,96 @@ fn mcp_serial_request_loop(
                     }
                 }
             }
+            crate::mcp_server::McpSerialRequest::LoadPcap { path, resp } => {
+                let result = {
+                    let mut state = lock_state(&app_state);
+                    let path_buf = std::path::PathBuf::from(&path);
+                    match serialrun_core::protocol::pcap::PcapFile::load(&path_buf) {
+                        Ok(pcap) => {
+                            state.pcap_decoded = pcap.packets.iter().map(|p| pcap.decode_packet(p)).collect();
+                            state.pcap_link_type = pcap.link_type.name().to_string();
+                            state.pcap_packets = pcap.packets;
+                            state.pcap_filename = pcap.filename;
+                            state.pcap_selected = None;
+                            Ok(format!("Loaded {} packets from {}", state.pcap_packets.len(), path))
+                        }
+                        Err(e) => Err(e.to_string()),
+                    }
+                };
+                let _ = resp.send(result);
+            }
+            crate::mcp_server::McpSerialRequest::QueryPackets { filter, limit, resp } => {
+                let result = {
+                    let state = lock_state(&app_state);
+                    let filter_lower = filter.to_lowercase();
+                    let packets: Vec<serde_json::Value> = state.pcap_decoded.iter().enumerate()
+                        .filter(|(_, d)| {
+                            if filter_lower.is_empty() { return true; }
+                            d.protocol.to_lowercase().contains(&filter_lower)
+                                || d.summary.to_lowercase().contains(&filter_lower)
+                        })
+                        .take(limit)
+                        .map(|(i, d)| {
+                            serde_json::json!({
+                                "index": i,
+                                "protocol": d.protocol,
+                                "src": d.src,
+                                "dst": d.dst,
+                                "summary": d.summary,
+                            })
+                        })
+                        .collect();
+                    serde_json::json!({
+                        "total": state.pcap_packets.len(),
+                        "filtered": packets.len(),
+                        "packets": packets,
+                    })
+                };
+                let _ = resp.send(result);
+            }
+            crate::mcp_server::McpSerialRequest::GetPacket { index, resp } => {
+                let result = {
+                    let state = lock_state(&app_state);
+                    if index >= state.pcap_packets.len() {
+                        serde_json::json!({"error": format!("Index {} out of range (total: {})", index, state.pcap_packets.len())})
+                    } else {
+                        let pkt = &state.pcap_packets[index];
+                        let decoded = &state.pcap_decoded[index];
+                        let hex: Vec<String> = pkt.data.iter().map(|b| format!("{:02X}", b)).collect();
+                        serde_json::json!({
+                            "index": index,
+                            "protocol": decoded.protocol,
+                            "src": decoded.src,
+                            "dst": decoded.dst,
+                            "summary": decoded.summary,
+                            "details": decoded.details.iter().map(|f| {
+                                serde_json::json!({"name": f.name, "value": f.value, "offset": f.offset, "length": f.length})
+                            }).collect::<Vec<_>>(),
+                            "hex": hex.join(" "),
+                            "ascii": String::from_utf8_lossy(&pkt.data).to_string(),
+                            "length": pkt.data.len(),
+                        })
+                    }
+                };
+                let _ = resp.send(result);
+            }
+            crate::mcp_server::McpSerialRequest::PcapStats { resp } => {
+                let result = {
+                    let state = lock_state(&app_state);
+                    let mut proto_counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+                    for d in &state.pcap_decoded {
+                        *proto_counts.entry(d.protocol.clone()).or_insert(0) += 1;
+                    }
+                    serde_json::json!({
+                        "total_packets": state.pcap_packets.len(),
+                        "filename": state.pcap_filename,
+                        "link_type": state.pcap_link_type,
+                        "protocols": proto_counts,
+                        "capturing": state.pcap_capturing,
+                    })
+                };
+                let _ = resp.send(result);
+            }
         }
     }
     eprintln!("[MCP-Serial] Request processing thread stopped");

@@ -66,6 +66,13 @@ pub fn render_pcap_viewer(ui: &mut egui::Ui, state: &mut AppState) {
                             ui.label(egui::RichText::new("灰色").color(egui::Color32::from_rgb(128, 128, 140)));
                             ui.label(" = 原始数据");
                         });
+                        ui.add_space(8.0);
+
+                        ui.strong("MCP 工具（AI 助手可用）：");
+                        ui.label("• load_pcap — 加载 pcap 文件");
+                        ui.label("• query_packets — 按协议/关键字查询数据包");
+                        ui.label("• get_packet — 获取指定数据包的详细信息");
+                        ui.label("• pcap_stats — 获取抓包统计信息");
                     } else {
                         heading_en(ui);
                     }
@@ -420,4 +427,11 @@ fn heading_en(ui: &mut egui::Ui) {
         ui.label(egui::RichText::new("Gray").color(egui::Color32::from_rgb(128, 128, 140)));
         ui.label(" = Raw Data");
     });
+    ui.add_space(8.0);
+
+    ui.strong("MCP Tools (for AI assistants):");
+    ui.label("• load_pcap — Load a pcap file by path");
+    ui.label("• query_packets — Query packets by protocol/keyword filter");
+    ui.label("• get_packet — Get detailed info of a specific packet by index");
+    ui.label("• pcap_stats — Get capture statistics (total, protocols, etc.)");
 }
