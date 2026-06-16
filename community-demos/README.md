@@ -41,13 +41,13 @@
 
 ## 🎁 贡献者福利
 
-- 你的 GitHub 个人主页会获得一个来自 `YaoIsAI/serialrun-plugins` 的贡献标记
+- 你的 GitHub 个人主页会获得一个来自 `YaoIsAI/SerialRUN` 的贡献标记
 - 通过审核的 demo 将被推荐到 SerialRUN 官方 README 社区展示区
 - 如果是 AGI Builder 任务提交，可获得 30% 积分加成（详见 AGI Builder 任务说明）
 
 ## 📞 联系
 
-- GitHub Issues: https://github.com/YaoIsAI/serialrun-plugins/issues
+- GitHub Issues: https://github.com/YaoIsAI/SerialRUN/issues
 - SerialRUN 官网: https://www.serialrun.com
 - 主仓库: https://github.com/YaoIsAI/SerialRUN
 
