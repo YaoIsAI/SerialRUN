@@ -1244,7 +1244,6 @@ impl eframe::App for SerialRunApp {
         viewport_window!(state.show_bridge_window, "bridge", T::bridge(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::bridge::render_bridge_panel(ui, s), 520.0, 450.0);
         viewport_window!(state.show_simulator_window, "simulator", T::simulator(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::simulator::render_simulator_panel(ui, s), 520.0, 500.0);
         viewport_window!(state.show_checksum_window, "checksum", T::checksum(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::checksum::render_checksum_panel(ui, s), 400.0, 350.0);
-        viewport_window!(state.show_file_transfer_window, "file_transfer", T::file_transfer(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::file_transfer::render_file_transfer_panel(ui, s), 420.0, 300.0);
         viewport_window!(state.show_frame_builder_window, "frame_builder", T::frame_builder(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::frame_builder::render_frame_builder_panel(ui, s), 450.0, 350.0);
         viewport_window!(state.show_data_logger_window, "data_logger", T::data_logger(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::data_logger::render_data_logger_panel(ui, s), 400.0, 250.0);
         viewport_window!(state.show_can_window, "can", T::can_analyzer(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::can_analyzer::render_can_analyzer_panel(ui, s), 550.0, 400.0);
