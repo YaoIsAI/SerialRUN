@@ -19,6 +19,7 @@ Thumbs.db
 *.dll
 *.so
 *.dylib
+*.zip
 
 # Test output
 tests/output/
@@ -29,21 +30,36 @@ tests/output/
 
 # Python test files
 test_*.py
+tests/mcp_*.py
 
-# Website (tracked in Gitea for Mac sync, deployed via wrangler)
+# Website (deployed via wrangler, not in public git)
+website/
 
-# Non-core files
+# WeChat articles and images
 wechat_article.html
-assets/screenshot_website.png
+assets/wechat_pay_qr.jpg
+assets/screenshot_website*.png
 
 # GUI (proprietary, not published to public repos)
 crates/serialrun-gui/
 
-# Internal scripts (contain private URLs, only on Gitea)
-# (sync-remotes.sh is tracked — no secrets, uses env vars)
+# Internal scripts (contain private URLs)
+scripts/webhook_server.py
+scripts/setup_webhook.sh
+scripts/start_webhook.sh
+
+# Forge state
+.forge-state.json
 
 # Cloudflare Wrangler cache
 .wrangler/
 .auto-task.md
 scripts/auto-implement.sh
 docs/AUTO_IMPLEMENT.md
+
+# Plugin build artifacts
+serialrun-plugin-*.zip
+plugins/serialrun-mpy-ide.zip
+
+# Submodule (managed separately)
+serialrun-plugins
