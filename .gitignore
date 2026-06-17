@@ -30,8 +30,7 @@ tests/output/
 # Python test files
 test_*.py
 
-# Website (deployed separately to Cloudflare Pages)
-website/
+# Website (tracked in Gitea for Mac sync, deployed via wrangler)
 
 # Non-core files
 wechat_article.html

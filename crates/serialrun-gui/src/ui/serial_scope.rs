@@ -11,7 +11,7 @@ pub fn render_serial_scope_panel(ui: &mut egui::Ui, state: &mut AppState) {
             for p in points {
                 state.scope_data.push(p);
             }
-            let max_points = 10000;
+            let max_points = 100_000;
             if state.scope_data.len() > max_points {
                 state.scope_data.drain(..state.scope_data.len() - max_points);
             }

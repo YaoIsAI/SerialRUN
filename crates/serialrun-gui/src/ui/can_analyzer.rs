@@ -1,7 +1,8 @@
-use crate::state::{AppState, CanFrameData, T};
+use crate::state::{AppState, CanConnectionMode, CanFrameData, T};
 use crate::async_utils::PersistentReader;
 use eframe::egui;
 use std::collections::HashMap;
+use serialrun_core::protocol::canalyst::{self, CanalystDriver, VciCanObj};
 
 pub fn render_can_analyzer_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
@@ -20,8 +21,8 @@ pub fn render_can_analyzer_panel(ui: &mut egui::Ui, state: &mut AppState) {
     if let Some(ref reader) = state.can_reader {
         while let Some(frames) = reader.poll() {
             state.can_frames.extend(frames);
-            if state.can_frames.len() > 5000 {
-                state.can_frames.drain(..state.can_frames.len() - 5000);
+            if state.can_frames.len() > 100_000 {
+                state.can_frames.drain(..state.can_frames.len() - 100_000);
             }
         }
     }
@@ -78,79 +79,25 @@ pub fn render_can_analyzer_panel(ui: &mut egui::Ui, state: &mut AppState) {
     // ═══════════════════════════════════════════════════════
     // CAN Connection (Independent from terminal)
     // ═══════════════════════════════════════════════════════
-    ui.horizontal(|ui| {
-        ui.label(T::can_port(lang));
-        let terminal_port = state.selected_port.clone().unwrap_or_default();
-        let can_port_empty = state.can_port.is_empty();
-        let port_conflict = !can_port_empty && state.can_port == terminal_port && state.is_connected;
-
-        egui::ComboBox::from_id_salt("can_port")
-            .width(140.0)
-            .selected_text(if can_port_empty { "—" } else { &state.can_port })
-            .show_ui(ui, |ui| {
-                for port in &state.ports {
-                    let name = port.name.clone();
-                    let is_terminal = name == terminal_port && state.is_connected;
-                    let is_can_active = name == state.can_port && state.can_connected;
-                    let label = if is_terminal && is_can_active {
-                        format!("{} ({})", name, T::can_port_both(lang))
-                    } else if is_terminal {
-                        format!("{} ({})", name, T::can_port_terminal(lang))
-                    } else if is_can_active {
-                        format!("{} ({})", name, T::can_port_can(lang))
-                    } else {
-                        name.clone()
-                    };
-                    ui.selectable_value(&mut state.can_port, name, label);
-                }
-            });
-
-        // Connect / Disconnect button — right next to port
-        if state.can_connected {
-            if ui.button(egui::RichText::new(T::can_disconnect(lang)).strong()).clicked() {
-                state.can_capturing = false;
-                state.can_tx_periodic = false;
-                stop_can_reader(state);
-                state.can_connected = false;
-            }
-        } else {
-            let can_port_ready = !state.can_port.is_empty();
-            if ui.add_enabled(can_port_ready, egui::Button::new(
-                egui::RichText::new(T::can_connect(lang)).strong())).clicked() {
-                start_can_reader(state);
-                if state.can_reader.is_some() {
-                    state.can_connected = true;
-                    state.can_capturing = true;
-                    state.can_frames.clear();
-                    state.can_stats = crate::state::CanStats::default();
-                } else {
-                    state.show_error("CAN: failed to open port");
+    // Mode selector (only show on Windows/Linux where CANalyst is supported)
+    let modes = CanConnectionMode::all();
+    if modes.len() > 1 {
+        ui.horizontal(|ui| {
+            ui.label(T::can_mode_label(lang));
+            for &mode in modes {
+                let selected = state.can_connection_mode == mode;
+                if ui.selectable_label(selected, mode.label(lang)).clicked() && !state.can_connected {
+                    state.can_connection_mode = mode;
                 }
             }
-        }
+        });
+        ui.add_space(2.0);
+    }
 
-        // Port conflict warning
-        if port_conflict {
-            ui.label(egui::RichText::new(format!("⚠ {}", T::can_port_conflict(lang)))
-                .color(egui::Color32::from_rgb(251, 191, 36)));
-        }
-
-        ui.separator();
-        ui.label(T::can_baud(lang));
-        egui::ComboBox::from_id_salt("can_baud")
-            .width(80.0)
-            .selected_text(baud_display(state.can_baud_rate))
-            .show_ui(ui, |ui| {
-                for &rate in &[100_000, 125_000, 250_000, 500_000, 1_000_000] {
-                    ui.selectable_value(&mut state.can_baud_rate, rate, baud_display(rate));
-                }
-            });
-
-        // Refresh ports button
-        if ui.small_button("↻").on_hover_text(T::refresh_ports(lang)).clicked() {
-            state.refresh_ports();
-        }
-    });
+    match state.can_connection_mode {
+        CanConnectionMode::Slcan => render_slcan_connection(ui, state),
+        CanConnectionMode::Canalyst => render_canalyst_connection(ui, state),
+    }
     ui.add_space(2.0);
 
     // ═══════════════════════════════════════════════════════
@@ -209,7 +156,10 @@ pub fn render_can_analyzer_panel(ui: &mut egui::Ui, state: &mut AppState) {
         ui.checkbox(&mut state.can_tx_id_increment, T::can_id_inc(lang));
         ui.checkbox(&mut state.can_tx_data_increment, T::can_data_inc(lang));
         ui.add_space(12.0);
-        let can_ready = state.can_connected && state.can_write_tx.is_some();
+        let can_ready = state.can_connected && match state.can_connection_mode {
+            CanConnectionMode::Slcan => state.can_write_tx.is_some(),
+            CanConnectionMode::Canalyst => state.canalyst_write_tx.is_some(),
+        };
         if state.can_tx_periodic {
             ui.label(egui::RichText::new(format!("{}/{}", state.can_tx_sent_count, state.can_tx_count))
                 .color(egui::Color32::from_rgb(251, 191, 36)));
@@ -487,6 +437,316 @@ fn stop_can_reader(state: &mut AppState) {
     // CAN has its own connection — no need to restart terminal's port_owner
 }
 
+// ── SLCAN Connection UI ──
+fn render_slcan_connection(ui: &mut egui::Ui, state: &mut AppState) {
+    let lang = state.language;
+    ui.horizontal(|ui| {
+        ui.label(T::can_port(lang));
+        let terminal_port = state.selected_port.clone().unwrap_or_default();
+        let can_port_empty = state.can_port.is_empty();
+        let port_conflict = !can_port_empty && state.can_port == terminal_port && state.is_connected;
+
+        egui::ComboBox::from_id_salt("can_port")
+            .width(140.0)
+            .selected_text(if can_port_empty { "—" } else { &state.can_port })
+            .show_ui(ui, |ui| {
+                for port in &state.ports {
+                    let name = port.name.clone();
+                    let is_terminal = name == terminal_port && state.is_connected;
+                    let is_can_active = name == state.can_port && state.can_connected;
+                    let label = if is_terminal && is_can_active {
+                        format!("{} ({})", name, T::can_port_both(lang))
+                    } else if is_terminal {
+                        format!("{} ({})", name, T::can_port_terminal(lang))
+                    } else if is_can_active {
+                        format!("{} ({})", name, T::can_port_can(lang))
+                    } else {
+                        name.clone()
+                    };
+                    ui.selectable_value(&mut state.can_port, name, label);
+                }
+            });
+
+        // Connect / Disconnect button
+        if state.can_connected {
+            if ui.button(egui::RichText::new(T::can_disconnect(lang)).strong()).clicked() {
+                state.can_capturing = false;
+                state.can_tx_periodic = false;
+                stop_can_reader(state);
+                state.can_connected = false;
+            }
+        } else {
+            let can_port_ready = !state.can_port.is_empty();
+            if ui.add_enabled(can_port_ready, egui::Button::new(
+                egui::RichText::new(T::can_connect(lang)).strong())).clicked() {
+                start_can_reader(state);
+                if state.can_reader.is_some() {
+                    state.can_connected = true;
+                    state.can_capturing = true;
+                    state.can_frames.clear();
+                    state.can_stats = crate::state::CanStats::default();
+                } else {
+                    state.show_error("CAN: failed to open port");
+                }
+            }
+        }
+
+        if port_conflict {
+            ui.label(egui::RichText::new(format!("⚠ {}", T::can_port_conflict(lang)))
+                .color(egui::Color32::from_rgb(251, 191, 36)));
+        }
+
+        ui.separator();
+        ui.label(T::can_baud(lang));
+        egui::ComboBox::from_id_salt("can_baud")
+            .width(80.0)
+            .selected_text(baud_display(state.can_baud_rate))
+            .show_ui(ui, |ui| {
+                for &rate in &[100_000, 125_000, 250_000, 500_000, 1_000_000] {
+                    ui.selectable_value(&mut state.can_baud_rate, rate, baud_display(rate));
+                }
+            });
+
+        if ui.small_button("↻").on_hover_text(T::refresh_ports(lang)).clicked() {
+            state.refresh_ports();
+        }
+    });
+}
+
+// ── CANalyst-II Connection UI ──
+fn render_canalyst_connection(ui: &mut egui::Ui, state: &mut AppState) {
+    let lang = state.language;
+
+    // Check DLL availability
+    let driver = canalyst::get_driver();
+    if driver.is_none() {
+        ui.colored_label(egui::Color32::from_rgb(220, 50, 50), T::can_dll_not_found(lang));
+        return;
+    }
+
+    // Scan devices button
+    ui.horizontal(|ui| {
+        if ui.button(T::can_scan_devices(lang)).clicked() {
+            if let Some(ref drv) = driver {
+                let devices = drv.find_devices();
+                state.canalyst_device_list = devices.iter().map(|d| d.serial_number()).collect();
+                if state.canalyst_device_list.is_empty() {
+                    state.show_error(T::can_no_device(lang));
+                } else if state.canalyst_device_index as usize >= state.canalyst_device_list.len() {
+                    state.canalyst_device_index = 0;
+                }
+            }
+        }
+
+        // Device selector
+        ui.label(T::can_device_label(lang));
+        let device_count = state.canalyst_device_list.len();
+        let device_text = if device_count == 0 {
+            "—".to_string()
+        } else {
+            state.canalyst_device_list
+                .get(state.canalyst_device_index as usize)
+                .cloned()
+                .unwrap_or_else(|| format!("#{}", state.canalyst_device_index))
+        };
+        egui::ComboBox::from_id_salt("canalyst_device")
+            .width(120.0)
+            .selected_text(&device_text)
+            .show_ui(ui, |ui| {
+                for (i, serial) in state.canalyst_device_list.iter().enumerate() {
+                    ui.selectable_value(&mut state.canalyst_device_index, i as u32, serial);
+                }
+            });
+
+        // Channel selector
+        ui.label(T::can_channel(lang));
+        let ch_text = if state.canalyst_channel == 0 { "CAN1" } else { "CAN2" };
+        egui::ComboBox::from_id_salt("canalyst_channel")
+            .width(60.0)
+            .selected_text(ch_text)
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut state.canalyst_channel, 0, "CAN1");
+                ui.selectable_value(&mut state.canalyst_channel, 1, "CAN2");
+            });
+
+        // Baud rate
+        ui.label(T::can_baud(lang));
+        egui::ComboBox::from_id_salt("canalyst_baud")
+            .width(80.0)
+            .selected_text(baud_display(state.can_baud_rate))
+            .show_ui(ui, |ui| {
+                for &rate in canalyst::SUPPORTED_BAUD_RATES {
+                    ui.selectable_value(&mut state.can_baud_rate, rate, baud_display(rate));
+                }
+            });
+    });
+
+    // Work mode + Board info
+    ui.horizontal(|ui| {
+        ui.label(T::can_work_mode(lang));
+        let mode_text = match state.canalyst_work_mode {
+            0 => T::can_normal_mode(lang),
+            1 => T::can_listen_mode(lang),
+            2 => T::can_loopback_mode(lang),
+            _ => T::can_normal_mode(lang),
+        };
+        egui::ComboBox::from_id_salt("canalyst_mode")
+            .width(80.0)
+            .selected_text(mode_text)
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut state.canalyst_work_mode, 0, T::can_normal_mode(lang));
+                ui.selectable_value(&mut state.canalyst_work_mode, 1, T::can_listen_mode(lang));
+                ui.selectable_value(&mut state.canalyst_work_mode, 2, T::can_loopback_mode(lang));
+            });
+
+        if let Some(ref info) = state.canalyst_board_info {
+            ui.separator();
+            ui.label(egui::RichText::new(format!("{} {}", T::can_board_info(lang), info))
+                .color(egui::Color32::from_rgb(100, 160, 230)));
+        }
+    });
+
+    // Connect / Disconnect
+    ui.horizontal(|ui| {
+        if state.can_connected {
+            if ui.button(egui::RichText::new(T::can_disconnect(lang)).strong()).clicked() {
+                state.can_capturing = false;
+                state.can_tx_periodic = false;
+                stop_canalyst_reader(state);
+                state.can_connected = false;
+                state.canalyst_board_info = None;
+            }
+        } else {
+            let has_device = !state.canalyst_device_list.is_empty();
+            if ui.add_enabled(has_device, egui::Button::new(
+                egui::RichText::new(T::can_connect(lang)).strong())).clicked() {
+                start_canalyst_reader(state);
+                if state.can_reader.is_some() {
+                    state.can_connected = true;
+                    state.can_capturing = true;
+                    state.can_frames.clear();
+                    state.can_stats = crate::state::CanStats::default();
+                } else {
+                    state.show_error("CANalyst-II: connection failed");
+                }
+            }
+        }
+    });
+}
+
+// ── CANalyst-II Reader ──
+fn start_canalyst_reader(state: &mut AppState) {
+    if state.can_reader.is_some() { return; }
+    let driver = match canalyst::get_driver() {
+        Some(d) => d,
+        None => { state.show_error("CANalyst-II: DLL not loaded"); return; }
+    };
+
+    let dev_index = state.canalyst_device_index;
+    let can_index = state.canalyst_channel as u32;
+    let baud_rate = state.can_baud_rate;
+    let work_mode = state.canalyst_work_mode;
+
+    // Open device and initialize
+    if let Err(e) = driver.open_device(dev_index) {
+        state.show_error(&format!("CANalyst-II: {}", e));
+        return;
+    }
+    if let Err(e) = driver.init_can_with_mode(dev_index, can_index, baud_rate, work_mode) {
+        let _ = driver.close_device(dev_index);
+        state.show_error(&format!("CANalyst-II init: {}", e));
+        return;
+    }
+    if let Err(e) = driver.clear_buffer(dev_index, can_index) {
+        log::warn!("CANalyst-II clear_buffer: {}", e);
+    }
+    if let Err(e) = driver.start_can(dev_index, can_index) {
+        let _ = driver.close_device(dev_index);
+        state.show_error(&format!("CANalyst-II start: {}", e));
+        return;
+    }
+
+    // Read board info
+    match driver.read_board_info(dev_index) {
+        Ok(info) => {
+            state.canalyst_board_info = Some(format!("{} SN:{}", info.hw_type(), info.serial_number()));
+        }
+        Err(e) => { log::warn!("CANalyst-II board info: {}", e); }
+    }
+
+    // Create write channel for TX
+    let (write_tx, write_rx) = std::sync::mpsc::channel::<CanFrameData>();
+    state.can_write_tx = None; // SLCAN channel not used
+    state.canalyst_write_tx = Some(write_tx);
+
+    let driver_clone = driver.clone();
+    let reader = PersistentReader::start(move |stop, tx| {
+        let mut buf = [VciCanObj::default(); 2500];
+        while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+            // TX: drain write channel
+            while let Ok(frame) = write_rx.try_recv() {
+                let vci_obj = canalyst_frame_to_vci(&frame);
+                let _ = driver_clone.transmit(dev_index, can_index, &[vci_obj]);
+            }
+            // RX: poll frames
+            match driver_clone.receive(dev_index, can_index, 2500) {
+                Ok(frames) if !frames.is_empty() => {
+                    let parsed: Vec<CanFrameData> = frames.iter()
+                        .map(|o| vci_to_can_frame(o, can_index as u8 + 1))
+                        .collect();
+                    let _ = tx.send(parsed);
+                }
+                Err(_) => {
+                    // Device disconnected
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
+                _ => {}
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        driver_clone.disconnect(dev_index, can_index);
+    });
+    state.can_reader = Some(reader);
+}
+
+fn stop_canalyst_reader(state: &mut AppState) {
+    if let Some(mut reader) = state.can_reader.take() {
+        reader.stop();
+    }
+    state.canalyst_write_tx = None;
+}
+
+// ── VCI <-> CanFrameData conversion ──
+fn vci_to_can_frame(obj: &VciCanObj, channel: u8) -> CanFrameData {
+    CanFrameData {
+        timestamp: chrono::Utc::now().timestamp_millis(),
+        id: obj.id,
+        is_ext: obj.extern_flag != 0,
+        dlc: obj.data_len,
+        data: obj.data[..obj.data_len as usize].to_vec(),
+        is_error: false,
+        is_tx: false,
+        channel,
+    }
+}
+
+fn canalyst_frame_to_vci(frame: &CanFrameData) -> VciCanObj {
+    let mut obj = VciCanObj {
+        id: frame.id,
+        timestamp: 0,
+        time_flag: 0,
+        send_type: 0, // normal send with auto-retry
+        remote_flag: 0,
+        extern_flag: if frame.is_ext { 1 } else { 0 },
+        data_len: frame.dlc,
+        data: [0u8; 8],
+        reserved: [0u8; 3],
+    };
+    let len = frame.data.len().min(8);
+    obj.data[..len].copy_from_slice(&frame.data[..len]);
+    obj
+}
+
 // ── Statistics ──
 struct CanStats { error_count: u64, rx_count: u64, tx_count: u64, unique_ids: usize, max_id: u32, bus_load: f64 }
 
@@ -536,29 +796,54 @@ fn can_transmit(state: &mut AppState) {
         state.show_error("CAN TX: data too long (max 8 bytes)");
         return;
     }
-    if state.can_write_tx.is_none() {
-        state.show_error(T::start_first(state.language));
-        return;
-    }
     let is_ext = state.can_tx_ext;
-    let cmd = if state.can_tx_remote {
-        if is_ext { format!("R{:08X}{}\r", id, data.len()) }
-        else { format!("r{:03X}{}\r", id, data.len()) }
-    } else if is_ext {
-        format!("T{:08X}{}\r", id, data.iter().map(|b| format!("{:02X}", b)).collect::<String>())
-    } else {
-        format!("t{:03X}{}\r", id, data.iter().map(|b| format!("{:02X}", b)).collect::<String>())
-    };
-    let tx_data = cmd.into_bytes();
-    let send_ok = if let Some(ref write_tx) = state.can_write_tx {
-        write_tx.send(tx_data).is_ok()
-    } else {
-        false
-    };
-    if !send_ok {
-        state.show_error("CAN TX: send failed (channel closed)");
-        return;
+
+    match state.can_connection_mode {
+        CanConnectionMode::Slcan => {
+            // SLCAN: send text command through serial write channel
+            if state.can_write_tx.is_none() {
+                state.show_error(T::start_first(state.language));
+                return;
+            }
+            let cmd = if state.can_tx_remote {
+                if is_ext { format!("R{:08X}{}\r", id, data.len()) }
+                else { format!("r{:03X}{}\r", id, data.len()) }
+            } else if is_ext {
+                format!("T{:08X}{}\r", id, data.iter().map(|b| format!("{:02X}", b)).collect::<String>())
+            } else {
+                format!("t{:03X}{}\r", id, data.iter().map(|b| format!("{:02X}", b)).collect::<String>())
+            };
+            let tx_data = cmd.into_bytes();
+            let send_ok = if let Some(ref write_tx) = state.can_write_tx {
+                write_tx.send(tx_data).is_ok()
+            } else { false };
+            if !send_ok {
+                state.show_error("CAN TX: send failed (channel closed)");
+                return;
+            }
+        }
+        CanConnectionMode::Canalyst => {
+            // CANalyst-II: send VciCanObj through dedicated channel
+            if state.canalyst_write_tx.is_none() {
+                state.show_error(T::start_first(state.language));
+                return;
+            }
+            let frame = CanFrameData {
+                timestamp: 0, id, is_ext,
+                dlc: data.len() as u8, data: data.clone(),
+                is_error: false, is_tx: true,
+                channel: state.canalyst_channel + 1,
+            };
+            let send_ok = if let Some(ref write_tx) = state.canalyst_write_tx {
+                write_tx.send(frame).is_ok()
+            } else { false };
+            if !send_ok {
+                state.show_error("CAN TX: send failed (channel closed)");
+                return;
+            }
+        }
     }
+
     state.can_frames.push(CanFrameData {
         timestamp: chrono::Utc::now().timestamp_millis(),
         id, is_ext, dlc: data.len() as u8, data, is_error: false, is_tx: true, channel: state.can_tx_channel,

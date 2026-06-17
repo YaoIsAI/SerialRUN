@@ -1,19 +1,21 @@
-use crate::state::{AppState, T};
+use crate::state::{AppState, Language, T};
+use crate::theme;
 use eframe::egui;
 use serialrun_core::file_transfer::{FileTransfer, TransferProtocol};
 use std::sync::{Arc, Mutex};
 
-pub fn render_file_transfer_panel(ui: &mut egui::Ui, state: &mut AppState) {
+/// Compact popup content for file transfer — renders inside the terminal input area popup.
+pub fn render_ft_popup_content(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
+    let c = theme::get_colors(state.theme);
 
+    // Header
     ui.horizontal(|ui| {
-        ui.heading(T::file_transfer(lang));
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.button(egui::RichText::new("?").size(14.0).strong())
-                .on_hover_text(T::file_transfer_tip_header(lang));
-        });
+        ui.label(egui::RichText::new("FT").size(12.0).strong().color(c.logo_green));
+        ui.label(egui::RichText::new(T::file_transfer(lang)).strong().size(13.0).color(c.text_primary));
     });
     ui.separator();
+    ui.add_space(4.0);
 
     // Poll transfer progress
     if let Some(ref rx) = state.file_transfer_progress_rx {
@@ -46,48 +48,100 @@ pub fn render_file_transfer_panel(ui: &mut egui::Ui, state: &mut AppState) {
         }
     }
 
-    ui.label(T::protocol(lang));
-    ui.horizontal(|ui| {
-        let mut current = state.file_transfer_protocol;
-        egui::ComboBox::from_id_salt("ft_proto").selected_text(match current { TransferProtocol::Xmodem => "XMODEM", TransferProtocol::XmodemCrc => "XMODEM-CRC", TransferProtocol::Ymodem => "YMODEM", TransferProtocol::Zmodem => "ZMODEM" }).show_ui(ui, |ui| {
-            ui.selectable_value(&mut current, TransferProtocol::Xmodem, "XMODEM");
-            ui.selectable_value(&mut current, TransferProtocol::XmodemCrc, "XMODEM-CRC");
-            ui.selectable_value(&mut current, TransferProtocol::Ymodem, "YMODEM");
-            ui.selectable_value(&mut current, TransferProtocol::Zmodem, "ZMODEM");
-        });
-        state.file_transfer_protocol = current;
-    });
-    ui.add_space(8.0);
+    ui.set_min_width(220.0);
 
-    // Progress bar
-    if state.file_transfer_sending || state.file_transfer_receiving {
-        ui.add(egui::ProgressBar::new(state.file_transfer_progress).text(format!("{:.0}%", state.file_transfer_progress * 100.0)));
-        ui.add_space(4.0);
+    // Protocol selector + file select button
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new(T::protocol(lang)).color(c.text_secondary));
+        let mut current = state.file_transfer_protocol;
+        egui::ComboBox::from_id_salt("ft_popup_proto")
+            .width(110.0)
+            .selected_text(match current {
+                TransferProtocol::Xmodem => "XMODEM",
+                TransferProtocol::XmodemCrc => "XMODEM-CRC",
+                TransferProtocol::Ymodem => "YMODEM",
+                TransferProtocol::Zmodem => "ZMODEM",
+            })
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut current, TransferProtocol::Xmodem, "XMODEM");
+                ui.selectable_value(&mut current, TransferProtocol::XmodemCrc, "XMODEM-CRC");
+                ui.selectable_value(&mut current, TransferProtocol::Ymodem, "YMODEM");
+                ui.selectable_value(&mut current, TransferProtocol::Zmodem, "ZMODEM");
+            });
+        state.file_transfer_protocol = current;
+        // File select button — always enabled (can pick file before connecting)
+        let file_label = if state.ft_selected_file.is_some() { "✓" } else { "..." };
+        let file_btn = ui.add(egui::Button::new(
+            egui::RichText::new(file_label).size(12.0).color(c.text_primary)
+        ).fill(c.hover_bg).rounding(4.0).min_size(egui::vec2(24.0, 20.0)));
+        if file_btn.clicked() {
+            if let Some(path) = rfd::FileDialog::new().pick_file() {
+                state.ft_selected_file = Some(path.to_string_lossy().to_string());
+                state.ft_selected_path = Some(path);
+            }
+        }
+        if let Some(ref name) = state.ft_selected_file {
+            file_btn.on_hover_text(name);
+        }
+    });
+
+    // Show selected file name
+    if let Some(ref name) = state.ft_selected_file {
+        ui.label(egui::RichText::new(name).size(10.0).color(c.text_muted));
     }
 
-    if state.file_transfer_done { ui.label(egui::RichText::new(T::done(lang)).color(egui::Color32::GREEN)); }
-    else if let Some(ref e) = state.file_transfer_error { ui.label(egui::RichText::new(format!("Error: {}", e)).color(egui::Color32::RED)); }
-    else if state.file_transfer_sending { ui.label(T::sending(lang)); }
-    else if state.file_transfer_receiving { ui.label(T::receiving(lang)); }
-    else { ui.label(T::ready(lang)); }
-    ui.add_space(8.0);
+    ui.add_space(4.0);
+
+    // Send / Receive buttons
+    let can = state.is_connected && !state.file_transfer_sending && !state.file_transfer_receiving;
     ui.horizontal(|ui| {
-        let can = state.is_connected && !state.file_transfer_sending && !state.file_transfer_receiving;
-        if ui.add_enabled(can, egui::Button::new(T::send_file(lang))).clicked() {
-            if let Some(path) = rfd::FileDialog::new().pick_file() {
+        let send_label = if lang == Language::Chinese { "发送文件" } else { "Send File" };
+        let send_btn = ui.add_enabled(can, egui::Button::new(
+            egui::RichText::new(send_label).color(egui::Color32::WHITE).strong().size(12.0)
+        ).fill(c.btn_send).rounding(4.0).min_size(egui::vec2(80.0, 22.0)));
+        if send_btn.clicked() {
+            if let Some(ref path) = state.ft_selected_path.clone() {
+                start_file_transfer(state, true, path);
+            } else if let Some(path) = rfd::FileDialog::new().pick_file() {
+                state.ft_selected_file = Some(path.to_string_lossy().to_string());
+                state.ft_selected_path = Some(path.clone());
                 start_file_transfer(state, true, &path);
             }
         }
-        if ui.add_enabled(can, egui::Button::new(T::receive_file(lang))).clicked() {
-            if let Some(path) = rfd::FileDialog::new().add_filter("All", &["*"]).save_file() {
+
+        let recv_label = if lang == Language::Chinese { "接收文件" } else { "Receive" };
+        let recv_btn = ui.add_enabled(can, egui::Button::new(
+            egui::RichText::new(recv_label).color(egui::Color32::WHITE).strong().size(12.0)
+        ).fill(c.info).rounding(4.0).min_size(egui::vec2(80.0, 22.0)));
+        if recv_btn.clicked() {
+            if let Some(path) = rfd::FileDialog::new().save_file() {
                 start_file_transfer(state, false, &path);
             }
         }
     });
+
+    ui.add_space(4.0);
+
+    // Status
+    if state.file_transfer_done {
+        ui.label(egui::RichText::new(T::done(lang)).color(c.success));
+    } else if let Some(ref e) = state.file_transfer_error {
+        ui.label(egui::RichText::new(format!("Error: {}", e)).color(c.error));
+    } else if state.file_transfer_sending {
+        ui.label(egui::RichText::new(T::sending(lang)).color(c.text_secondary));
+    } else if state.file_transfer_receiving {
+        ui.label(egui::RichText::new(T::receiving(lang)).color(c.text_secondary));
+    }
+
+    // Progress bar
+    if state.file_transfer_sending || state.file_transfer_receiving {
+        ui.add_space(4.0);
+        ui.add(egui::ProgressBar::new(state.file_transfer_progress)
+            .text(format!("{:.0}%", state.file_transfer_progress * 100.0)));
+    }
 }
 
 fn start_file_transfer(state: &mut AppState, send: bool, path: &std::path::Path) {
-    // Validate port is selected
     let port_name = match state.selected_port.clone() {
         Some(p) if !p.is_empty() => p,
         _ => {
@@ -105,7 +159,6 @@ fn start_file_transfer(state: &mut AppState, send: bool, path: &std::path::Path)
     let proto = state.file_transfer_protocol;
     let file_path = path.to_path_buf();
 
-    // Stop port_owner and wait for port release before opening exclusive file transfer
     if let Some(po) = state.port_owner.take() {
         po.wait_for_release();
     }

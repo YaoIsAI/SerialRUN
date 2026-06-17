@@ -1,6 +1,6 @@
 [package]
 name = "serialrun-core"
-version = "0.4.0"
+version = "0.4.3"
 edition = "2021"
 description = "Core library for SerialRUN serial port assistant"
 license = "MIT"
@@ -23,6 +23,7 @@ libloading = { workspace = true }
 zip = "2"
 reqwest = { workspace = true }
 base64 = { workspace = true }
+pcap-file = "2"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }

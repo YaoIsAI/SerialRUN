@@ -6,6 +6,9 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+/// Maximum buffer size in bytes to prevent OOM when consumer can't keep up.
+const MAX_RX_BUFFER_BYTES: usize = 10 * 1024 * 1024; // 10 MB
+
 pub enum PortCommand {
     Open(SerialConfig),
     Close,
@@ -321,27 +324,19 @@ impl PortOwnerHandle {
                                 let mut buf = [0u8; 4096];
                                 let result = match p.read(&mut buf) {
                                     Ok(n) if n > 0 => {
-                                        // Try to accumulate more data with Modbus frame detection
+                                        // Accumulate more data using timeout-based approach
+                                        // (works for all protocols, not just Modbus)
                                         let mut all = buf[..n].to_vec();
-                                        let _ = p.set_timeout(Duration::from_millis(50));
+                                        let _ = p.set_timeout(Duration::from_millis(20));
                                         loop {
-                                            // Check if we have a complete Modbus frame
-                                            // FC03/04 response: [slave_id(1)] [func(1)] [byte_count(1)] [data(N)] [crc(2)]
-                                            // Total = 3 + byte_count + 2 = 5 + byte_count
-                                            if all.len() >= 5 {
-                                                let byte_count = all[2] as usize;
-                                                let expected_len = 5 + byte_count;
-                                                if all.len() >= expected_len {
-                                                    break; // Complete frame received
-                                                }
-                                            }
                                             let mut tmp = [0u8; 4096];
                                             match p.read(&mut tmp) {
                                                 Ok(m) if m > 0 => {
                                                     all.extend_from_slice(&tmp[..m]);
+                                                    // Reset timeout to catch more data
                                                     let _ = p.set_timeout(Duration::from_millis(20));
                                                 }
-                                                _ => break,
+                                                _ => break, // Timeout or error = no more data
                                             }
                                         }
                                         Ok(all)
@@ -464,10 +459,17 @@ impl PortOwnerHandle {
                         let _ = p.set_timeout(Duration::from_millis(50));
                         // Store in shared RX buffer for MCP read_buffer()
                         if let Ok(mut rbuf) = rx_buffer.lock() {
+                            // Backpressure: drop oldest data if buffer exceeds limit
+                            while rbuf.len() + all_data.len() > MAX_RX_BUFFER_BYTES {
+                                rbuf.pop_front();
+                            }
                             rbuf.extend(all_data.iter().copied());
                         }
                         // Also store in MCP-specific buffer (independent read for MCP)
                         if let Ok(mut mcp_rbuf) = mcp_rx_buffer.lock() {
+                            while mcp_rbuf.len() + all_data.len() > MAX_RX_BUFFER_BYTES {
+                                mcp_rbuf.pop_front();
+                            }
                             mcp_rbuf.extend(all_data.iter().copied());
                         }
                         let _ = evt_tx.send(PortEvent::Data(all_data.clone()));

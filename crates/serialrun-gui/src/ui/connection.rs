@@ -29,12 +29,13 @@ pub fn render_connection_panel(ui: &mut egui::Ui, state: &mut AppState, ctx: &eg
             ("Log", "日志", "Log"), ("Chart", "图表", "Chart"),
             ("PLC", "PLC 控制", "PLC"), ("Mod", "Modbus", "Modbus"),
             ("TCP", "TCP 桥接", "TCP Bridge"), ("HMI", "HMI 模拟器", "HMI Sim"),
-            ("FT", "文件传输", "File Transfer"), ("FB", "帧生成器", "Frame Builder"), ("DL", "数据记录", "Data Logger"),
+            ("FB", "帧生成器", "Frame Builder"), ("DL", "数据记录", "Data Logger"),
             ("CAN", "CAN 总线", "CAN Bus"), ("I2C", "I2C/SPI", "I2C/SPI"),
             ("Scope", "示波器", "Oscilloscope"), ("Flash", "烧录器", "Flasher"), ("Reg", "寄存器编辑", "Reg Editor"),
+            ("Pcap", "抓包分析", "Packet Capture"),
         ];
         for (i, (label, zh, en)) in buttons.iter().enumerate() {
-            if i == 2 || i == 9 { ui.separator(); }
+            if i == 2 || i == 8 { ui.separator(); }
             let tooltip = match lang { Language::Chinese => *zh, Language::English => *en };
             if ui.small_button(*label).on_hover_text(tooltip).clicked() { toggled = Some(i); }
         }
@@ -77,10 +78,10 @@ pub fn render_connection_panel(ui: &mut egui::Ui, state: &mut AppState, ctx: &eg
                 0 => state.show_log_window = !state.show_log_window, 1 => state.show_chart_window = !state.show_chart_window,
                 2 => state.show_plc_window = !state.show_plc_window, 3 => state.show_modbus_window = !state.show_modbus_window,
                 4 => state.show_bridge_window = !state.show_bridge_window, 5 => state.show_simulator_window = !state.show_simulator_window,
-                6 => state.show_file_transfer_window = !state.show_file_transfer_window, 7 => state.show_frame_builder_window = !state.show_frame_builder_window,
-                8 => state.show_data_logger_window = !state.show_data_logger_window, 9 => state.show_can_window = !state.show_can_window,
-                10 => state.show_i2c_spi_window = !state.show_i2c_spi_window, 11 => state.show_scope_window = !state.show_scope_window,
-                12 => state.show_flasher_window = !state.show_flasher_window, 13 => state.show_register_editor_window = !state.show_register_editor_window,
+                6 => state.show_frame_builder_window = !state.show_frame_builder_window, 7 => state.show_data_logger_window = !state.show_data_logger_window,
+                8 => state.show_can_window = !state.show_can_window, 9 => state.show_i2c_spi_window = !state.show_i2c_spi_window,
+                10 => state.show_scope_window = !state.show_scope_window, 11 => state.show_flasher_window = !state.show_flasher_window,
+                12 => state.show_register_editor_window = !state.show_register_editor_window, 13 => state.show_pcap_window = !state.show_pcap_window,
                 _ => {}
             }
         }
@@ -113,7 +114,7 @@ pub fn render_connection_controls(ui: &mut egui::Ui, state: &mut AppState) {
     let selected = state.selected_port.clone().unwrap_or_default();
     ui.horizontal(|ui| {
         ui.label(T::serial_port(lang));
-        egui::ComboBox::from_id_salt("port_select").width(120.0).selected_text(if selected.is_empty() { "—" } else { &selected }).show_ui(ui, |ui| {
+        egui::ComboBox::from_id_salt("port_select").width(140.0).selected_text(if selected.is_empty() { "—" } else { &selected }).show_ui(ui, |ui| {
             // Auto-refresh port list when dropdown is opened
             state.refresh_ports();
             for port in &state.ports {

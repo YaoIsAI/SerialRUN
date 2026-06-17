@@ -105,18 +105,23 @@ impl ModbusMaster {
     }
 
     /// Build a write multiple registers request.
+    /// Returns None if values.len() exceeds 123 (Modbus FC16 max).
     pub fn build_write_multiple_registers(
         &self,
         start_addr: u16,
         values: &[u16],
-    ) -> ModbusFrame {
+    ) -> Option<ModbusFrame> {
+        // Modbus FC16: max 123 registers (246 bytes of data)
+        if values.is_empty() || values.len() > 123 {
+            return None;
+        }
         let mut data = Vec::new();
         data.extend_from_slice(&start_addr.to_be_bytes());
         data.push(values.len() as u8);
         for &val in values {
             data.extend_from_slice(&val.to_be_bytes());
         }
-        ModbusFrame::new(self.slave_id, ModbusFunction::WriteMultipleRegisters, data)
+        Some(ModbusFrame::new(self.slave_id, ModbusFunction::WriteMultipleRegisters, data))
     }
 }
 
@@ -168,12 +173,20 @@ mod tests {
     #[test]
     fn test_build_write_multiple_registers() {
         let master = ModbusMaster::new(0x01);
-        let frame = master.build_write_multiple_registers(0x0000, &[0x1234, 0x5678]);
+        let frame = master.build_write_multiple_registers(0x0000, &[0x1234, 0x5678]).unwrap();
 
         assert_eq!(frame.slave_id, 0x01);
         assert_eq!(frame.function, ModbusFunction::WriteMultipleRegisters);
         // start_addr(2) + count(1) + values(4) = 7 bytes
         assert_eq!(frame.data.len(), 7);
+    }
+
+    #[test]
+    fn test_build_write_multiple_registers_overflow() {
+        let master = ModbusMaster::new(0x01);
+        // 124 values exceeds Modbus FC16 max of 123
+        let values: Vec<u16> = vec![0; 124];
+        assert!(master.build_write_multiple_registers(0x0000, &values).is_none());
     }
 
     #[test]

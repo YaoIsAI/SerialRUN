@@ -43,6 +43,8 @@ pub struct SerialRunApp {
     last_prefs: crate::state::UserPrefs,
     /// Tracks which viewports are currently open (OS-level windows)
     open_viewports: std::collections::HashSet<egui::ViewportId>,
+    /// Force theme sync on first frame to override eframe's default visuals
+    first_frame: bool,
 }
 
 impl SerialRunApp {
@@ -62,7 +64,7 @@ impl SerialRunApp {
         std::thread::spawn(move || {
             mcp_serial_request_loop(mcp_serial_rx, app_state);
         });
-        Self { state: state_clone, current_theme: prefs.theme, mcp_handle, last_prefs, open_viewports: std::collections::HashSet::new() }
+        Self { state: state_clone, current_theme: prefs.theme, mcp_handle, last_prefs, open_viewports: std::collections::HashSet::new(), first_frame: true }
     }
 }
 
@@ -119,7 +121,7 @@ fn poll_mcp_log(mcp_handle: &crate::mcp_server::McpHandle, state: &mut AppState)
     let mut changed = false;
     while let Some(entry) = mcp_handle.poll_log() {
         state.mcp_access_log.push_back(entry);
-        if state.mcp_access_log.len() > 1000 {
+        if state.mcp_access_log.len() > 50_000 {
             state.mcp_access_log.pop_front();
         }
         changed = true;
@@ -301,6 +303,12 @@ fn apply_config(state: &mut crate::state::AppState, key: &str, value: &serde_jso
                 po.sync_timeout(state.rx_aggregate_ms);
             }
             Ok(format!("rx_aggregate_ms = {}", state.rx_aggregate_ms))
+        }
+        "clear_buffers" => {
+            if let Some(ref po) = state.port_owner {
+                po.send(crate::port_owner::PortCommand::ClearBuffers);
+            }
+            Ok("Buffers cleared".to_string())
         }
         _ => Err(format!("Unknown key: {}", key)),
     }
@@ -659,6 +667,104 @@ fn mcp_serial_request_loop(
                     }
                 }
             }
+            crate::mcp_server::McpSerialRequest::LoadPcap { path, resp } => {
+                let result = {
+                    let mut state = lock_state(&app_state);
+                    let path_buf = std::path::PathBuf::from(&path);
+                    match serialrun_core::protocol::pcap::PcapFile::load(&path_buf) {
+                        Ok(pcap) => {
+                            state.pcap_decoded = pcap.packets.iter().map(|p| pcap.decode_packet(p)).collect();
+                            state.pcap_link_type = pcap.link_type.name().to_string();
+                            state.pcap_packets = pcap.packets;
+                            state.pcap_filename = pcap.filename;
+                            state.pcap_selected = None;
+                            Ok(format!("Loaded {} packets from {}", state.pcap_packets.len(), path))
+                        }
+                        Err(e) => Err(e.to_string()),
+                    }
+                };
+                let _ = resp.send(result);
+            }
+            crate::mcp_server::McpSerialRequest::QueryPackets { filter, limit, resp } => {
+                let result = {
+                    let state = lock_state(&app_state);
+                    if state.pcap_packets.is_empty() {
+                        serde_json::json!({"error": "No pcap data loaded. Call load_pcap first or start a live capture.", "total": 0, "filtered": 0, "packets": []})
+                    } else {
+                        let filter_lower = filter.to_lowercase();
+                        let packets: Vec<serde_json::Value> = state.pcap_decoded.iter().enumerate()
+                            .filter(|(_, d)| {
+                                if filter_lower.is_empty() { return true; }
+                                d.protocol.to_lowercase().contains(&filter_lower)
+                                    || d.summary.to_lowercase().contains(&filter_lower)
+                                    || d.src.to_lowercase().contains(&filter_lower)
+                                    || d.dst.to_lowercase().contains(&filter_lower)
+                            })
+                            .take(limit)
+                            .map(|(i, d)| {
+                                serde_json::json!({
+                                    "index": i,
+                                    "protocol": d.protocol,
+                                    "src": d.src,
+                                    "dst": d.dst,
+                                    "summary": d.summary,
+                                })
+                            })
+                            .collect();
+                        serde_json::json!({
+                            "total": state.pcap_packets.len(),
+                            "filtered": packets.len(),
+                            "packets": packets,
+                        })
+                    }
+                };
+                let _ = resp.send(result);
+            }
+            crate::mcp_server::McpSerialRequest::GetPacket { index, resp } => {
+                let result = {
+                    let state = lock_state(&app_state);
+                    if state.pcap_packets.is_empty() {
+                        Err("No pcap data loaded. Call load_pcap first or start a live capture.".to_string())
+                    } else if index >= state.pcap_packets.len() {
+                        Err(format!("Index {} out of range (total: {})", index, state.pcap_packets.len()))
+                    } else {
+                        let pkt = &state.pcap_packets[index];
+                        let decoded = &state.pcap_decoded[index];
+                        let hex: Vec<String> = pkt.data.iter().map(|b| format!("{:02X}", b)).collect();
+                        Ok(serde_json::json!({
+                            "index": index,
+                            "protocol": decoded.protocol,
+                            "src": decoded.src,
+                            "dst": decoded.dst,
+                            "summary": decoded.summary,
+                            "details": decoded.details.iter().map(|f| {
+                                serde_json::json!({"name": f.name, "value": f.value, "offset": f.offset, "length": f.length})
+                            }).collect::<Vec<_>>(),
+                            "hex": hex.join(" "),
+                            "ascii": String::from_utf8_lossy(&pkt.data).to_string(),
+                            "length": pkt.data.len(),
+                        }))
+                    }
+                };
+                let _ = resp.send(result);
+            }
+            crate::mcp_server::McpSerialRequest::PcapStats { resp } => {
+                let result = {
+                    let state = lock_state(&app_state);
+                    let mut proto_counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+                    for d in &state.pcap_decoded {
+                        *proto_counts.entry(d.protocol.clone()).or_insert(0) += 1;
+                    }
+                    serde_json::json!({
+                        "total_packets": state.pcap_packets.len(),
+                        "filename": state.pcap_filename,
+                        "link_type": state.pcap_link_type,
+                        "protocols": proto_counts,
+                        "capturing": state.pcap_capturing,
+                    })
+                };
+                let _ = resp.send(result);
+            }
         }
     }
     eprintln!("[MCP-Serial] Request processing thread stopped");
@@ -693,6 +799,17 @@ fn poll_port_events(state: &mut AppState) -> bool {
                 state.add_terminal_line(crate::state::Direction::Rx, received, is_hex_display);
                 state.add_log_entry(crate::state::LogLevel::Info, &format!("RX {} bytes: {} | {}", data.len(), hex_preview, text_preview));
                 super::ui::data_logger::log_data(state, "RX", &data);
+                // Live capture to pcap viewer
+                if state.pcap_capturing {
+                    let idx = state.pcap_packets.len() as u32;
+                    let ts = chrono::Utc::now().timestamp_millis();
+                    state.pcap_packets.push(serialrun_core::protocol::pcap::PcapPacket {
+                        index: idx, timestamp_ms: ts, data: data.clone(),
+                    });
+                    state.pcap_decoded.push(
+                        serialrun_core::protocol::pcap::PcapFile::decode_packet_static(&data)
+                    );
+                }
                 has_rx_data = true;
                 // Auto-reply
                 if state.auto_reply_enabled && !state.auto_reply_pattern.is_empty() && !state.auto_reply_response.is_empty() {
@@ -829,6 +946,11 @@ impl eframe::App for SerialRunApp {
         let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
 
         // --- Background processing ---
+        // Force theme sync on first frame to override eframe's default visuals
+        if self.first_frame {
+            self.current_theme = match state.theme { Theme::Dark => Theme::Light, Theme::Light => Theme::Dark };
+            self.first_frame = false;
+        }
         sync_theme_visuals(ctx, state.theme, &mut self.current_theme);
 
         {
@@ -904,6 +1026,10 @@ impl eframe::App for SerialRunApp {
                             let old_port = state.selected_port.clone().unwrap_or_default();
                             let old_baud = state.config.baud_rate;
                             state.stc_log.push(format!("[STC] Temporarily disconnecting ({} @ {} baud)...", old_port, old_baud));
+                            // Explicitly close the port before dropping the handle
+                            if let Some(ref po) = state.port_owner {
+                                po.send(crate::port_owner::PortCommand::Close);
+                            }
                             state.port_owner = None;
                             state.is_connected = false;
                         }
@@ -966,6 +1092,10 @@ impl eframe::App for SerialRunApp {
                         // Restore original connection if we had one
                         if orig_port.is_some() {
                             let mut state = state_arc.lock().unwrap_or_else(|e| e.into_inner());
+                            // Explicitly close the STC port before restoring
+                            if let Some(ref po) = state.port_owner {
+                                po.send(crate::port_owner::PortCommand::Close);
+                            }
                             state.port_owner = None;
                             state.is_connected = false;
 
@@ -1114,13 +1244,13 @@ impl eframe::App for SerialRunApp {
         viewport_window!(state.show_bridge_window, "bridge", T::bridge(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::bridge::render_bridge_panel(ui, s), 520.0, 450.0);
         viewport_window!(state.show_simulator_window, "simulator", T::simulator(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::simulator::render_simulator_panel(ui, s), 520.0, 500.0);
         viewport_window!(state.show_checksum_window, "checksum", T::checksum(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::checksum::render_checksum_panel(ui, s), 400.0, 350.0);
-        viewport_window!(state.show_file_transfer_window, "file_transfer", T::file_transfer(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::file_transfer::render_file_transfer_panel(ui, s), 420.0, 300.0);
         viewport_window!(state.show_frame_builder_window, "frame_builder", T::frame_builder(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::frame_builder::render_frame_builder_panel(ui, s), 450.0, 350.0);
         viewport_window!(state.show_data_logger_window, "data_logger", T::data_logger(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::data_logger::render_data_logger_panel(ui, s), 400.0, 250.0);
         viewport_window!(state.show_can_window, "can", T::can_analyzer(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::can_analyzer::render_can_analyzer_panel(ui, s), 550.0, 400.0);
         viewport_window!(state.show_i2c_spi_window, "i2c_spi", T::i2c_spi(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::i2c_spi::render_i2c_spi_panel(ui, s), 450.0, 380.0);
         viewport_window!(state.show_scope_window, "scope", T::oscilloscope(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::serial_scope::render_serial_scope_panel(ui, s), 600.0, 480.0);
         viewport_window!(state.show_flasher_window, "flasher", T::flasher(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::flasher::render_flasher_panel(ui, s), 420.0, 350.0);
+        viewport_window!(state.show_pcap_window, "pcap", T::pcap_title(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::pcap_viewer::render_pcap_viewer(ui, s), 700.0, 550.0);
         viewport_window!(state.show_register_editor_window, "reg_editor", T::register_editor(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::register_editor::render_register_editor_panel(ui, s), 500.0, 400.0);
         viewport_window!(state.show_plugin_window, "plugin", T::plugins(lang), |ui: &mut egui::Ui, s: &mut AppState| ui::plugin::render_plugin_panel(ui, s), 480.0, 400.0);
 

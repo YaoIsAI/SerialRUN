@@ -1,6 +1,7 @@
 use crate::port_owner::PortCommand;
 use crate::state::{AppState, ChecksumMode, Direction, Language, LineEnding, QuickCommand, ScriptAction, ScriptCommand, T};
 use crate::theme;
+use crate::ui;
 use eframe::egui;
 
 /// Extract tag from terminal line: checks `tag` field first, then content "[xxx]" prefix
@@ -27,7 +28,7 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
         ui.separator();
         ui.label(egui::RichText::new(T::crc_label(lang)).strong()).on_hover_text(crc_hover_text(lang));
         let checksum = state.terminal_checksum_mode;
-        egui::ComboBox::from_id_salt("term_crc").width(65.0).selected_text(checksum.label(lang)).show_ui(ui, |ui| {
+        egui::ComboBox::from_id_salt("term_crc").width(70.0).selected_text(checksum.label(lang)).show_ui(ui, |ui| {
             for &mode in ChecksumMode::all() {
                 ui.selectable_value(&mut state.terminal_checksum_mode, mode, mode.label(lang));
             }
@@ -133,8 +134,9 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let show_qc = QC_OPEN.load(Ordering::Relaxed) && has_qc;
 
     // Terminal display area — subtract input row + quick commands panel
+    let row_height = ui.text_style_height(&egui::TextStyle::Body) + 12.0;
     let qc_panel_height = if show_qc { 24.0 } else { 0.0 };
-    let available_height = (ui.available_height() - 50.0 - qc_panel_height).max(50.0);
+    let available_height = (ui.available_height() - row_height - 20.0 - qc_panel_height).max(row_height);
 
     egui::ScrollArea::vertical()
         .auto_shrink([false, false])
@@ -327,15 +329,21 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
             egui::ScrollArea::horizontal().max_height(22.0).show(ui, |ui| {
                 ui.horizontal(|ui| {
                     for (idx, qc) in qc_snapshot.iter().enumerate() {
+                        let mode_color = if qc.is_hex { egui::Color32::from_rgb(255, 152, 0) } else { egui::Color32::from_rgb(76, 175, 80) };
+                        let mut job = egui::text::LayoutJob::default();
+                        let dot = "\u{25CF} ";
+                        job.append(dot, 0.0, egui::TextFormat::simple(egui::FontId::proportional(10.0), mode_color));
+                        job.append(&qc.name, 0.0, egui::TextFormat::simple(egui::FontId::proportional(10.0), btn_text_color));
                         let resp = ui.add(egui::Button::new(
-                            egui::RichText::new(&qc.name).size(10.0).color(btn_text_color)
+                            job
                         ).fill(btn_color).rounding(3.0).min_size(egui::vec2(0.0, 20.0)));
                         let is_hovered = resp.hovered();
                         let is_clicked = resp.clicked();
+                        let mode_label = if qc.is_hex { "HEX" } else { "TXT" };
                         resp.context_menu(|ui| {
                             if ui.button("删除").clicked() { qc_delete_idx = Some(idx); ui.close_menu(); }
                         });
-                        if is_hovered { resp.on_hover_text(&qc.data); }
+                        if is_hovered { resp.on_hover_text(format!("[{}] {}", mode_label, &qc.data)); }
                         if is_clicked && state.port_owner.is_some() { qc_clicked_idx = Some(idx); }
                     }
                 });
@@ -351,8 +359,14 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
                 let le = if qc.line_ending.is_empty() { state.line_ending } else {
                     match qc.line_ending.as_str() { "CR" => LineEnding::CR, "LF" => LineEnding::LF, "CRLF" => LineEnding::CRLF, _ => LineEnding::None }
                 };
-                let mut bytes = if is_hex { match parse_hex(&data) { Some(b) => b, None => return } }
-                else { let mut b = data.as_bytes().to_vec(); b.extend_from_slice(le.suffix()); b };
+                let mut bytes = if is_hex {
+                    parse_hex(&data).unwrap_or_else(|| {
+                        // Fallback: hex parse failed, treat as text
+                        let mut b = data.as_bytes().to_vec();
+                        b.extend_from_slice(le.suffix());
+                        b
+                    })
+                } else { let mut b = data.as_bytes().to_vec(); b.extend_from_slice(le.suffix()); b };
                 bytes = state.terminal_checksum_mode.append_checksum(&bytes);
                 let display = if is_hex { data } else { data.replace("\r", "\\r").replace("\n", "\\n") };
                 state.tx_count += bytes.len() as u64;
@@ -365,7 +379,6 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
 
     // ── Input row: [▶/▲] [保留输入] [TXT/HEX] [input] [+] [行尾] [发送] ──
     let is_connected = state.port_owner.is_some();
-    let row_height = 28.0;
     ui.allocate_ui_with_layout(
         egui::vec2(ui.available_width(), row_height),
         egui::Layout::left_to_right(egui::Align::Center),
@@ -388,8 +401,25 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
             let mode_btn = ui.add(egui::Button::new(egui::RichText::new(mode_label).color(egui::Color32::WHITE).strong().size(11.0)).fill(mode_color).min_size(egui::vec2(36.0, 18.0)).rounding(3.0));
             if mode_btn.clicked() { state.hex_mode = !state.hex_mode; }
             ui.add_space(4.0);
-            let input_w = (ui.available_width() - 240.0).max(60.0);
-            ui.add_sized([input_w, row_height], egui::TextEdit::singleline(&mut state.input_buffer).frame(true).margin(egui::Margin::symmetric(8.0, 4.0)));
+            // Dynamically compute reserved width for widgets after the input field
+            let plus_w = if !state.input_buffer.is_empty() { 16.0 + 2.0 } else { 0.0 };
+            let le_label_w = ui.fonts(|f| f.layout(T::line_ending(lang).into(), egui::FontId::proportional(13.0), egui::Color32::WHITE, f32::INFINITY).rect.width());
+            let le_combo_w = 60.0;
+            let send_text_w = ui.fonts(|f| f.layout(T::send(lang).into(), egui::FontId::proportional(13.0), egui::Color32::WHITE, f32::INFINITY).rect.width());
+            let send_w = send_text_w.max(50.0) + 16.0; // text + button padding
+            let ft_w = 28.0 + 2.0;
+            let spacing = 2.0 + 4.0 + 4.0 + 4.0 + 2.0; // gaps between widgets
+            let reserved = plus_w + le_label_w + le_combo_w + send_w + ft_w + spacing + 40.0;
+            let input_w = (ui.available_width() - reserved).max(60.0);
+            let input_resp = ui.add_sized([input_w, row_height], egui::TextEdit::singleline(&mut state.input_buffer).frame(true).margin(egui::Margin::symmetric(8.0, 4.0)));
+            // Enter → send, Shift+Enter → newline
+            if input_resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) && !state.input_buffer.is_empty() {
+                if ui.input(|i| i.modifiers.shift) {
+                    state.input_buffer.push('\n');
+                } else {
+                    do_send(state);
+                }
+            }
             // "+" save as quick command
             ui.add_space(2.0);
             if !state.input_buffer.is_empty() {
@@ -421,6 +451,150 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
             let btn_fill = if state.hex_mode { egui::Color32::from_rgb(255, 152, 0) } else { c.btn_send };
             let send_btn = ui.add(egui::Button::new(egui::RichText::new(T::send(lang)).color(egui::Color32::WHITE).strong().size(13.0)).fill(btn_fill).min_size(egui::vec2(50.0, row_height)));
             if send_btn.clicked() && !state.input_buffer.is_empty() { do_send(state); }
+
+            // File transfer button — up/down transfer arrows with click animation
+            ui.add_space(2.0);
+            let ft_active = state.show_ft_popup;
+            let ft_busy = state.file_transfer_sending || state.file_transfer_receiving;
+
+            // Pulse animation for glow
+            let glow_alpha = if ft_active {
+                let t = ui.ctx().input(|i| i.time) as f32;
+                let pulse = (t * 3.0).sin() * 0.5 + 0.5;
+                (30.0 + pulse * 40.0) as u8
+            } else { 0u8 };
+
+            // Click bounce animation
+            let click_id = egui::Id::new("ft_click_anim");
+            let clicked_now = ui.ctx().input(|i| i.pointer.any_click());
+            if clicked_now {
+                ui.ctx().animate_value_with_time(click_id, 3.0f32, 0.0);
+            }
+            let arrow_offset_y = ui.ctx().animate_value_with_time(click_id, 0.0f32, 0.15);
+
+            let btn_size = egui::vec2(28.0, row_height);
+            let btn_resp = ui.allocate_response(btn_size, egui::Sense::click());
+            let btn_rect = btn_resp.rect;
+            let p = ui.painter();
+
+            // Glow ring when active
+            if ft_active && glow_alpha > 0 {
+                p.rect_filled(btn_rect.expand(2.5), 5.0, egui::Color32::from_rgba_premultiplied(c.logo_green.r(), c.logo_green.g(), c.logo_green.b(), glow_alpha));
+            }
+
+            // Background: active=logo_green, hover=hover_bg, default=transparent
+            if ft_active {
+                p.rect_filled(btn_rect, 5.0, c.logo_green);
+            } else if btn_resp.hovered() {
+                p.rect_filled(btn_rect, 5.0, c.hover_bg);
+            }
+
+            // Click flash ring
+            if btn_resp.clicked() {
+                p.rect_filled(btn_rect.expand(1.5), 5.0, egui::Color32::from_rgba_premultiplied(255, 255, 255, 80));
+                ui.ctx().request_repaint();
+            }
+
+            // Draw up/down transfer arrows icon
+            let cx = btn_rect.center().x;
+            let cy = btn_rect.center().y + arrow_offset_y;
+            let icon_color = if ft_active {
+                egui::Color32::WHITE
+            } else if ft_busy {
+                c.warning
+            } else if btn_resp.hovered() {
+                c.text_primary
+            } else {
+                c.text_muted
+            };
+            let stroke = egui::Stroke::new(1.5, icon_color);
+
+            if ft_busy {
+                // Spinning transfer indicator
+                let t = ui.ctx().input(|i| i.time) as f32;
+                let angle = t * 4.0;
+                let r = 5.0f32;
+                let (sx, sy) = (cx + angle.cos() * r, cy + angle.sin() * r);
+                let (ex, ey) = (cx + (angle + 1.8).cos() * r, cy + (angle + 1.8).sin() * r);
+                p.line_segment([egui::pos2(sx, sy), egui::pos2(ex, ey)], stroke);
+            } else {
+                // Left = up half arrow (send), Right = down half arrow (receive)
+                let half_w = 5.0f32;
+                let arrow_h = 8.0f32;
+
+                // Left side: up arrow (send)
+                let lx = cx - 3.0;
+                let l_top = cy - arrow_h / 2.0;
+                let l_bot = cy + arrow_h / 2.0;
+                let l_head = l_top + 2.5;
+                p.line_segment([egui::pos2(lx - 2.0, l_head), egui::pos2(lx, l_top)], stroke);
+                p.line_segment([egui::pos2(lx + 2.0, l_head), egui::pos2(lx, l_top)], stroke);
+                p.line_segment([egui::pos2(lx, l_top + 0.5), egui::pos2(lx, l_bot)], stroke);
+
+                // Right side: down arrow (receive)
+                let rx = cx + 3.0;
+                let r_top = cy - arrow_h / 2.0;
+                let r_bot = cy + arrow_h / 2.0;
+                let r_head = r_bot - 2.5;
+                p.line_segment([egui::pos2(rx - 2.0, r_head), egui::pos2(rx, r_bot)], stroke);
+                p.line_segment([egui::pos2(rx + 2.0, r_head), egui::pos2(rx, r_bot)], stroke);
+                p.line_segment([egui::pos2(rx, r_top), egui::pos2(rx, r_head + 0.5)], stroke);
+            }
+
+            let attach_rect = btn_rect;
+            let attach_clicked = btn_resp.clicked();
+            if ft_active {
+                btn_resp.on_hover_text(if lang == Language::Chinese { "关闭文件传输" } else { "Close File Transfer" });
+            } else {
+                btn_resp.on_hover_text(T::file_transfer(lang));
+            }
+            if attach_clicked {
+                state.show_ft_popup = !state.show_ft_popup;
+            }
+
+            if ft_active || ft_busy || arrow_offset_y > 0.01 { ui.ctx().request_repaint(); }
+
+            // Render popup above the button — content determines size, no hardcoded heights
+            if state.show_ft_popup {
+                let popup_id = egui::Id::new("ft_popup");
+                let popup_w = 240.0f32;
+                let popup_x = attach_rect.center().x - popup_w / 2.0;
+                // Use previous frame's actual height to position, so bottom aligns with button top
+                let h = if state.ft_popup_height > 0.0 { state.ft_popup_height } else { 120.0 };
+                let popup_top = attach_rect.top() - h - 6.0;
+
+                let popup_response = egui::Area::new(popup_id)
+                    .fixed_pos(egui::pos2(popup_x, popup_top))
+                    .order(egui::Order::Foreground)
+                    .show(ui.ctx(), |ui| {
+                        ui.set_max_width(popup_w);
+                        egui::Frame::none()
+                            .fill(c.bg_secondary)
+                            .stroke(egui::Stroke::new(1.0, c.border))
+                            .rounding(6.0)
+                            .inner_margin(10.0)
+                            .show(ui, |ui| {
+                                ui::file_transfer::render_ft_popup_content(ui, state);
+                            });
+                    });
+
+                // Store actual height for next frame positioning
+                state.ft_popup_height = popup_response.response.rect.height();
+                ui.ctx().request_repaint();
+
+                // Close when clicking outside popup or button
+                let pointer_pos = ui.ctx().input(|i| i.pointer.interact_pos());
+                let any_click = ui.ctx().input(|i| i.pointer.any_click());
+                if any_click {
+                    if let Some(pos) = pointer_pos {
+                        let popup_rect = popup_response.response.rect;
+                        if !popup_rect.contains(pos) && !attach_rect.contains(pos) {
+                            state.show_ft_popup = false;
+                            state.ft_popup_height = 0.0;
+                        }
+                    }
+                }
+            }
         },
     );
     ui.add_space(4.0);

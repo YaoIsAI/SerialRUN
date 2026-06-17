@@ -14,6 +14,7 @@ pub mod log_viewer;
 pub mod mcp_log;
 pub mod modbus;
 pub mod mpy_ide_panel;
+pub mod pcap_viewer;
 pub mod plc;
 pub mod plugin;
 pub mod plugin_ui;

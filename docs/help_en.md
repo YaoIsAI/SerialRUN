@@ -191,14 +191,27 @@ Log serial send/receive data to CSV files:
 
 ### CAN Bus Analyzer
 
-CAN bus analysis tool based on SLCAN protocol:
+CAN bus analysis tool with two connection modes:
+
+**SLCAN (Serial)** — For SLCAN-compatible adapters connected via serial port:
+- Select port and baud rate (100K/125K/250K/500K/1M)
+- Uses independent serial connection, does not affect terminal
+
+**CANalyst-II (USB)** — For CANalyst-II / USBCAN-2A adapters (Windows/Linux):
+- Scan and auto-detect connected USB CAN devices
+- Dual channel support (CAN1 + CAN2)
+- Work mode: Normal / Listen-only / Loopback self-test
+- Full baud rate range: 10K to 1Mbps (17 standard rates)
+- Device info display (hardware version, serial number)
+- Requires `ControlCAN.dll` in the application directory
+
+**Common features (both modes):**
 - **Capture** — Start/stop CAN frame capture
 - **Statistics** — Total frames, error frames, unique IDs, bus load estimate
-- **ID Statistics** — Per-ID frame count, frequency, time intervals
 - **Frame List** — Timestamp, direction, ID (standard/extended), DLC, data
-- **Transmit** — Enter ID and data to send CAN frames
+- **Transmit** — Enter ID and data to send CAN frames (single or periodic burst)
 - **Filter** — Filter display by ID
-- CSV export supported, up to 2000 frames buffer
+- CSV export supported, up to 100,000 frames buffer
 
 ### I2C/SPI Debug
 

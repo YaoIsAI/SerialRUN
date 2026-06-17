@@ -12,7 +12,7 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 - 端口：9527
 - 协议：JSON-RPC over TCP
 
-## 可用工具（19 个）
+## 可用工具（23 个）
 
 ### 1. list_ports
 列出所有可用的串口设备。
@@ -128,6 +128,30 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 {"jsonrpc":"2.0","id":19,"method":"tools/call","params":{"name":"get_config_keys","arguments":{}}}
 ```
 
+### 20. load_pcap
+加载 pcap 或 pcapng 抓包文件到分析器。支持 Modbus RTU/TCP、CAN、AT 指令自动识别。
+```json
+{"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"load_pcap","arguments":{"path":"C:/capture/test.pcap"}}}
+```
+
+### 21. query_packets
+按协议或关键字查询已加载的数据包。返回协议、源、目标、摘要信息。
+```json
+{"jsonrpc":"2.0","id":21,"method":"tools/call","params":{"name":"query_packets","arguments":{"filter":"Modbus","limit":50}}}
+```
+
+### 22. get_packet
+获取指定索引数据包的详细信息，包括协议字段和十六进制转储。
+```json
+{"jsonrpc":"2.0","id":22,"method":"tools/call","params":{"name":"get_packet","arguments":{"index":0}}}
+```
+
+### 23. pcap_stats
+获取抓包统计信息：总包数、协议分布、时间范围。
+```json
+{"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"pcap_stats","arguments":{}}}
+```
+
 ## 使用示例
 
 1. 列出端口：`list_ports`
@@ -135,6 +159,7 @@ RX 数据由后台连续监听自动捕获并存入缓冲区，read 操作从缓
 3. 发送 AT 命令：`send_command` "AT"
 4. 读取响应：`read`（从缓冲区取数据）
 5. Modbus 读取：`modbus_read` 地址 0，数量 10
+6. 抓包分析：`load_pcap` 加载文件，`query_packets` 查询，`get_packet` 查看详情
 6. 查看设置：`get_config`（返回所有 UI 设置）
 7. 修改设置：`set_config` key="hex_mode" value=true
 8. 查看状态：`status`
@@ -194,7 +219,7 @@ RX data is automatically captured by background continuous monitoring and stored
 - Port: 9527
 - Protocol: JSON-RPC over TCP
 
-## Available Tools (19)
+## Available Tools (23)
 
 ### 1. list_ports
 List all available serial ports.
@@ -310,6 +335,30 @@ List all available configuration keys with their types, valid values, and whethe
 {"jsonrpc":"2.0","id":19,"method":"tools/call","params":{"name":"get_config_keys","arguments":{}}}
 ```
 
+### 20. load_pcap
+Load a pcap or pcapng capture file into the analyzer. Auto-detects Modbus RTU/TCP, CAN, and AT commands.
+```json
+{"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"load_pcap","arguments":{"path":"C:/capture/test.pcap"}}}
+```
+
+### 21. query_packets
+Query loaded packets by protocol or keyword filter. Returns protocol, source, destination, and summary.
+```json
+{"jsonrpc":"2.0","id":21,"method":"tools/call","params":{"name":"query_packets","arguments":{"filter":"Modbus","limit":50}}}
+```
+
+### 22. get_packet
+Get detailed information of a specific packet by index, including protocol fields and hex dump.
+```json
+{"jsonrpc":"2.0","id":22,"method":"tools/call","params":{"name":"get_packet","arguments":{"index":0}}}
+```
+
+### 23. pcap_stats
+Get capture statistics: total packets, protocol distribution, time range.
+```json
+{"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"pcap_stats","arguments":{}}}
+```
+
 ## Usage Examples
 
 1. List ports: `list_ports`
@@ -320,6 +369,7 @@ List all available configuration keys with their types, valid values, and whethe
 6. Get settings: `get_config` (returns all UI settings)
 7. Change setting: `set_config` key="hex_mode" value=true
 8. Check status: `status`
+9. Pcap analysis: `load_pcap` to load file, `query_packets` to search, `get_packet` for details
 9. Disconnect: `disconnect`
 
 ## Configurable Settings (get_config / set_config)
@@ -500,9 +550,9 @@ pub fn render_help_panel(ui: &mut egui::Ui, state: &mut AppState) {
         ui.heading("MCP 服务器 / MCP Server");
         ui.add_space(4.0);
         ui.label(if lang == Language::Chinese {
-            "SerialRUN 内置 MCP 服务器（19 个工具），支持 AI 助手通过 TCP 控制串口设备。RX 数据由后台连续监听自动捕获，send_command 发送后响应自动在缓冲区中。"
+            "SerialRUN 内置 MCP 服务器（23 个工具），支持 AI 助手通过 TCP 控制串口设备。RX 数据由后台连续监听自动捕获，send_command 发送后响应自动在缓冲区中。"
         } else {
-            "SerialRUN includes a built-in MCP server (19 tools) for AI assistants to control serial devices via TCP. RX data is auto-captured by background monitor; send_command responses are available in the buffer immediately."
+            "SerialRUN includes a built-in MCP server (23 tools) for AI assistants to control serial devices via TCP. RX data is auto-captured by background monitor; send_command responses are available in the buffer immediately."
         });
         ui.add_space(4.0);
 

@@ -77,11 +77,15 @@ impl PluginManager {
     pub fn install_from_zip(&mut self, zip_path: &Path) -> CoreResult<String> {
         log::info!("Installing plugin from: {}", zip_path.display());
 
-        // Create unique temp directory per install
+        // Create unique temp directory per install (PID + nanosecond timestamp)
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
         let temp_dir = std::env::temp_dir().join(format!(
             "serialrun_plugin_{}_{}",
             std::process::id(),
-            chrono::Utc::now().timestamp_millis()
+            nonce
         ));
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir)
@@ -96,7 +100,18 @@ impl PluginManager {
         for i in 0..archive.len() {
             let mut entry = archive.by_index(i)
                 .map_err(|e| PluginError::PluginError(format!("Zip read error: {}", e)))?;
-            let out_path = temp_dir.join(entry.mangled_name());
+            // Security: use enclosed_name() to prevent path traversal attacks
+            let relative_path = match entry.enclosed_name() {
+                Some(p) => p.to_path_buf(),
+                None => continue, // Skip entries with suspicious paths (e.g., containing "..")
+            };
+            let out_path = temp_dir.join(&relative_path);
+
+            // Double-check: resolved path must stay within temp_dir
+            if !out_path.starts_with(&temp_dir) {
+                log::warn!("Skipping zip entry with path outside target dir: {}", relative_path.display());
+                continue;
+            }
 
             if entry.is_dir() {
                 fs::create_dir_all(&out_path).map_err(|e| PluginError::IoError(e))?;
