@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>工具全景</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1440px;
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(160deg, #0a0e27, #0c1445, #1a0a3e, #0f172a);
+    color: #e2e8f0;
+    padding: 80px 70px;
+    position: relative;
+    overflow: hidden;
+  }
+  .bg-glow {
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .bg-glow.g1 { top: -50px; left: 200px; background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%); }
+  .bg-glow.g2 { bottom: 100px; right: 50px; background: radial-gradient(circle, rgba(167,139,250,0.06) 0%, transparent 70%); }
+
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+    position: relative;
+    z-index: 2;
+  }
+  .header .tag {
+    display: inline-block;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.25);
+    color: #60a5fa;
+    padding: 8px 24px;
+    border-radius: 100px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-size: 52px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header .count {
+    font-size: 22px;
+    color: #94a3b8;
+    margin-top: 10px;
+  }
+  .header .count span {
+    color: #60a5fa;
+    font-weight: 700;
+  }
+
+  .categories {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .cat {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(148,163,184,0.08);
+    border-radius: 18px;
+    padding: 28px 32px;
+  }
+  .cat-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .cat-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .cat-title {
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .cat-count {
+    font-size: 14px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-weight: 700;
+    margin-left: auto;
+  }
+
+  .cat:nth-child(1) .cat-icon { background: rgba(59,130,246,0.15); }
+  .cat:nth-child(1) .cat-title { color: #60a5fa; }
+  .cat:nth-child(1) .cat-count { background: rgba(59,130,246,0.15); color: #60a5fa; }
+
+  .cat:nth-child(2) .cat-icon { background: rgba(251,146,60,0.15); }
+  .cat:nth-child(2) .cat-title { color: #fb923c; }
+  .cat:nth-child(2) .cat-count { background: rgba(251,146,60,0.15); color: #fb923c; }
+
+  .cat:nth-child(3) .cat-icon { background: rgba(167,139,250,0.15); }
+  .cat:nth-child(3) .cat-title { color: #a78bfa; }
+  .cat:nth-child(3) .cat-count { background: rgba(167,139,250,0.15); color: #a78bfa; }
+
+  .cat:nth-child(4) .cat-icon { background: rgba(74,222,128,0.15); }
+  .cat:nth-child(4) .cat-title { color: #4ade80; }
+  .cat:nth-child(4) .cat-count { background: rgba(74,222,128,0.15); color: #4ade80; }
+
+  .cat:nth-child(5) .cat-icon { background: rgba(6,182,212,0.15); }
+  .cat:nth-child(5) .cat-title { color: #06b6d4; }
+  .cat:nth-child(5) .cat-count { background: rgba(6,182,212,0.15); color: #06b6d4; }
+
+  .tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .tool-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 18px;
+    border-radius: 100px;
+    font-size: 15px;
+    font-weight: 600;
+    border: 1px solid;
+  }
+  .cat:nth-child(1) .tool-tag {
+    background: rgba(59,130,246,0.08);
+    border-color: rgba(59,130,246,0.2);
+    color: #93c5fd;
+  }
+  .cat:nth-child(2) .tool-tag {
+    background: rgba(251,146,60,0.08);
+    border-color: rgba(251,146,60,0.2);
+    color: #fdba74;
+  }
+  .cat:nth-child(3) .tool-tag {
+    background: rgba(167,139,250,0.08);
+    border-color: rgba(167,139,250,0.2);
+    color: #c4b5fd;
+  }
+  .cat:nth-child(4) .tool-tag {
+    background: rgba(74,222,128,0.08);
+    border-color: rgba(74,222,128,0.2);
+    color: #86efac;
+  }
+  .cat:nth-child(5) .tool-tag {
+    background: rgba(6,182,212,0.08);
+    border-color: rgba(6,182,212,0.2);
+    color: #67e8f9;
+  }
+
+  .bottom-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #fb923c, #a78bfa, #4ade80, #06b6d4);
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-glow g1"></div>
+<div class="bg-glow g2"></div>
+
+<div class="header">
+  <div class="tag">MCP TOOLS</div>
+  <h1>19 MCP 工具全景</h1>
+  <p class="count">覆盖 <span>5 大类别</span>，串口操作全搞定</p>
+</div>
+
+<div class="categories">
+  <!-- 基础串口 -->
+  <div class="cat">
+    <div class="cat-header">
+      <div class="cat-icon">🔌</div>
+      <div class="cat-title">基础串口</div>
+      <div class="cat-count">7 个工具</div>
+    </div>
+    <div class="tools">
+      <span class="tool-tag">list_ports</span>
+      <span class="tool-tag">connect</span>
+      <span class="tool-tag">disconnect</span>
+      <span class="tool-tag">send_data</span>
+      <span class="tool-tag">read_data</span>
+      <span class="tool-tag">get_status</span>
+      <span class="tool-tag">list_connections</span>
+    </div>
+  </div>
+
+  <!-- Modbus -->
+  <div class="cat">
+    <div class="cat-header">
+      <div class="cat-icon">📡</div>
+      <div class="cat-title">Modbus 协议</div>
+      <div class="cat-count">2 个工具</div>
+    </div>
+    <div class="tools">
+      <span class="tool-tag">modbus_read</span>
+      <span class="tool-tag">modbus_write</span>
+    </div>
+  </div>
+
+  <!-- PLC -->
+  <div class="cat">
+    <div class="cat-header">
+      <div class="cat-icon">🏭</div>
+      <div class="cat-title">PLC 通信</div>
+      <div class="cat-count">2 个工具</div>
+    </div>
+    <div class="tools">
+      <span class="tool-tag">plc_connect</span>
+      <span class="tool-tag">plc_read_write</span>
+    </div>
+  </div>
+
+  <!-- 硬件 -->
+  <div class="cat">
+    <div class="cat-header">
+      <div class="cat-icon">🔧</div>
+      <div class="cat-title">硬件调试</div>
+      <div class="cat-count">2 个工具</div>
+    </div>
+    <div class="tools">
+      <span class="tool-tag">gpio_control</span>
+      <span class="tool-tag">uart_monitor</span>
+    </div>
+  </div>
+
+  <!-- 配置 -->
+  <div class="cat">
+    <div class="cat-header">
+      <div class="cat-icon">⚙️</div>
+      <div class="cat-title">配置管理</div>
+      <div class="cat-count">6 个工具</div>
+    </div>
+    <div class="tools">
+      <span class="tool-tag">get_config</span>
+      <span class="tool-tag">set_config</span>
+      <span class="tool-tag">save_profile</span>
+      <span class="tool-tag">load_profile</span>
+      <span class="tool-tag">export_log</span>
+      <span class="tool-tag">plugin_manage</span>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar"></div>
+</body>
+</html>

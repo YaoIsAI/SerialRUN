@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>行动号召</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1440px;
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(160deg, #0a0e27, #0c1445, #1a0a3e, #0f172a);
+    color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    padding: 80px;
+  }
+
+  /* Background decorations */
+  .bg-glow {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .bg-glow.g1 {
+    width: 600px; height: 600px;
+    top: -100px; right: -100px;
+    background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+  }
+  .bg-glow.g2 {
+    width: 500px; height: 500px;
+    bottom: -50px; left: -100px;
+    background: radial-gradient(circle, rgba(167,139,250,0.1) 0%, transparent 70%);
+  }
+  .bg-glow.g3 {
+    width: 300px; height: 300px;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%);
+  }
+
+  .content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    width: 100%;
+    max-width: 800px;
+  }
+
+  .download-icon {
+    width: 100px; height: 100px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(167,139,250,0.1));
+    border: 1px solid rgba(59,130,246,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    margin: 0 auto 40px;
+  }
+
+  .content h1 {
+    font-size: 56px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
+  }
+
+  .url {
+    font-size: 32px;
+    color: #60a5fa;
+    font-weight: 700;
+    margin-bottom: 48px;
+    letter-spacing: 1px;
+  }
+
+  .versions {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+  .ver-card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148,163,184,0.1);
+    border-radius: 18px;
+    padding: 28px 36px;
+    text-align: center;
+    min-width: 220px;
+  }
+  .ver-card .os {
+    font-size: 32px;
+    margin-bottom: 12px;
+  }
+  .ver-card .ver {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .ver-card .ver-num {
+    font-size: 16px;
+    color: #94a3b8;
+  }
+  .ver-card:nth-child(1) { border-color: rgba(59,130,246,0.2); }
+  .ver-card:nth-child(1) .ver { color: #60a5fa; }
+  .ver-card:nth-child(2) { border-color: rgba(167,139,250,0.2); }
+  .ver-card:nth-child(2) .ver { color: #a78bfa; }
+
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 56px;
+  }
+  .btn {
+    padding: 20px 52px;
+    border-radius: 16px;
+    font-size: 22px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #7c3aed);
+    color: #fff;
+    box-shadow: 0 8px 32px rgba(59,130,246,0.3);
+  }
+  .btn-secondary {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #e2e8f0;
+  }
+
+  .qr-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 20px;
+  }
+  .qr-box {
+    width: 160px; height: 160px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .qr-box .qr-icon {
+    font-size: 48px;
+    opacity: 0.4;
+  }
+  .qr-box .qr-text {
+    font-size: 13px;
+    color: #64748b;
+  }
+  .qr-info {
+    text-align: left;
+  }
+  .qr-info h4 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .qr-info p {
+    font-size: 16px;
+    color: #94a3b8;
+    line-height: 1.7;
+  }
+
+  .footer-text {
+    margin-top: 56px;
+    font-size: 16px;
+    color: #475569;
+    letter-spacing: 1px;
+  }
+  .footer-text span {
+    color: #60a5fa;
+  }
+
+  .bottom-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #a78bfa, #4ade80, #06b6d4);
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-glow g1"></div>
+<div class="bg-glow g2"></div>
+<div class="bg-glow g3"></div>
+
+<div class="content">
+  <div class="download-icon">⬇️</div>
+  <h1>下载体验</h1>
+  <div class="url">www.serialrun.com</div>
+
+  <div class="versions">
+    <div class="ver-card">
+      <div class="os">🍎</div>
+      <div class="ver">macOS</div>
+      <div class="ver-num">v0.4.0 (最新)</div>
+    </div>
+    <div class="ver-card">
+      <div class="os">🪟</div>
+      <div class="ver">Windows</div>
+      <div class="ver-num">v0.3.0</div>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <a class="btn btn-primary" href="https://github.com/YaoIsAI/SerialRUN" target="_blank">
+      ⭐ GitHub Star
+    </a>
+    <a class="btn btn-secondary" href="https://www.serialrun.com" target="_blank">
+      📥 立即下载
+    </a>
+  </div>
+
+  <div class="qr-section">
+    <div class="qr-box">
+      <div class="qr-icon">📱</div>
+      <div class="qr-text">扫码访问</div>
+    </div>
+    <div class="qr-info">
+      <h4>关注 SerialRUN</h4>
+      <p>获取最新版本更新<br>插件开发教程<br>嵌入式调试技巧</p>
+    </div>
+  </div>
+
+  <p class="footer-text">MIT License &middot; Open Source &middot; <span>欢迎贡献</span></p>
+</div>
+
+<div class="bottom-bar"></div>
+</body>
+</html>

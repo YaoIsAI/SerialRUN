@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>使用方式</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1440px;
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(160deg, #0a0e27, #0c1445, #1a0a3e, #0f172a);
+    color: #e2e8f0;
+    padding: 80px 70px;
+    position: relative;
+    overflow: hidden;
+  }
+  .bg-glow {
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .bg-glow.g1 { top: 200px; left: -150px; background: radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%); }
+  .bg-glow.g2 { bottom: 50px; right: -100px; background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%); }
+
+  .header {
+    text-align: center;
+    margin-bottom: 64px;
+    position: relative;
+    z-index: 2;
+  }
+  .header .tag {
+    display: inline-block;
+    background: rgba(6,182,212,0.12);
+    border: 1px solid rgba(6,182,212,0.25);
+    color: #06b6d4;
+    padding: 8px 24px;
+    border-radius: 100px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-size: 52px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header p {
+    font-size: 20px;
+    color: #64748b;
+    margin-top: 12px;
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 28px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .col {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148,163,184,0.08);
+    border-radius: 24px;
+    padding: 44px 36px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .col::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+  }
+  .col:nth-child(1)::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+  .col:nth-child(2)::before { background: linear-gradient(90deg, #4ade80, #22d3ee); }
+  .col:nth-child(3)::before { background: linear-gradient(90deg, #a78bfa, #c084fc); }
+
+  .col-icon {
+    width: 88px; height: 88px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    margin-bottom: 24px;
+  }
+  .col:nth-child(1) .col-icon { background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(59,130,246,0.05)); }
+  .col:nth-child(2) .col-icon { background: linear-gradient(135deg, rgba(74,222,128,0.2), rgba(74,222,128,0.05)); }
+  .col:nth-child(3) .col-icon { background: linear-gradient(135deg, rgba(167,139,250,0.2), rgba(167,139,250,0.05)); }
+
+  .col h3 {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .col:nth-child(1) h3 { color: #60a5fa; }
+  .col:nth-child(2) h3 { color: #4ade80; }
+  .col:nth-child(3) h3 { color: #a78bfa; }
+
+  .col-sub {
+    font-size: 16px;
+    color: #64748b;
+    margin-bottom: 28px;
+  }
+
+  .col-features {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+  }
+  .col-feat {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 16px;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .col-feat .bullet {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .col:nth-child(1) .bullet { background: #3b82f6; }
+  .col:nth-child(2) .bullet { background: #4ade80; }
+  .col:nth-child(3) .bullet { background: #a78bfa; }
+
+  .col-code {
+    margin-top: 20px;
+    background: #0f172a;
+    border: 1px solid rgba(148,163,184,0.08);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 14px;
+    color: #4ade80;
+    text-align: left;
+    width: 100%;
+    line-height: 1.7;
+    overflow: hidden;
+  }
+  .col-code .prompt { color: #a78bfa; }
+  .col-code .flag { color: #60a5fa; }
+
+  .bottom-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #4ade80, #a78bfa);
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-glow g1"></div>
+<div class="bg-glow g2"></div>
+
+<div class="header">
+  <div class="tag">OPERATION MODES</div>
+  <h1>三种操作方式</h1>
+  <p>GUI / CLI / MCP，总有一种适合你</p>
+</div>
+
+<div class="columns">
+  <!-- GUI -->
+  <div class="col">
+    <div class="col-icon">🖥️</div>
+    <h3>GUI</h3>
+    <div class="col-sub">图形界面操作</div>
+    <div class="col-features">
+      <div class="col-feat"><span class="bullet"></span>可视化串口终端</div>
+      <div class="col-feat"><span class="bullet"></span>实时波形显示</div>
+      <div class="col-feat"><span class="bullet"></span>插件扩展面板</div>
+      <div class="col-feat"><span class="bullet"></span>Modbus 解析视图</div>
+      <div class="col-feat"><span class="bullet"></span>快捷指令面板</div>
+      <div class="col-feat"><span class="bullet"></span>深色/浅色主题</div>
+    </div>
+  </div>
+
+  <!-- CLI -->
+  <div class="col">
+    <div class="col-icon">⌨️</div>
+    <h3>CLI</h3>
+    <div class="col-sub">命令行自动化</div>
+    <div class="col-features">
+      <div class="col-feat"><span class="bullet"></span>交互式终端</div>
+      <div class="col-feat"><span class="bullet"></span>send-command</div>
+      <div class="col-feat"><span class="bullet"></span>脚本录制回放</div>
+      <div class="col-feat"><span class="bullet"></span>JSON Agent 输出</div>
+      <div class="col-feat"><span class="bullet"></span>CI/CD 集成</div>
+      <div class="col-feat"><span class="bullet"></span>自动化测试</div>
+    </div>
+    <div class="col-code">
+      <span class="prompt">$</span> serialrun <span class="flag">interactive</span> COM3<br>
+      <span class="prompt">$</span> serialrun <span class="flag">send-command</span> COM3 "AT"
+    </div>
+  </div>
+
+  <!-- MCP -->
+  <div class="col">
+    <div class="col-icon">🤖</div>
+    <h3>MCP</h3>
+    <div class="col-sub">AI 驱动接口</div>
+    <div class="col-features">
+      <div class="col-feat"><span class="bullet"></span>19 个 MCP 工具</div>
+      <div class="col-feat"><span class="bullet"></span>Claude/GPT 集成</div>
+      <div class="col-feat"><span class="bullet"></span>自然语言控制</div>
+      <div class="col-feat"><span class="bullet"></span>智能诊断</div>
+      <div class="col-feat"><span class="bullet"></span>协议分析</div>
+      <div class="col-feat"><span class="bullet"></span>自动化调试</div>
+    </div>
+    <div class="col-code">
+      <span class="prompt">AI:</span> 连接 COM3 并发送 AT<br>
+      <span class="prompt">Tool:</span> serialrun_send_command
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar"></div>
+</body>
+</html>

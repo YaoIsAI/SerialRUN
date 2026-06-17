@@ -4302,11 +4302,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "serialrun-plugin-adc-reader"
+version = "0.4.0"
+dependencies = [
+ "chrono",
+ "hex",
+ "log",
+ "serde",
+ "serde_json",
+ "serialrun-plugin-api",
+]
+
+[[package]]
 name = "serialrun-plugin-api"
 version = "0.4.3"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "serialrun-plugin-relay-controller"
+version = "0.4.0"
+dependencies = [
+ "chrono",
+ "hex",
+ "log",
+ "serde",
+ "serde_json",
+ "serialrun-plugin-api",
 ]
 
 [[package]]

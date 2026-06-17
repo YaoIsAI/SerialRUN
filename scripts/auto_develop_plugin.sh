@@ -66,30 +66,24 @@ mv "$PLUGIN_DIR/plugin.json.tmp" "$PLUGIN_DIR/plugin.json"
 
 # Step 3: Update Cargo.toml
 echo "📝 Updating Cargo.toml..."
-sed -i '' "s/name = \"serialrun-example-plugin\"/name = \"$PLUGIN_NAME\"/" \
-    "$PLUGIN_DIR/Cargo.toml" 2>/dev/null || \
-sed -i "s/name = \"serialrun-example-plugin\"/name = \"$PLUGIN_NAME\"/" \
-    "$PLUGIN_DIR/Cargo.toml"
+perl -i -pe "s/name = \"serialrun-example-plugin\"/name = \"$PLUGIN_NAME\"/" "$PLUGIN_DIR/Cargo.toml"
 
 # Add to workspace members if not already present
 WORKSPACE_CARGO="$REPO_ROOT/Cargo.toml"
 if ! grep -q "\"plugins/$PLUGIN_NAME\"" "$WORKSPACE_CARGO"; then
     echo "📝 Adding to workspace members..."
-    sed -i '' "/members =/,/]/{
-        s|]|\    \"plugins/$PLUGIN_NAME\",\n]|;
-    }" "$WORKSPACE_CARGO" 2>/dev/null || \
-    sed -i "/members =/,/]/{
-        s|]|\    \"plugins/$PLUGIN_NAME\",\n]|;
-    }" "$WORKSPACE_CARGO"
+    # Add plugin to members list
+    sed -i '' '/members = \[/,/]/{
+        /]/i\
+    "plugins/'"$PLUGIN_NAME"'",
+    }' "$WORKSPACE_CARGO"
 fi
 
 # Step 4: Generate plugin commands from features
 echo "📝 Generating plugin commands..."
 COMMANDS=""
-IFS=$'\n' read -rd '' -a FEATURE_ARRAY <<< "$FEATURES"
-
-for i in "${!FEATURE_ARRAY[@]}"; do
-    feature="${FEATURE_ARRAY[$i]}"
+while IFS= read -r feature; do
+    [[ -z "$feature" ]] && continue
     cmd_name=$(echo "$feature" | tr '[:upper:]' '[:lower:]' | tr ' ' '_' | tr -cd 'a-z0-9_')
     COMMANDS="$COMMANDS
         PluginCommand {
@@ -97,7 +91,7 @@ for i in "${!FEATURE_ARRAY[@]}"; do
             description: \"$feature\".to_string(),
             parameters: vec![],
         },"
-done
+done <<< "$FEATURES"
 
 # Step 5: Build and test
 echo ""
@@ -128,7 +122,13 @@ fi
 echo ""
 echo "📦 Packaging plugin..."
 cd "$REPO_ROOT"
-"$REPO_ROOT/scripts/package_plugin.sh" "$PLUGIN_DIR" 2>&1 || true
+if command -v zip &> /dev/null; then
+    ZIP_NAME="${PLUGIN_NAME}-$(jq -r '.version' "$PLUGIN_DIR/plugin.json")-$(uname -m).zip"
+    zip -j "$ZIP_NAME" "$PLUGIN_DIR/plugin.json" "$PLUGIN_DIR/src/lib.rs" 2>/dev/null || true
+    echo "✅ Package created: $ZIP_NAME"
+else
+    echo "⚠️  zip command not available, skipping packaging"
+fi
 
 # Update request status
 jq '.status = "completed"' "$REQUEST_FILE" > "$REQUEST_FILE.tmp"

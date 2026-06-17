@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1080px; height: 1440px;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(160deg, #0a0e27 0%, #0c1445 40%, #1a0a3e 70%, #0f172a 100%);
+  color: white; overflow: hidden; position: relative;
+}
+.glow { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%); top: 100px; left: -150px; border-radius: 50%; }
+.glow2 { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%); bottom: 200px; right: -100px; border-radius: 50%; }
+.content { position: relative; z-index: 10; padding: 120px 80px 60px; height: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+h1 { font-size: 68px; font-weight: 700; margin-bottom: 20px; line-height: 1.2; }
+h1 span { background: linear-gradient(135deg, #a78bfa, #3b82f6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.subtitle { font-size: 32px; color: #94a3b8; margin-bottom: 60px; line-height: 1.5; max-width: 700px; }
+.buttons { display: flex; gap: 24px; margin-bottom: 60px; }
+.btn { padding: 20px 52px; border-radius: 12px; font-size: 26px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 10px; }
+.btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+.btn-secondary { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; }
+.features { display: flex; gap: 30px; margin-bottom: 60px; }
+.feature { text-align: center; }
+.feature .icon { font-size: 40px; margin-bottom: 8px; }
+.feature .label { font-size: 22px; color: #94a3b8; }
+.qr-area { display: flex; gap: 60px; align-items: center; margin-bottom: 40px; }
+.qr-box { width: 180px; height: 180px; background: white; border-radius: 16px; padding: 12px; display: flex; align-items: center; justify-content: center; }
+.qr-box .placeholder { width: 140px; height: 140px; background: #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #94a3b8; }
+.qr-label { font-size: 22px; color: #94a3b8; text-align: center; line-height: 1.5; }
+.footer { margin-top: auto; display: flex; justify-content: space-between; width: 100%; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); }
+.footer .brand { font-size: 32px; font-weight: 700; color: #475569; }
+.footer .brand span { color: #3b82f6; }
+.footer .url { font-size: 20px; color: #475569; text-align: right; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="glow2"></div>
+  <div class="content">
+    <h1>AI 时代的<br><span>串口调试工具</span></h1>
+    <div class="subtitle">开源免费 · 19 个 MCP 工具 · 跨平台<br>用对话控制你的嵌入式设备</div>
+
+    <div class="buttons">
+      <a href="https://www.serialrun.com/downloads.html" class="btn btn-primary">🌐 下载 v0.3.0</a>
+      <a href="https://github.com/YaoIsAI/SerialRUN" class="btn btn-secondary">⭐ GitHub Star</a>
+    </div>
+
+    <div class="features">
+      <div class="feature"><div class="icon">🔌</div><div class="label">串口调试</div></div>
+      <div class="feature"><div class="icon">📊</div><div class="label">Modbus</div></div>
+      <div class="feature"><div class="icon">🏭</div><div class="label">PLC 控制</div></div>
+      <div class="feature"><div class="icon">🤖</div><div class="label">MCP AI</div></div>
+      <div class="feature"><div class="icon">🔧</div><div class="label">插件扩展</div></div>
+    </div>
+
+    <div style="margin-bottom: 40px;">
+      <div style="font-size: 28px; color: #e2e8f0; margin-bottom: 12px;">📥 下载体验</div>
+      <div style="font-size: 22px; color: #94a3b8; margin-bottom: 8px;">macOS / Windows / Linux 全平台支持</div>
+      <div style="font-size: 20px; color: #64748b;">v0.3.0 · 19 MCP 工具 · 开源免费</div>
+    </div>
+    <div style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 12px; padding: 20px 32px; margin-bottom: 20px;">
+      <div style="font-size: 26px; font-weight: 700; color: #60a5fa; margin-bottom: 8px;">🌐 官网地址</div>
+      <div style="font-size: 32px; font-weight: 700; color: #e2e8f0;">www.serialrun.com</div>
+    </div>
+    <div style="font-size: 20px; color: #94a3b8; line-height: 1.6;">
+      👉 下载最新版本 v0.3.0<br>
+      👉 查看 MCP 使用指南: serialrun.com/guide.html#mcp<br>
+      👉 查看所有版本: serialrun.com/downloads.html
+    </div>
+
+    <div class="footer">
+      <div class="brand">Serial<span>RUN</span></div>
+      <div class="url">v0.3.0 · 19 MCP Tools<br>www.serialrun.com</div>
+    </div>
+  </div>
+</body>
+</html>

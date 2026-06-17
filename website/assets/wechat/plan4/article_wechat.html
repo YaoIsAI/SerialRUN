@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>SerialRUN — 6天造了一个世界</title>
+</head>
+<body style="font-family:'PingFang SC','Microsoft YaHei',sans-serif; color:#333; line-height:1.8; font-size:16px; max-width:1080px; margin:0 auto; padding:20px;">
+
+<h1 style="font-size:26px; font-weight:700; color:#1a1a2e; text-align:center; margin-bottom:6px;">6 天造了一个世界</h1>
+<p style="text-align:center; color:#888; font-size:14px; margin-bottom:30px; font-style:italic;">SerialRUN 从 v0.1.0 到 v0.4.0 背后的故事</p>
+
+<hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+
+<h2 style="font-size:20px; font-weight:700; color:#1a1a2e; border-bottom:2px solid #3b82f6; padding-bottom:6px;">序章：深夜的串口</h2>
+
+<blockquote style="background:#f8f9fa; border-left:4px solid #3b82f6; padding:12px 16px; margin:16px 0; font-style:italic; color:#555;">2026 年 5 月 30 日，凌晨 2:47。</blockquote>
+
+<p>一个嵌入式开发者坐在屏幕前，面前是三个窗口：<span style="color:#3b82f6; font-weight:600;">minicom</span> 在左边，<span style="color:#3b82f6; font-weight:600;">Modbus Poll</span> 在右边，<span style="color:#3b82f6; font-weight:600;">TIA Portal</span> 在底部。</p>
+
+<p><strong>没有一个工具能同时做这些事。</strong></p>
+
+<p>那一刻，他做了一个决定：自己写一个。</p>
+
+<hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+
+<h2 style="font-size:20px; font-weight:700; color:#1a1a2e; border-bottom:2px solid #3b82f6; padding-bottom:6px;">第一幕：从零到一（v0.1.0，5月31日）</h2>
+
+<p><span style="color:#3b82f6; font-weight:600;">串口操作涉及硬件，一个 buffer overflow 可能烧掉一块开发板。</span></p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0; border-radius:8px; overflow:hidden;">
+<tr bgcolor="#f8fafc"><td style="padding:8px 14px; border-bottom:1px solid #e2e8f0;">🔌 串口通信（HEX/TEXT、时间戳、CRC）</td></tr>
+<tr bgcolor="#f8fafc"><td style="padding:8px 14px; border-bottom:1px solid #e2e8f0;">📊 Modbus 调试（8 种功能码）</td></tr>
+<tr bgcolor="#f8fafc"><td style="padding:8px 14px; border-bottom:1px solid #e2e8f0;">🏭 PLC 控制（4 个品牌预设）</td></tr>
+<tr bgcolor="#f8fafc"><td style="padding:8px 14px; border-bottom:1px solid #e2e8f0;">📡 CAN 总线分析</td></tr>
+<tr bgcolor="#f8fafc"><td style="padding:8px 14px;">🔧 I2C/SPI + 固件烧录</td></tr>
+</table>
+
+<p><span style="color:#8b5cf6; font-weight:600;">但找到这一行代码，花了两个小时。</span></p>
+
+<hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+
+<h2 style="font-size:20px; font-weight:700; color:#1a1a2e; border-bottom:2px solid #3b82f6; padding-bottom:6px;">第三幕：重复的力量（v0.3.0）</h2>
+
+<blockquote style="background:#f8f9fa; border-left:4px solid #059669; padding:12px 16px; margin:16px 0; color:#555;">「我每天要输入 200 次 AT+CSQ。」</blockquote>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0; border-radius:8px; overflow:hidden;">
+<tr bgcolor="#ecfdf5"><td style="padding:8px 14px; border-bottom:1px solid #d1fae5;">1. 输入框右侧 + 号——点击即保存</td></tr>
+<tr bgcolor="#ecfdf5"><td style="padding:8px 14px; border-bottom:1px solid #d1fae5;">2. 展开后点击即发送</td></tr>
+<tr bgcolor="#ecfdf5"><td style="padding:8px 14px;">3. 右键菜单——删除</td></tr>
+</table>
+
+<hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+
+<h2 style="font-size:20px; font-weight:700; color:#1a1a2e; border-bottom:2px solid #3b82f6; padding-bottom:6px;">困在 Token 里的人</h2>
+
+<blockquote style="background:#f8f9fa; border-left:4px solid #3b82f6; padding:12px 16px; margin:16px 0; font-style:italic; color:#555;">「AI 能处理 token，但处理不了焦虑。」</blockquote>
+
+<p><span style="color:#3b82f6; font-weight:600;">AI 处理的是 token，人处理的是意义。</span></p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0; border-radius:8px; overflow:hidden;">
+<tr bgcolor="#eff6ff"><td style="padding:8px 14px; border-bottom:1px solid #dbeafe;"><code>connect COM3</code> — 连接你熬了三个通宵的设备</td></tr>
+<tr bgcolor="#eff6ff"><td style="padding:8px 14px; border-bottom:1px solid #dbeafe;"><code>modbus_read 0 10</code> — 检查控制系统是否正常</td></tr>
+<tr bgcolor="#eff6ff"><td style="padding:8px 14px;"><code>send_command "AT+CSQ"</code> — 确认固件能否联网</td></tr>
+</table>
+
+<p><strong>这些经验，token 里没有。</strong></p>
+
+<hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+
+<h2 style="font-size:20px; font-weight:700; color:#1a1a2e; border-bottom:2px solid #3b82f6; padding-bottom:6px;">第七幕：三种世界</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0; border-radius:8px; overflow:hidden;">
+<tr bgcolor="#eff6ff"><td style="padding:14px 18px;"><strong>🖥️ GUI：给人看的</strong><br><span style="color:#555;">鼠标点击，实时反馈。90% 的用户通过 GUI 操作。</span></td></tr>
+<tr bgcolor="#f0fdf4"><td style="padding:14px 18px;"><strong>⌨️ CLI：给机器用的</strong><br><span style="color:#555;">一行命令，放进 CI/CD 流程。</span></td></tr>
+<tr bgcolor="#f5f3ff"><td style="padding:14px 18px;"><strong>🤖 MCP：给 AI 用的</strong><br><span style="color:#555;">自然语言，直接操作。这是未来的方向。</span></td></tr>
+</table>
+
+<p style="text-align:center; font-size:17px; font-weight:700; color:#3b82f6; margin:20px 0;"><strong>同一个内核，三种灵魂。</strong></p>
+
+<hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+
+<h2 style="font-size:20px; font-weight:700; color:#1a1a2e; border-bottom:2px solid #3b82f6; padding-bottom:6px;">第八幕：数字</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0; border-radius:8px; overflow:hidden;">
+<tr bgcolor="#f8fafc"><td style="padding:10px 16px; border-bottom:1px solid #e2e8f0;"><span style="color:#3b82f6; font-weight:700;">5月31日</span> — v0.1.0 初始发布</td></tr>
+<tr bgcolor="#f8fafc"><td style="padding:10px 16px; border-bottom:1px solid #e2e8f0;"><span style="color:#8b5cf6; font-weight:700;">6月2日</span> — v0.2.0 插件 + MCP</td></tr>
+<tr bgcolor="#f8fafc"><td style="padding:10px 16px; border-bottom:1px solid #e2e8f0;"><span style="color:#059669; font-weight:700;">6月4日</span> — v0.3.0 快捷指令</td></tr>
+<tr bgcolor="#f8fafc"><td style="padding:10px 16px;"><span style="color:#d97706; font-weight:700;">6月5日</span> — v0.4.0 CLI 模式</td></tr>
+</table>
+
+<p style="text-align:center; font-size:18px; font-weight:700; margin:16px 0;">
+<span style="color:#3b82f6;">6 天</span> · <span style="color:#8b5cf6;">4 个版本</span> · <span style="color:#059669;">19 个工具</span> · <span style="color:#d97706;">5 个 Bug</span>
+</p>
+
+<hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+
+<h2 style="font-size:20px; font-weight:700; color:#1a1a2e; border-bottom:2px solid #3b82f6; padding-bottom:6px;">尾声：工具的意义</h2>
+
+<blockquote style="background:#f8f9fa; border-left:4px solid #3b82f6; padding:12px 16px; margin:16px 0; color:#555;">SerialRUN 解决了一个真实问题：<span style="color:#3b82f6; font-weight:600;">嵌入式开发者的工具碎片化</span>。</blockquote>
+
+<p style="text-align:center; font-size:17px; font-weight:700; color:#3b82f6; margin:20px 0;">这就是工具的意义：让复杂的事情变简单。</p>
+
+<hr style="border:none; border-top:1px solid #ddd; margin:24px 0;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0; border-radius:12px; overflow:hidden;">
+<tr bgcolor="#3b82f6"><td style="padding:24px; color:white;">
+<p style="margin:0 0 12px 0; font-size:20px; font-weight:700; color:white;">下载体验</p>
+<p style="margin:0 0 8px 0; font-size:15px; color:white;">
+macOS：v0.4.0 Universal<br>
+Windows：v0.4.0 x64<br>
+Linux：源码编译
+</p>
+<p style="margin:0; font-size:15px; color:white;">
+🌐 www.serialrun.com/downloads.html<br>
+⭐ github.com/YaoIsAI/SerialRUN
+</p>
+</td></tr>
+</table>
+
+<p style="text-align:center; color:#94a3b8; font-size:13px; margin-top:30px; padding-top:16px; border-top:1px solid #eee;">
+SerialRUN 是开源项目（BSL 1.1），欢迎 Star、Fork、提交 Issue。<br>
+——Yao，2026年6月5日
+</p>
+
+</body>
+</html>

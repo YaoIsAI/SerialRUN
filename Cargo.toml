@@ -9,6 +9,8 @@ members = [
     "plugins/serialrun-example-plugin",
     "plugins/serialrun-stc-isp",
     "plugins/serialrun-mpy-ide",
+    "plugins/serialrun-plugin-adc-reader",
+    "plugins/serialrun-plugin-relay-controller",
 ]
 
 [workspace.dependencies]

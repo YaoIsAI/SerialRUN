@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1080px; height: 1440px;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(160deg, #0a0e27 0%, #0c1445 40%, #1a0a3e 70%, #0f172a 100%);
+  color: white; overflow: hidden; position: relative;
+}
+.glow { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%); top: 100px; right: -150px; border-radius: 50%; }
+.glow2 { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%); bottom: 200px; left: -100px; border-radius: 50%; }
+.content { position: relative; z-index: 10; padding: 100px 80px 60px; height: 100%; display: flex; flex-direction: column; }
+.badge { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,130,246,0.2)); border: 1px solid rgba(139,92,246,0.3); border-radius: 100px; padding: 10px 24px; font-size: 18px; color: #a78bfa; width: fit-content; margin-bottom: 40px; letter-spacing: 1px; }
+.title { margin-bottom: 30px; }
+.title h1 { font-size: 62px; font-weight: 700; line-height: 1.2; margin-bottom: 16px; }
+.title h1 span { background: linear-gradient(135deg, #a78bfa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.title p { font-size: 32px; color: #94a3b8; line-height: 1.5; }
+.chat-demo { flex: 1; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+.chat-msg { padding: 22px 30px; border-radius: 16px; max-width: 85%; font-size: 26px; line-height: 1.6; }
+.chat-user { background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.3); align-self: flex-end; color: #e2e8f0; }
+.chat-ai { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; }
+.chat-ai .tool { display: inline-block; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; padding: 2px 8px; font-size: 18px; color: #4ade80; font-family: monospace; margin: 4px 2px; }
+.chat-label { font-size: 16px; color: #64748b; margin-bottom: 4px; }
+.chat-label.user-label { text-align: right; color: #3b82f6; }
+.footer { margin-top: auto; display: flex; justify-content: space-between; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); }
+.footer .brand { font-size: 32px; font-weight: 700; color: #475569; }
+.footer .brand span { color: #3b82f6; }
+.footer .url { font-size: 20px; color: #475569; text-align: right; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="glow2"></div>
+  <div class="content">
+    <div class="badge">MCP × AI</div>
+    <div class="title">
+      <h1>用对话<br><span>控制串口设备</span></h1>
+      <p>SerialRUN 内置 MCP 服务器，19 个工具一句话搞定</p>
+    </div>
+    <div class="chat-demo">
+      <div class="chat-label user-label">你</div>
+      <div class="chat-msg chat-user">帮我连接串口，发送 AT 指令检查模块状态</div>
+      <div class="chat-label">AI 助手</div>
+      <div class="chat-msg chat-ai">
+        好的，正在执行：<br>
+        <span class="tool">connect</span> COM3 @ 115200<br>
+        <span class="tool">send_command</span> "AT"<br>
+        <span class="tool">read</span><br><br>
+        ✅ 模块正常，信号强度 -65dBm
+      </div>
+    </div>
+    <div class="footer">
+      <div class="brand">Serial<span>RUN</span></div>
+      <div class="url">v0.3.0 · 19 MCP Tools · 详细指南: serialrun.com/guide.html<br>www.serialrun.com</div>
+    </div>
+  </div>
+</body>
+</html>
