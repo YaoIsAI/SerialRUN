@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common USB-to-Serial converter vendor IDs -->
+    <!-- CH340/CH341 -->
+    <usb-device vendor-id="1659" />
+    <!-- CP2102/CP2104 -->
+    <usb-device vendor-id="4292" />
+    <!-- FT232R/FT2232H -->
+    <usb-device vendor-id="1027" />
+    <!-- PL2303 -->
+    <usb-device vendor-id="1659" />
+    <!-- CDC ACM devices -->
+    <usb-device class="2" />
+</resources>

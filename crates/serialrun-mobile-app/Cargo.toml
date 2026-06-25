@@ -1,0 +1,31 @@
+[package]
+name = "serialrun-mobile-app"
+version = "0.1.0"
+edition = "2021"
+description = "SerialRUN Mobile App — Android serial port terminal"
+license = "BSL-1.1"
+
+[dependencies]
+eframe = { workspace = true }
+egui = { workspace = true }
+egui_extras = { workspace = true }
+serialrun-core = { path = "../serialrun-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+log = { workspace = true }
+env_logger = "0.11"
+chrono = { workspace = true }
+image = "0.25"
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+android-activity = "0.6"
+winit = { version = "0.30", features = ["android-native-activity"] }
+
+[lib]
+name = "serialrun"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "serialrun-mobile"
+path = "src/main.rs"

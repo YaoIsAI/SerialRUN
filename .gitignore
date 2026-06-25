@@ -63,3 +63,14 @@ plugins/serialrun-mpy-ide.zip
 
 # Submodule (managed separately)
 serialrun-plugins
+
+# APK build temp files
+apk_build/apk_tmp/
+apk_build/serialrun-mobile-v0.1.0.apk.idsig
+
+# Test screenshots
+mobile_*.png
+mcp_*.png
+step*.png
+verify_*.png
+check_*.png

@@ -9,6 +9,8 @@ use std::sync::Arc;
 const LIB_NAME: &str = "ControlCAN.dll";
 #[cfg(target_os = "linux")]
 const LIB_NAME: &str = "libcontrolcan.so";
+#[cfg(not(any(target_os = "windows", target_os = "linux")))]
+const LIB_NAME: &str = "";
 
 /// Device type for CANalyst-II / USBCAN-2A / USBCAN-2C
 pub const VCI_USBCAN2: u32 = 4;

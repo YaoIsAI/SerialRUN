@@ -5,6 +5,8 @@ members = [
     "crates/serialrun-cli",
     "crates/serialrun-gui",
     "crates/serialrun-mcp",
+    "crates/serialrun-mobile",
+    "crates/serialrun-mobile-app",
     "crates/serialrun-plugin-api",
     "plugins/serialrun-example-plugin",
     "plugins/serialrun-stc-isp",

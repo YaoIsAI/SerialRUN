@@ -1,0 +1,10 @@
+[target.aarch64-linux-android]
+linker = "aarch64-linux-android24-clang"
+ar = "aarch64-linux-android24-ar"
+
+[target.x86_64-linux-android]
+linker = "x86_64-linux-android24-clang"
+ar = "x86_64-linux-android24-ar"
+
+[env]
+ANDROID_NDK_HOME = { value = "C:\\Users\\yao\\android-sdk\\ndk\\26.1.10909125", force = true }
