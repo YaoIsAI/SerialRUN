@@ -7,6 +7,8 @@
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange?logo=rust)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](https://mariadb.com/bsl11/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue.svg)]()
+[![Release](https://img.shields.io/github/v/release/YaoIsAI/SerialRUN?label=release&color=brightgreen)](https://github.com/YaoIsAI/SerialRUN/releases/latest)
+[![CI](https://github.com/YaoIsAI/SerialRUN/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/YaoIsAI/SerialRUN/actions/workflows/ci.yml)
 [![Website](https://img.shields.io/badge/Website-serialrun.com-brightgreen)](https://www.serialrun.com)
 
 [English](README.md) | [中文](#功能特性)
@@ -78,6 +80,7 @@ make app
 - **CLI & GUI** — 命令行用于自动化，桌面客户端用于交互式使用
 - **多窗口界面** — 所有面板作为独立 OS 窗口运行，自由拖拽和缩放，始终在最前
 - **协议支持** — Modbus RTU/TCP 解析，自定义协议模式匹配
+- **灵活波特率** — 支持任意自定义波特率，预设最高 3,000,000
 - **数据可视化** — 实时图表和统计信息
 - **脚本录制** — 录制和回放串口通信会话，保留时间间隔
 - **文件传输** — 支持 XMODEM / YMODEM / ZMODEM

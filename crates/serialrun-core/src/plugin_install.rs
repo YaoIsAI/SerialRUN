@@ -556,6 +556,12 @@ mod tests {
         let zip_path = test_dir.join("malicious.zip");
         fs::create_dir_all(&test_dir).unwrap();
 
+        // Unique marker in the temp root: a successful traversal writes it next to the
+        // extraction directory (temp_dir/serialrun_plugin_<pid>_<nonce>/../marker).
+        let marker_name = format!("serialrun_zip_escape_{}_zip_traversal.txt", std::process::id());
+        let marker_path = std::env::temp_dir().join(&marker_name);
+        let _ = fs::remove_file(&marker_path);
+
         {
             let zip_file = fs::File::create(&zip_path).unwrap();
             let mut zip = zip::ZipWriter::new(zip_file);
@@ -563,7 +569,7 @@ mod tests {
                 .compression_method(zip::CompressionMethod::Stored);
 
             // Try to write outside the target directory
-            zip.start_file("../../../etc/passwd", options).unwrap();
+            zip.start_file(format!("../{}", marker_name), options).unwrap();
             zip.write_all(b"malicious content").unwrap();
 
             // Also include a valid plugin.json
@@ -582,20 +588,16 @@ mod tests {
         // Try to install the malicious zip
         let result = mgr.install_from_zip(&zip_path);
 
-        // The install should either fail or the path traversal should be blocked
-        // by the zip crate's mangled_name() function
+        // The install should either fail or block the traversal entry; either way the
+        // file must never appear outside the extraction directory.
         if result.is_ok() {
-            // If install succeeded, verify no files were written outside the plugin dir
             let plugin_dir = plugins_dir.join("evil-plugin");
             assert!(plugin_dir.exists(), "Plugin dir should exist");
-
-            // Check that no traversal occurred
-            let escaped = test_dir.join("../../../etc/passwd");
-            assert!(!escaped.exists() || !escaped.to_string_lossy().contains("etc"),
-                "Path traversal should be blocked");
         }
+        assert!(!marker_path.exists(), "Path traversal should be blocked");
 
         // Cleanup
+        let _ = fs::remove_file(&marker_path);
         let _ = fs::remove_dir_all(&test_dir);
     }
 }

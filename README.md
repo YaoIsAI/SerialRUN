@@ -7,6 +7,8 @@
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange?logo=rust)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](https://mariadb.com/bsl11/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue.svg)]()
+[![Release](https://img.shields.io/github/v/release/YaoIsAI/SerialRUN?label=release&color=brightgreen)](https://github.com/YaoIsAI/SerialRUN/releases/latest)
+[![CI](https://github.com/YaoIsAI/SerialRUN/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/YaoIsAI/SerialRUN/actions/workflows/ci.yml)
 [![Website](https://img.shields.io/badge/Website-serialrun.com-brightgreen)](https://www.serialrun.com)
 
 [English](#features) | [中文](README_CN.md)
@@ -77,6 +79,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed platform-specific instructions.
 - **CLI & GUI** — Command-line for automation, desktop app for interactive use
 - **Multi-Window Interface** — All panels run as independent OS windows, drag and resize freely, always on top
 - **Protocol Support** — Modbus RTU/TCP parsing, custom protocol patterns
+- **Flexible Baud Rates** — arbitrary custom rates plus presets up to 3,000,000
 - **Data Visualization** — Real-time charts and statistics
 - **Script Recording** — Record and replay serial communication sessions with timing
 - **File Transfer** — XMODEM / YMODEM / ZMODEM support
