@@ -52,7 +52,7 @@ cargo build --target x86_64-pc-windows-msvc --release -p serialrun-gui
 # 详见 docs/RELEASE_SOP.md
 
 # 本地打包（先执行 cargo build --release -p serialrun-gui）
-pwsh ./scripts/package-windows.ps1 -Version 0.4.4
+pwsh ./scripts/package-windows.ps1 -Version 0.4.5
 ```
 
 ZIP 内容：`serialrun.exe`、安装说明、帮助和手册文档。
@@ -83,11 +83,11 @@ cargo build --target x86_64-apple-darwin --release -p serialrun-gui
 
 ```bash
 # 生成 SerialRUN.app，ad-hoc 签名，并同时输出 ZIP 和 DMG
-bash scripts/package-macos.sh aarch64-apple-darwin 0.4.4    # Apple Silicon
-bash scripts/package-macos.sh x86_64-apple-darwin 0.4.4     # Intel
+bash scripts/package-macos.sh aarch64-apple-darwin 0.4.5    # Apple Silicon
+bash scripts/package-macos.sh x86_64-apple-darwin 0.4.5     # Intel
 ```
 
-输出：`dist/serialrun-0.4.4-macos-arm64.dmg` / `.zip`
+输出：`dist/serialrun-0.4.5-macos-arm64.dmg` / `.zip`
 
 应用包使用 `crates/serialrun-gui/Info.plist` 和 `icon.icns`。设置
 `CODESIGN_IDENTITY` 可使用 Developer ID 正式签名；未设置时使用 ad-hoc 签名。
@@ -117,7 +117,7 @@ rustup target add x86_64-unknown-linux-gnu
 cargo build --target x86_64-unknown-linux-gnu --release -p serialrun-gui
 
 # 打包为 tar.gz
-bash scripts/package-linux.sh 0.4.4
+bash scripts/package-linux.sh 0.4.5
 ```
 
 ## Android

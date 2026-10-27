@@ -53,7 +53,7 @@ Output: `target/x86_64-pc-windows-msvc/release/serialrun.exe`
 # See docs/RELEASE_SOP.md
 
 # Local packaging (after cargo build --release -p serialrun-gui)
-pwsh ./scripts/package-windows.ps1 -Version 0.4.4
+pwsh ./scripts/package-windows.ps1 -Version 0.4.5
 ```
 
 ZIP contents: `serialrun.exe`, install notes, help and manual documents.
@@ -84,11 +84,11 @@ Output: `target/<target>/release/serialrun`
 
 ```bash
 # Builds SerialRUN.app, ad-hoc signs it, and creates both ZIP and DMG
-bash scripts/package-macos.sh aarch64-apple-darwin 0.4.4    # Apple Silicon
-bash scripts/package-macos.sh x86_64-apple-darwin 0.4.4     # Intel
+bash scripts/package-macos.sh aarch64-apple-darwin 0.4.5    # Apple Silicon
+bash scripts/package-macos.sh x86_64-apple-darwin 0.4.5     # Intel
 ```
 
-Output: `dist/serialrun-0.4.4-macos-arm64.dmg` / `.zip`
+Output: `dist/serialrun-0.4.5-macos-arm64.dmg` / `.zip`
 
 The bundle uses `crates/serialrun-gui/Info.plist` and `icon.icns`. Set
 `CODESIGN_IDENTITY` to a Developer ID to sign with your certificate instead of
@@ -118,7 +118,7 @@ rustup target add x86_64-unknown-linux-gnu
 cargo build --target x86_64-unknown-linux-gnu --release -p serialrun-gui
 
 # Package as tar.gz
-bash scripts/package-linux.sh 0.4.4
+bash scripts/package-linux.sh 0.4.5
 ```
 
 ## Android

@@ -41,10 +41,10 @@
 
 | 平台 | 安装包 |
 |------|--------|
-| Windows (x64) | [serialrun-0.4.4-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-windows-x64.zip) |
-| macOS（Apple 芯片，M1–M4） | [serialrun-0.4.4-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-arm64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-arm64.zip) |
-| macOS（Intel 芯片） | [serialrun-0.4.4-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-x64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-x64.zip) |
-| Linux (x86_64) | [serialrun-0.4.4-linux-x64.tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-linux-x64.tar.gz) |
+| Windows (x64) | [serialrun-0.4.5-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-windows-x64.zip) |
+| macOS（Apple 芯片，M1–M4） | [serialrun-0.4.5-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-arm64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-arm64.zip) |
+| macOS（Intel 芯片） | [serialrun-0.4.5-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-x64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-x64.zip) |
+| Linux (x86_64) | [serialrun-0.4.5-linux-x64.tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-linux-x64.tar.gz) |
 
 所有安装包均由 GitHub Actions 在每次发布时自动构建。macOS 版本为 ad-hoc 签名（未公证），
 首次打开请**右键 → 打开**。如果提示“应用已损坏”，执行一次

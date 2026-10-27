@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bump the SerialRUN version everywhere it is user-visible.
 #
-# Usage: ./scripts/bump-version.sh 0.4.4
+# Usage: ./scripts/bump-version.sh 0.4.5
 #
 # Updates:
 #   - crates/{core,cli,gui,mcp,plugin-api}/Cargo.toml
@@ -16,7 +16,7 @@ VERSION="${1:-}"
 VERSION="${VERSION#v}"
 
 if [[ -z "$VERSION" ]]; then
-    echo "Usage: $0 <version>   (example: $0 0.4.4)" >&2
+    echo "Usage: $0 <version>   (example: $0 0.4.5)" >&2
     exit 1
 fi
 

@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.4 - 2026-10-28
+## v0.4.5 - 2026-10-28
 
 ### Multi-Platform Releases & User Feedback Fixes
 
@@ -8,6 +8,7 @@
 - **GitHub Actions release pipeline**: Windows x64, macOS Apple Silicon, macOS Intel, Linux x86_64
 - **Automated version bump**: one-click releases sync Cargo manifests, Cargo.lock, status bar, Info.plist and README download links
 - **Consistent MCP version**: MCP servers now report the actual build version instead of a hardcoded value
+- **Private assets stay private**: the donation QR code is only bundled in local builds; CI and release builds no longer depend on ignored files
 - **Verified packages**: each platform ships a ready-to-run archive (ZIP / DMG / tar.gz) attached to GitHub Releases
 
 #### Bug Fixes (from GitHub issues)

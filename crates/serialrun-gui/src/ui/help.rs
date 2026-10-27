@@ -648,11 +648,12 @@ pub fn render_help_panel(ui: &mut egui::Ui, state: &mut AppState) {
             ui.label(egui::RichText::new("YaoIsAI").size(13.0).color(egui::Color32::from_rgb(80, 160, 255)).strong());
         });
         ui.add_space(2.0);
-        ui.label(egui::RichText::new("WeChat Pay / \u{5FAE}\u{4FE1}\u{652F}\u{4ED8}").size(13.0));
-        ui.add_space(6.0);
 
-        // QR code image
+        // The donation QR is a private asset and is only bundled in local builds.
         if let Some(handle) = get_qr_texture(ui.ctx()) {
+            ui.label(egui::RichText::new("WeChat Pay / \u{5FAE}\u{4FE1}\u{652F}\u{4ED8}").size(13.0));
+            ui.add_space(6.0);
+
             let max_width = 180.0;
             let tex_size = handle.size_vec2();
             let scale = max_width / tex_size.x;
@@ -662,11 +663,14 @@ pub fn render_help_panel(ui: &mut egui::Ui, state: &mut AppState) {
     });
 }
 
+#[cfg(has_wechat_qr)]
 static QR_IMAGE_BYTES: &[u8] = include_bytes!("../../../../assets/wechat_pay_qr.jpg");
 
 use std::sync::OnceLock;
+#[cfg(has_wechat_qr)]
 static QR_HANDLE: OnceLock<Option<egui::TextureHandle>> = OnceLock::new();
 
+#[cfg(has_wechat_qr)]
 fn get_qr_texture(ctx: &egui::Context) -> Option<egui::TextureHandle> {
     let entry = QR_HANDLE.get_or_init(|| {
         let img = image::load_from_memory(QR_IMAGE_BYTES).ok()?;
@@ -679,6 +683,11 @@ fn get_qr_texture(ctx: &egui::Context) -> Option<egui::TextureHandle> {
     });
 
     entry.as_ref().cloned()
+}
+
+#[cfg(not(has_wechat_qr))]
+fn get_qr_texture(_ctx: &egui::Context) -> Option<egui::TextureHandle> {
+    None
 }
 
 fn get_local_ip_for_help() -> Option<String> {
