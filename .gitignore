@@ -11,6 +11,7 @@
 
 # OS
 .DS_Store
+**/.DS_Store
 Thumbs.db
 *.log
 
@@ -28,6 +29,10 @@ tests/output/
 .claude/
 .claude-phases/
 
+# Non-core files
+wechat_article.html
+assets/screenshot_website.png
+
 # Python test files
 test_*.py
 tests/mcp_*.py
@@ -39,9 +44,6 @@ website/
 wechat_article.html
 assets/wechat_pay_qr.jpg
 assets/screenshot_website*.png
-
-# GUI (proprietary, not published to public repos)
-crates/serialrun-gui/
 
 # Internal scripts (contain private URLs)
 scripts/webhook_server.py
@@ -74,3 +76,9 @@ mcp_*.png
 step*.png
 verify_*.png
 check_*.png
+
+# Local release/build artifacts
+serialrun-*-windows-x64/
+serialrun-*-macos-*/
+serialrun-*-linux-*/
+*.pcap
