@@ -1,6 +1,10 @@
 #!/bin/bash
 # Release script — build, package, publish to GitHub + Gitea
 #
+# NOTE: Prefer the GitHub Actions workflow (.github/workflows/release.yml) and
+# docs/RELEASE_SOP.md. This script only builds Windows packages locally and is
+# kept for offline/Gitea publishing.
+#
 # Usage:
 #   ./scripts/release.sh v0.3.0              # Full release
 #   ./scripts/release.sh v0.3.0 --dry-run   # Preview only
@@ -10,7 +14,7 @@
 # Environment variables:
 #   GITHUB_TOKEN  — GitHub personal access token
 #   GITEA_TOKEN   — Gitea personal access token (from Gitea → Settings → Applications)
-#   GITEA_URL     — Gitea base URL (default: http://192.168.31.85:38633)
+#   GITEA_URL     — Gitea base URL (required for --gitea, no default)
 #   GITEA_USER    — Gitea username (default: yao)
 #   GITEA_REPO    — Gitea repo path (default: yao/serialrun)
 
@@ -18,7 +22,7 @@ set -euo pipefail
 
 # ── Config ──
 GITHUB_REPO="YaoIsAI/SerialRUN"
-GITEA_URL="${GITEA_URL:-http://192.168.31.85:38633}"
+GITEA_URL="${GITEA_URL:-}"
 GITEA_USER="${GITEA_USER:-yao}"
 GITEA_REPO="${GITEA_REPO:-yao/serialrun}"
 GITEA_TOKEN="${GITEA_TOKEN:-}"
@@ -133,6 +137,7 @@ fi
 if [[ "$PUSH_GITEA" == "true" ]]; then
     log "Publishing to Gitea..."
     GT_TOKEN="${GITEA_TOKEN:?Please set GITEA_TOKEN}"
+    : "${GITEA_URL:?Please set GITEA_URL}"
 
     # Create release
     RELEASE_RESP=$(curl -s -X POST "$GITEA_URL/api/v1/repos/$GITEA_REPO/releases" \

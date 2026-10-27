@@ -1,0 +1,22 @@
+[package]
+name = "serialrun-mobile"
+version = "0.1.0"
+edition = "2021"
+description = "SerialRUN Mobile — Android USB serial port adapter"
+license = "BSL-1.1"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serialrun-core = { path = "../serialrun-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+log = { workspace = true }
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+
+[features]
+default = []
+android = []

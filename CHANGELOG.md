@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.4.4 - 2026-10-28
+
+### Multi-Platform Releases & User Feedback Fixes
+
+#### Release Engineering
+- **GitHub Actions release pipeline**: Windows x64, macOS Apple Silicon, macOS Intel, Linux x86_64
+- **Automated version bump**: one-click releases sync Cargo manifests, Cargo.lock, status bar, Info.plist and README download links
+- **Consistent MCP version**: MCP servers now report the actual build version instead of a hardcoded value
+- **Verified packages**: each platform ships a ready-to-run archive (ZIP / DMG / tar.gz) attached to GitHub Releases
+
+#### Bug Fixes (from GitHub issues)
+- **Custom baud rate (#12)**: typed values were only applied when pressing Enter; clicking Connect silently kept the old rate. The typed rate is now applied on focus loss and on Connect
+- **High baud rate presets**: added 1000000, 1500000, 2000000 and 3000000
+- **macOS (#11)**: the previous "macos-universal" package was actually ARM64-only, so Intel Macs could not launch it. Releases now ship separate Intel (x64) and Apple Silicon (arm64) builds, with correct bundle versions, icon, and a minimum macOS 11 target
+
+#### Documentation
+- Updated download table, MCP tool list (23 tools), baud rate reference
+- Added release SOP (`docs/RELEASE_SOP.md`)
+- Updated build documentation with the CI release flow
+
+---
+
+## v0.4.3 - 2026-06-18
+
+- Wireshark-style packet capture viewer with live capture from serial ports
+- pcap MCP tools (load_pcap, query_packets, get_packet, pcap_stats)
+- File transfer integration, dynamic UI, keyboard shortcuts
+- Complete plugin system with community plugins
+- Sample Modbus RTU/TCP capture files
+
+---
+
 ## v0.2.0 - 2026-06-02
 
 ### Major Release: Plugin System, CAN Analyzer, MCP Server

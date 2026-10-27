@@ -336,7 +336,7 @@ fn handle_request(
             let result = serde_json::json!({
                 "protocolVersion": "2024-11-05",
                 "capabilities": { "tools": {} },
-                "serverInfo": { "name": "serialrun-mcp", "version": "0.2.0" }
+                "serverInfo": { "name": "serialrun-mcp", "version": env!("CARGO_PKG_VERSION") }
             });
             McpResponse::success(request.id, result)
         }
@@ -1127,10 +1127,11 @@ fn handle_request(
                     };
                     McpResponse::success(request.id, serde_json::json!({
                         "content": [{ "type": "text", "text": format!(
-                            "Device: SerialRUN\nStatus: {}\nActive clients: {}\nTotal access log entries: {}\nServer: MCP v0.2.0\nProtocol: JSON-RPC over TCP",
+                            "Device: SerialRUN\nStatus: {}\nActive clients: {}\nTotal access log entries: {}\nServer: MCP v{}\nProtocol: JSON-RPC over TCP",
                             if connected { "Connected" } else { "Disconnected" },
                             active,
-                            log_count
+                            log_count,
+                            env!("CARGO_PKG_VERSION")
                         ) }]
                     }))
                 }
@@ -1158,7 +1159,7 @@ fn handle_request(
                         },
                         "mcp": {
                             "active_clients": active_clients,
-                            "server_version": "0.2.0",
+                            "server_version": env!("CARGO_PKG_VERSION"),
                         },
                         "counters": {
                             "ai_tx_bytes": ai_tx,

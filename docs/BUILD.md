@@ -19,6 +19,18 @@ target/aarch64-apple-darwin/release/       # macOS ARM
 target/x86_64-apple-darwin/release/        # macOS Intel
 ```
 
+## GitHub Actions Release (Recommended)
+
+The release workflow builds every platform in the cloud:
+
+1. Open **Actions → Release → Run workflow**.
+2. Enter the version (e.g. `0.4.5`) and run it.
+3. The workflow bumps all version numbers, commits, tags `vX.Y.Z`, builds
+   Windows x64 / macOS arm64 / macOS x64 / Linux x64, and publishes the
+   archives to GitHub Releases.
+
+See [RELEASE_SOP.md](RELEASE_SOP.md) for the full checklist.
+
 ## Windows
 
 ### Requirements
@@ -37,18 +49,14 @@ Output: `target/x86_64-pc-windows-msvc/release/serialrun.exe`
 ### Release Package
 
 ```bash
-# Automated (via release script)
-./scripts/release.sh v0.3.0 --dry-run     # Preview
-./scripts/release.sh v0.3.0               # Build + publish to GitHub & Gitea
+# Automated (recommended): bumps versions, builds and publishes all platforms
+# See docs/RELEASE_SOP.md
 
-# Manual
-mkdir -p /tmp/serialrun-win
-cp target/x86_64-pc-windows-msvc/release/serialrun.exe /tmp/serialrun-win/
-cp docs/help_en.md docs/help_zh.md /tmp/serialrun-win/
-cd /tmp/serialrun-win && zip -r serialrun-0.3.0-windows-x64.zip .
+# Local packaging (after cargo build --release -p serialrun-gui)
+pwsh ./scripts/package-windows.ps1 -Version 0.4.4
 ```
 
-ZIP contents: `serialrun.exe`, `help_en.md`, `help_zh.md`
+ZIP contents: `serialrun.exe`, install notes, help and manual documents.
 
 ## macOS
 
@@ -75,26 +83,16 @@ Output: `target/<target>/release/serialrun`
 ### Bundle as .app
 
 ```bash
-cargo install cargo-bundle
+# Builds SerialRUN.app, ad-hoc signs it, and creates both ZIP and DMG
+bash scripts/package-macos.sh aarch64-apple-darwin 0.4.4    # Apple Silicon
+bash scripts/package-macos.sh x86_64-apple-darwin 0.4.4     # Intel
 ```
 
-Add to `crates/serialrun-gui/Cargo.toml`:
+Output: `dist/serialrun-0.4.4-macos-arm64.dmg` / `.zip`
 
-```toml
-[package.metadata.bundle]
-name = "SerialRUN"
-identifier = "com.serialrun.app"
-category = "DeveloperTool"
-short_description = "Serial port assistant for embedded developers"
-```
-
-Run:
-
-```bash
-cargo bundle --target aarch64-apple-darwin --release -p serialrun-gui
-```
-
-Output: `target/release/bundle/osx/SerialRUN.app`
+The bundle uses `crates/serialrun-gui/Info.plist` and `icon.icns`. Set
+`CODESIGN_IDENTITY` to a Developer ID to sign with your certificate instead of
+ad-hoc signing. Gatekeeper first-launch instructions are included in `INSTALL.txt`.
 
 ### Release Package (via Makefile)
 
@@ -108,8 +106,9 @@ make install    # Copy to /Applications
 ### Requirements (Ubuntu/Debian)
 
 ```bash
-sudo apt install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
-  libxkbcommon-dev libgtk-3-dev libatk1.0-dev
+sudo apt install libudev-dev pkg-config libx11-dev libxcursor-dev libxrandr-dev \
+  libxi-dev libgl1-mesa-dev libxkbcommon-dev libwayland-dev \
+  libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
 ```
 
 ### Build
@@ -117,6 +116,9 @@ sudo apt install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
 ```bash
 rustup target add x86_64-unknown-linux-gnu
 cargo build --target x86_64-unknown-linux-gnu --release -p serialrun-gui
+
+# Package as tar.gz
+bash scripts/package-linux.sh 0.4.4
 ```
 
 ## Android

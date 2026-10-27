@@ -1,0 +1,240 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, without the leading v (e.g. 0.4.4)"
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  prepare:
+    name: Prepare version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Needed so bump-version.sh can refresh Cargo.lock.
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          VERSION="${VERSION#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version '$VERSION' (expected X.Y.Z)"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version, commit and tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          CURRENT=$(sed -n 's/^version = "\([^"]*\)"/\1/p' crates/serialrun-gui/Cargo.toml | head -1)
+          if [ "$CURRENT" = "$VERSION" ]; then
+            echo "Workspace is already at $VERSION; skipping bump commit."
+          else
+            bash scripts/bump-version.sh "$VERSION"
+            git add Cargo.lock \
+              crates/serialrun-core/Cargo.toml \
+              crates/serialrun-cli/Cargo.toml \
+              crates/serialrun-gui/Cargo.toml \
+              crates/serialrun-mcp/Cargo.toml \
+              crates/serialrun-plugin-api/Cargo.toml \
+              crates/serialrun-gui/src/ui/status.rs \
+              crates/serialrun-gui/Info.plist \
+              README.md README_CN.md
+            if git diff --cached --quiet; then
+              echo "::error::Version bump produced no changes but workspace is $CURRENT (expected $VERSION)."
+              exit 1
+            fi
+            git commit -m "chore: release v$VERSION"
+            git push origin "HEAD:${{ github.ref_name }}"
+          fi
+          if TAG_SHA=$(git rev-list -n1 "refs/tags/v$VERSION" 2>/dev/null); then
+            if [ "$TAG_SHA" != "$(git rev-parse HEAD)" ]; then
+              echo "::error::Tag v$VERSION already exists at $TAG_SHA, not at HEAD"
+              exit 1
+            fi
+            echo "Tag v$VERSION already exists at HEAD"
+          else
+            git tag -a "v$VERSION" -m "SerialRUN v$VERSION"
+            git push origin "v$VERSION"
+          fi
+
+      - name: Verify tag matches workspace version
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          CARGO_VERSION=$(sed -n 's/^version = "\([^"]*\)"/\1/p' crates/serialrun-gui/Cargo.toml | head -1)
+          echo "tag=$VERSION workspace=$CARGO_VERSION"
+          test "$VERSION" = "$CARGO_VERSION"
+
+  build-windows:
+    name: Windows x64
+    needs: prepare
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-x64
+
+      - name: Build
+        run: cargo build --release -p serialrun-gui -p serialrun-cli -p serialrun-mcp
+
+      - name: Package
+        shell: pwsh
+        run: ./scripts/package-windows.ps1 -Version "${{ needs.prepare.outputs.version }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows-x64
+          path: dist/*.zip
+          if-no-files-found: error
+
+  build-macos:
+    name: macOS ${{ matrix.arch }}
+    needs: prepare
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            arch: arm64
+          - target: x86_64-apple-darwin
+            arch: x64
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: macos-${{ matrix.arch }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }} -p serialrun-gui -p serialrun-cli -p serialrun-mcp
+
+      - name: Package
+        env:
+          CODESIGN_IDENTITY: ${{ secrets.MACOS_CODESIGN_IDENTITY }}
+        run: bash scripts/package-macos.sh "${{ matrix.target }}" "${{ needs.prepare.outputs.version }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-${{ matrix.arch }}
+          path: |
+            dist/*.zip
+            dist/*.dmg
+          if-no-files-found: error
+
+  build-linux:
+    name: Linux x64
+    needs: prepare
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libudev-dev pkg-config libx11-dev libxcursor-dev libxrandr-dev \
+            libxi-dev libgl1-mesa-dev libxkbcommon-dev libwayland-dev \
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: linux-x64
+
+      - name: Build
+        run: cargo build --release -p serialrun-gui -p serialrun-cli -p serialrun-mcp
+
+      - name: Package
+        run: bash scripts/package-linux.sh "${{ needs.prepare.outputs.version }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux-x64
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: [prepare, build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: release-*
+          merge-multiple: true
+
+      - name: List assets
+        run: ls -lh dist
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          if gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --repo "${{ github.repository }}" --clobber
+          else
+            gh release create "$TAG" dist/* \
+              --repo "${{ github.repository }}" \
+              --title "SerialRUN $TAG" \
+              --generate-notes \
+              --latest
+          fi

@@ -39,11 +39,20 @@
 
 ## Download
 
-| Platform | Link |
-|----------|------|
-| Windows (x64) | [SerialRUN-v0.4.3-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.3/serialrun-0.4.3-windows-x64.zip) |
-| macOS (Apple Silicon / Intel) | [SerialRUN-v0.4.0-macos-universal.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.0/serialrun-0.4.0-macos-universal.zip) |
-| Linux (x86_64 / aarch64) | Build from source |
+| Platform | Package |
+|----------|---------|
+| Windows (x64) | [serialrun-0.4.4-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-windows-x64.zip) |
+| macOS (Apple Silicon, M1–M4) | [serialrun-0.4.4-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-arm64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-arm64.zip) |
+| macOS (Intel) | [serialrun-0.4.4-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-x64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-x64.zip) |
+| Linux (x86_64) | [serialrun-0.4.4-linux-x64.tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-linux-x64.tar.gz) |
+
+All packages are built automatically by GitHub Actions for every release. The
+macOS builds are ad-hoc signed (not notarized), so on first launch use
+**right-click → Open**. If macOS reports the app as damaged, run
+`xattr -dr com.apple.quarantine /Applications/SerialRUN.app` once and open it again.
+
+Linux runtime dependencies (Ubuntu/Debian):
+`sudo apt install libudev1 libxkbcommon0 libx11-6 libxcursor1 libxrandr2 libxi6 libgl1 libwayland-client0`
 
 ### Build from Source
 
@@ -82,7 +91,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed platform-specific instructions.
 - **TCP/RTU Bridge** — Bridge Modbus TCP clients to serial RTU devices
 - **HMI Simulator** — Virtual Modbus slave simulator (TCP/RTU)
 - **Plugin System** — Extensible architecture with dynamic plugin loading
-- **MCP Server** — Built-in TCP server with 15 tools for AI assistant integration
+- **MCP Server** — Built-in TCP server with 23 tools for AI assistant integration
 - **Access Logging** — All MCP operations logged with client IP for traceability
 - **HEX Mode** — Send and receive data in hexadecimal format
 - **Auto Reply** — Automatically respond to matched patterns
@@ -105,28 +114,28 @@ cargo build --release
 
 ```bash
 # List available ports
-serialrun list
+serialrun-cli list
 
 # Connect to a port
-serialrun connect COM1 -b 115200
+serialrun-cli connect COM1 -b 115200
 
 # Send data
-serialrun send COM1 "Hello\r\n"
+serialrun-cli send COM1 "Hello\r\n"
 
 # Monitor with timestamps
-serialrun monitor COM1 -t -l output.log
+serialrun-cli monitor COM1 -t -l output.log
 
 # Record a script
-serialrun record COM1 -o script.txt
+serialrun-cli record COM1 -o script.txt
 
 # Replay a script
-serialrun replay COM1 script.txt
+serialrun-cli replay COM1 script.txt
 ```
 
 ### GUI Usage
 
 ```bash
-serialrun-gui
+serialrun
 ```
 
 ### GUI Quick Start
@@ -145,6 +154,8 @@ SerialRUN/
 │   ├── serialrun-cli/        # CLI application
 │   ├── serialrun-gui/        # GUI application (egui/eframe)
 │   ├── serialrun-mcp/        # MCP server for AI integration
+│   ├── serialrun-mobile/     # Android USB serial adapter
+│   ├── serialrun-mobile-app/ # Android app (eframe/egui)
 │   └── serialrun-plugin-api/ # Plugin API definitions
 ├── plugins/
 │   └── serialrun-example-plugin/  # Plugin example (C FFI)
@@ -191,15 +202,15 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed instructions.
 ## Agent Mode (Automation)
 
 ```bash
-serialrun agent list-ports                # List ports (JSON)
-serialrun agent COM1 send "AT+RST"        # Send data
-serialrun agent COM1 read --timeout 1000  # Read data
-serialrun agent COM1 run-script test.txt  # Run script
+serialrun-cli agent list-ports                # List ports (JSON)
+serialrun-cli agent COM1 send "AT+RST"        # Send data
+serialrun-cli agent COM1 read --timeout 1000  # Read data
+serialrun-cli agent COM1 run-script test.txt  # Run script
 ```
 
 ## MCP Server
 
-SerialRUN includes a built-in MCP server with 15 tools for AI assistant integration. All serial operations are routed through the GUI's port manager.
+SerialRUN includes a built-in MCP server with 23 tools for AI assistant integration. All serial operations are routed through the GUI's port manager.
 
 ### Available Tools
 
@@ -216,9 +227,18 @@ SerialRUN includes a built-in MCP server with 15 tools for AI assistant integrat
 | `plc_read` | Read all registers from a PLC preset brand |
 | `plc_write` | Write to a PLC register by address |
 | `status` | View connection status, byte counters, MCP server info |
+| `get_device_info` | Port metadata (description, manufacturer, VID/PID) |
 | `get_config` | Read UI settings (supports all or single key) |
 | `set_config` | Update UI setting (syncs to GUI immediately) |
+| `get_config_keys` | List all settable configuration keys |
+| `clear_buffers` | Clear RX/TX buffers |
+| `set_dtr` | Control the DTR line |
+| `set_rts` | Control the RTS line |
 | `get_access_log` | View access log with client IPs |
+| `load_pcap` | Load a pcap capture file for analysis |
+| `query_packets` | Query captured packets with filters |
+| `get_packet` | Fetch a single captured packet |
+| `pcap_stats` | Capture statistics and protocol summary |
 
 ### Features
 
@@ -263,6 +283,7 @@ See [plugins/serialrun-example-plugin/](plugins/serialrun-example-plugin/) for a
 | [docs/MANUAL.md](docs/MANUAL.md) | User manual |
 | [docs/MCP_API.md](docs/MCP_API.md) | MCP API reference |
 | [docs/BUILD.md](docs/BUILD.md) | Build guide |
+| [docs/RELEASE_SOP.md](docs/RELEASE_SOP.md) | Release SOP (multi-platform CI) |
 | [CLAUDE.md](CLAUDE.md) | Agent operation guide |
 
 ## Development

@@ -67,6 +67,7 @@ plugins/serialrun-mpy-ide.zip
 serialrun-plugins
 
 # APK build temp files
+/apk_build/
 apk_build/apk_tmp/
 apk_build/serialrun-mobile-v0.1.0.apk.idsig
 

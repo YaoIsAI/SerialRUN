@@ -5,5 +5,5 @@
 
 fn main() {
     env_logger::init();
-    serialrun_mobile_app::run_desktop();
+    serialrun::run_desktop();
 }

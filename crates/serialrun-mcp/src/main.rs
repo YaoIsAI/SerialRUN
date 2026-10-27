@@ -57,7 +57,7 @@ impl SerialRunMcp {
                     },
                     "serverInfo": {
                         "name": "serialrun-mcp",
-                        "version": "0.2.0"
+                        "version": env!("CARGO_PKG_VERSION")
                     }
                 });
                 McpResponse::success(request.id, result)

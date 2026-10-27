@@ -416,6 +416,13 @@ impl T {
         }
     }
 
+    pub fn custom_baud_hint(lang: Language) -> &'static str {
+        match lang {
+            Language::English => "Type any baud rate (e.g. 1000000, 1500000, 2000000, 3000000) — applied when you click Connect",
+            Language::Chinese => "可直接输入任意波特率（如 1000000、1500000、2000000、3000000），点击“连接”即生效",
+        }
+    }
+
     pub fn serial_port(lang: Language) -> &'static str {
         match lang {
             Language::English => "Port",

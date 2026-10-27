@@ -131,15 +131,12 @@ pub fn render_connection_controls(ui: &mut egui::Ui, state: &mut AppState) {
     ui.add_space(4.0);
 
     ui.horizontal(|ui| {
-        let baud_rates = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600];
+        let baud_rates = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600, 1_000_000, 1_500_000, 2_000_000, 3_000_000];
         // Editable baud rate: type to input, click to dropdown
-        let text_resp = ui.add(egui::TextEdit::singleline(&mut state.baud_rate_text).desired_width(80.0));
-        if text_resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-            if let Ok(rate) = state.baud_rate_text.trim().parse::<u32>() {
-                if rate > 0 { state.config.baud_rate = rate; }
-            } else {
-                state.baud_rate_text = state.config.baud_rate.to_string();
-            }
+        let text_resp = ui.add(egui::TextEdit::singleline(&mut state.baud_rate_text).desired_width(80.0))
+            .on_hover_text(T::custom_baud_hint(lang));
+        if text_resp.lost_focus() {
+            apply_baud_text(state);
         }
         // Show popup on click
         if text_resp.clicked() {
@@ -229,7 +226,8 @@ pub fn render_connection_controls(ui: &mut egui::Ui, state: &mut AppState) {
             }
         // Connect button - disabled while auto-detect is running or MCP is connecting
         } else if !state.auto_detect_running && !state.mcp_connect_in_progress && ui.button(egui::RichText::new(T::connect(lang)).color(c.success)).clicked() {
-            if let Some(ref pn) = state.selected_port {
+            if let Some(pn) = state.selected_port.clone() {
+                apply_baud_text(state);
                 let mut config = state.config.clone();
                 config.port_name = pn.clone();
                 // Drop old handle first to ensure old thread is shut down
@@ -248,6 +246,18 @@ pub fn render_connection_controls(ui: &mut egui::Ui, state: &mut AppState) {
     ui.add_space(8.0);
     ui.separator();
     ui.add_space(4.0);
+}
+
+/// Commit the typed baud rate to the connection config. Invalid input falls
+/// back to the last valid rate so the field never shows a stale value.
+fn apply_baud_text(state: &mut AppState) {
+    match state.baud_rate_text.trim().parse::<u32>() {
+        Ok(rate) if rate > 0 => {
+            state.config.baud_rate = rate;
+            state.baud_rate_text = rate.to_string();
+        }
+        _ => state.baud_rate_text = state.config.baud_rate.to_string(),
+    }
 }
 
 pub fn auto_detect_baud(port_name: &str, progress_tx: &std::sync::mpsc::Sender<AutoDetectMsg>) -> Option<u32> {

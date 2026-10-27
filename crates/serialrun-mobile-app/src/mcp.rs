@@ -30,7 +30,7 @@ impl McpState {
 
     pub fn handle_request(&mut self, req: McpRequest) -> McpResponse {
         match req.method.as_str() {
-            "initialize" => McpResponse::ok(req.id, serde_json::json!({ "protocolVersion": "2024-11-05", "capabilities": { "tools": {} }, "serverInfo": { "name": "serialrun-mobile-mcp", "version": "0.1.0" } })),
+            "initialize" => McpResponse::ok(req.id, serde_json::json!({ "protocolVersion": "2024-11-05", "capabilities": { "tools": {} }, "serverInfo": { "name": "serialrun-mobile-mcp", "version": env!("CARGO_PKG_VERSION") } })),
             "tools/list" => McpResponse::ok(req.id, serde_json::json!({ "tools": [
                 { "name": "list_ports", "description": "List serial ports", "inputSchema": { "type": "object", "properties": {} } },
                 { "name": "connect", "description": "Connect to serial port", "inputSchema": { "type": "object", "properties": { "port": { "type": "string" }, "baud_rate": { "type": "integer" } }, "required": ["port"] } },

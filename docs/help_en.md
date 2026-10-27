@@ -51,7 +51,7 @@ Three system buttons on the right side of the toolbar:
 ### Left Panel
 
 - **Serial Port** — Select serial device from dropdown, click `↻` to refresh port list
-- **Baud Rate** — Type custom baud rate directly, click to show common rates (300-921600)
+- **Baud Rate** — Type any custom baud rate directly (e.g. 1000000, 1500000, 2000000, 3000000), click to show common rates
 - **Auto Button** — Auto-detect baud rate, progress shown in status bar (ASCII spinner animation)
 - **Port Config** — Data bits (5-8), stop bits (1/2), parity (None/Odd/Even), flow control (None/Software/Hardware)
 - **Auto Reply** — Set match pattern and reply content, auto-send reply when matching data is received
@@ -439,7 +439,7 @@ In the left settings panel, find "MCP Server":
    - **All interfaces (LAN)** — Allow LAN AI assistants to connect
 4. Click **Copy MCP Info** button to one-click copy connection info and tool descriptions for your AI assistant
 
-### Available Tools (15)
+### Available Tools (23)
 
 | Tool | Description |
 |------|-------------|
@@ -456,8 +456,16 @@ In the left settings panel, find "MCP Server":
 | `status` | View connection status, byte counters, MCP server info |
 | `get_config` | Read UI settings (supports all or single key) |
 | `set_config` | Update UI setting (syncs to GUI immediately) |
+| `get_config_keys` | List all settable configuration keys |
+| `clear_buffers` | Clear the RX/TX buffers |
+| `set_dtr` | Control the DTR line |
+| `set_rts` | Control the RTS line |
 | `get_access_log` | View access log (client IPs, tool calls, timestamps) |
 | `get_device_info` | Get current device identification info (port, baud rate, connection status) |
+| `load_pcap` | Load a pcap capture file for analysis |
+| `query_packets` | Query captured packets with filters |
+| `get_packet` | Fetch a single captured packet |
+| `pcap_stats` | Capture statistics and protocol summary |
 
 ### Usage
 

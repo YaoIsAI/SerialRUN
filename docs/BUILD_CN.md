@@ -19,6 +19,17 @@ target/aarch64-apple-darwin/release/       # macOS ARM
 target/x86_64-apple-darwin/release/        # macOS Intel
 ```
 
+## GitHub Actions 发布（推荐）
+
+发布流水线在云端构建全部平台：
+
+1. 打开 **Actions → Release → Run workflow**。
+2. 输入版本号（如 `0.4.5`）并运行。
+3. 流水线会自动递增版本号、提交并打标签 `vX.Y.Z`，构建 Windows x64 /
+   macOS arm64 / macOS x64 / Linux x64，并上传安装包到 GitHub Releases。
+
+完整检查清单见 [RELEASE_SOP.md](RELEASE_SOP.md)。
+
 ## Windows
 
 ### 要求
@@ -37,18 +48,14 @@ cargo build --target x86_64-pc-windows-msvc --release -p serialrun-gui
 ### 发布打包
 
 ```bash
-# 自动化（通过发布脚本）
-./scripts/release.sh v0.3.0 --dry-run     # 预览
-./scripts/release.sh v0.3.0               # 构建 + 发布到 GitHub & Gitea
+# 推荐：使用 GitHub Actions 自动递增版本并发布全部平台
+# 详见 docs/RELEASE_SOP.md
 
-# 手动
-mkdir -p /tmp/serialrun-win
-cp target/x86_64-pc-windows-msvc/release/serialrun.exe /tmp/serialrun-win/
-cp docs/help_en.md docs/help_zh.md /tmp/serialrun-win/
-cd /tmp/serialrun-win && zip -r serialrun-0.3.0-windows-x64.zip .
+# 本地打包（先执行 cargo build --release -p serialrun-gui）
+pwsh ./scripts/package-windows.ps1 -Version 0.4.4
 ```
 
-ZIP 内容: `serialrun.exe`, `help_en.md`, `help_zh.md`
+ZIP 内容：`serialrun.exe`、安装说明、帮助和手册文档。
 
 ## macOS
 
@@ -75,26 +82,16 @@ cargo build --target x86_64-apple-darwin --release -p serialrun-gui
 ### 打包为 .app
 
 ```bash
-cargo install cargo-bundle
+# 生成 SerialRUN.app，ad-hoc 签名，并同时输出 ZIP 和 DMG
+bash scripts/package-macos.sh aarch64-apple-darwin 0.4.4    # Apple Silicon
+bash scripts/package-macos.sh x86_64-apple-darwin 0.4.4     # Intel
 ```
 
-在 `crates/serialrun-gui/Cargo.toml` 中添加:
+输出：`dist/serialrun-0.4.4-macos-arm64.dmg` / `.zip`
 
-```toml
-[package.metadata.bundle]
-name = "SerialRUN"
-identifier = "com.serialrun.app"
-category = "DeveloperTool"
-short_description = "串口助手 - 嵌入式开发者工具"
-```
-
-运行:
-
-```bash
-cargo bundle --target aarch64-apple-darwin --release -p serialrun-gui
-```
-
-输出: `target/release/bundle/osx/SerialRUN.app`
+应用包使用 `crates/serialrun-gui/Info.plist` 和 `icon.icns`。设置
+`CODESIGN_IDENTITY` 可使用 Developer ID 正式签名；未设置时使用 ad-hoc 签名。
+首次打开说明会写入包内 `INSTALL.txt`。
 
 ### 发布打包（通过 Makefile）
 
@@ -108,8 +105,9 @@ make install    # 复制到 /Applications
 ### 要求 (Ubuntu/Debian)
 
 ```bash
-sudo apt install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
-  libxkbcommon-dev libgtk-3-dev libatk1.0-dev
+sudo apt install libudev-dev pkg-config libx11-dev libxcursor-dev libxrandr-dev \
+  libxi-dev libgl1-mesa-dev libxkbcommon-dev libwayland-dev \
+  libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
 ```
 
 ### 构建
@@ -117,6 +115,9 @@ sudo apt install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
 ```bash
 rustup target add x86_64-unknown-linux-gnu
 cargo build --target x86_64-unknown-linux-gnu --release -p serialrun-gui
+
+# 打包为 tar.gz
+bash scripts/package-linux.sh 0.4.4
 ```
 
 ## Android

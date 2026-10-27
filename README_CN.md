@@ -39,11 +39,19 @@
 
 ## 下载
 
-| 平台 | 链接 |
-|------|------|
-| Windows (x64) | [SerialRUN-v0.4.3-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.3/serialrun-0.4.3-windows-x64.zip) |
-| macOS (Apple Silicon / Intel) | [SerialRUN-v0.4.0-macos-universal.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.0/serialrun-0.4.0-macos-universal.zip) |
-| Linux (x86_64 / aarch64) | 从源码编译 |
+| 平台 | 安装包 |
+|------|--------|
+| Windows (x64) | [serialrun-0.4.4-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-windows-x64.zip) |
+| macOS（Apple 芯片，M1–M4） | [serialrun-0.4.4-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-arm64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-arm64.zip) |
+| macOS（Intel 芯片） | [serialrun-0.4.4-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-x64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-macos-x64.zip) |
+| Linux (x86_64) | [serialrun-0.4.4-linux-x64.tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.4/serialrun-0.4.4-linux-x64.tar.gz) |
+
+所有安装包均由 GitHub Actions 在每次发布时自动构建。macOS 版本为 ad-hoc 签名（未公证），
+首次打开请**右键 → 打开**。如果提示“应用已损坏”，执行一次
+`xattr -dr com.apple.quarantine /Applications/SerialRUN.app` 后重新打开即可。
+
+Linux 运行依赖（Ubuntu/Debian）：
+`sudo apt install libudev1 libxkbcommon0 libx11-6 libxcursor1 libxrandr2 libxi6 libgl1 libwayland-client0`
 
 ### 从源码编译
 
@@ -84,7 +92,7 @@ make app
 - **TCP/RTU 桥接** — 将 Modbus TCP 客户端桥接到串口 RTU 设备
 - **HMI 模拟器** — 虚拟 Modbus 从站模拟器（TCP/RTU）
 - **插件系统** — 可扩展架构，支持动态加载插件
-- **MCP 服务器** — 内置 TCP 服务器，15 个工具支持 AI 助手集成
+- **MCP 服务器** — 内置 TCP 服务器，23 个工具支持 AI 助手集成
 - **访问日志** — 所有 MCP 操作自动记录客户端 IP，支持追溯
 - **十六进制模式** — 以十六进制格式收发数据
 - **自动回复** — 自动响应匹配的模式
@@ -107,28 +115,28 @@ cargo build --release
 
 ```bash
 # 列出可用串口
-serialrun list
+serialrun-cli list
 
 # 连接串口
-serialrun connect COM1 -b 115200
+serialrun-cli connect COM1 -b 115200
 
 # 发送数据
-serialrun send COM1 "Hello\r\n"
+serialrun-cli send COM1 "Hello\r\n"
 
 # 带时间戳监听
-serialrun monitor COM1 -t -l output.log
+serialrun-cli monitor COM1 -t -l output.log
 
 # 录制脚本
-serialrun record COM1 -o script.txt
+serialrun-cli record COM1 -o script.txt
 
 # 回放脚本
-serialrun replay COM1 script.txt
+serialrun-cli replay COM1 script.txt
 ```
 
 ### 桌面客户端使用
 
 ```bash
-serialrun-gui
+serialrun
 ```
 
 ### GUI 快速开始
@@ -147,6 +155,8 @@ SerialRUN/
 │   ├── serialrun-cli/        # 命令行工具
 │   ├── serialrun-gui/        # 桌面客户端 (egui/eframe)
 │   ├── serialrun-mcp/        # MCP 服务器（AI 集成）
+│   ├── serialrun-mobile/     # Android USB 串口适配层
+│   ├── serialrun-mobile-app/ # Android 客户端 (eframe/egui)
 │   └── serialrun-plugin-api/ # 插件 API 定义
 ├── plugins/
 │   └── serialrun-example-plugin/  # 插件示例 (C FFI)
@@ -193,15 +203,15 @@ SerialRUN/
 ## Agent 模式 (自动化)
 
 ```bash
-serialrun agent list-ports                # 列出端口 (JSON)
-serialrun agent COM1 send "AT+RST"        # 发送数据
-serialrun agent COM1 read --timeout 1000  # 读取数据
-serialrun agent COM1 run-script test.txt  # 运行脚本
+serialrun-cli agent list-ports                # 列出端口 (JSON)
+serialrun-cli agent COM1 send "AT+RST"        # 发送数据
+serialrun-cli agent COM1 read --timeout 1000  # 读取数据
+serialrun-cli agent COM1 run-script test.txt  # 运行脚本
 ```
 
 ## MCP 服务器
 
-SerialRUN 内置 MCP 服务器，15 个工具支持 AI 助手集成。所有串口操作通过 GUI 的端口管理器路由。
+SerialRUN 内置 MCP 服务器，23 个工具支持 AI 助手集成。所有串口操作通过 GUI 的端口管理器路由。
 
 ### 可用工具
 
@@ -218,9 +228,18 @@ SerialRUN 内置 MCP 服务器，15 个工具支持 AI 助手集成。所有串�
 | `plc_read` | 读取 PLC 预设品牌的所有寄存器 |
 | `plc_write` | 按地址写入 PLC 寄存器 |
 | `status` | 查看连接状态、字节统计、MCP 服务器信息 |
+| `get_device_info` | 查看串口设备信息（描述、厂商、VID/PID） |
 | `get_config` | 读取 UI 设置（支持读取全部或单个键值） |
 | `set_config` | 修改 UI 设置（立即同步到 GUI） |
+| `get_config_keys` | 列出所有可配置项 |
+| `clear_buffers` | 清空收发缓冲区 |
+| `set_dtr` | 控制 DTR 信号线 |
+| `set_rts` | 控制 RTS 信号线 |
 | `get_access_log` | 查看访问日志（客户端 IP、操作记录、时间戳） |
+| `load_pcap` | 加载 pcap 抓包文件进行分析 |
+| `query_packets` | 按条件查询抓包数据包 |
+| `get_packet` | 获取单个数据包详情 |
+| `pcap_stats` | 抓包统计与协议汇总 |
 
 ### 特性
 
@@ -265,6 +284,7 @@ pub extern "C" fn plugin_execute(command: *const c_char, params: *const c_char) 
 | [docs/MANUAL.md](docs/MANUAL.md) | 用户手册 |
 | [docs/MCP_API.md](docs/MCP_API.md) | MCP API 参考 |
 | [docs/BUILD_CN.md](docs/BUILD_CN.md) | 构建指南 |
+| [docs/RELEASE_SOP.md](docs/RELEASE_SOP.md) | 发布 SOP（多平台 CI） |
 | [CLAUDE_CN.md](CLAUDE_CN.md) | Agent 操作指南 |
 
 ## 开发
