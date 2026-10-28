@@ -43,10 +43,14 @@
 
 | Platform | Package |
 |----------|---------|
-| Windows (x64) | [serialrun-0.4.5-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-windows-x64.zip) |
-| macOS (Apple Silicon, M1–M4) | [serialrun-0.4.5-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-arm64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-arm64.zip) |
-| macOS (Intel) | [serialrun-0.4.5-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-x64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-x64.zip) |
-| Linux (x86_64) | [serialrun-0.4.5-linux-x64.tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-linux-x64.tar.gz) |
+| Windows (x64) | [serialrun-0.4.6-windows-x64-setup.exe](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-windows-x64-setup.exe) · [portable zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-windows-x64.zip) |
+| macOS (Apple Silicon, M1–M4) | [serialrun-0.4.6-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-arm64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-arm64.zip) |
+| macOS (Intel) | [serialrun-0.4.6-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-x64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-x64.zip) |
+| Linux (x86_64) | [serialrun_0.4.6_amd64.deb](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun_0.4.6_amd64.deb) · [tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-linux-x64.tar.gz) |
+
+The Windows installer adds Start Menu shortcuts and an uninstaller; the portable
+ZIP needs no installation. On Debian/Ubuntu, `sudo apt install ./serialrun_0.4.6_amd64.deb`
+resolves the runtime dependencies automatically.
 
 All packages are built automatically by GitHub Actions for every release. The
 macOS builds are ad-hoc signed (not notarized), so on first launch use

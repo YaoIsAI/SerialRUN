@@ -4342,7 +4342,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-cli"
-version = "0.4.5"
+version = "0.4.6"
 dependencies = [
  "anyhow",
  "chrono",
@@ -4356,7 +4356,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-core"
-version = "0.4.5"
+version = "0.4.6"
 dependencies = [
  "anyhow",
  "base64",
@@ -4392,7 +4392,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-gui"
-version = "0.4.5"
+version = "0.4.6"
 dependencies = [
  "anyhow",
  "arboard",
@@ -4419,7 +4419,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-mcp"
-version = "0.4.5"
+version = "0.4.6"
 dependencies = [
  "anyhow",
  "serde",
@@ -4484,7 +4484,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-plugin-api"
-version = "0.4.5"
+version = "0.4.6"
 dependencies = [
  "serde",
  "serde_json",

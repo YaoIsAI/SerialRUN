@@ -43,10 +43,13 @@
 
 | 平台 | 安装包 |
 |------|--------|
-| Windows (x64) | [serialrun-0.4.5-windows-x64.zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-windows-x64.zip) |
-| macOS（Apple 芯片，M1–M4） | [serialrun-0.4.5-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-arm64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-arm64.zip) |
-| macOS（Intel 芯片） | [serialrun-0.4.5-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-x64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-macos-x64.zip) |
-| Linux (x86_64) | [serialrun-0.4.5-linux-x64.tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.5/serialrun-0.4.5-linux-x64.tar.gz) |
+| Windows (x64) | [serialrun-0.4.6-windows-x64-setup.exe](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-windows-x64-setup.exe) · [便携版 zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-windows-x64.zip) |
+| macOS（Apple 芯片，M1–M4） | [serialrun-0.4.6-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-arm64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-arm64.zip) |
+| macOS（Intel 芯片） | [serialrun-0.4.6-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-x64.dmg) · [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-x64.zip) |
+| Linux (x86_64) | [serialrun_0.4.6_amd64.deb](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun_0.4.6_amd64.deb) · [tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-linux-x64.tar.gz) |
+
+Windows 安装包会创建开始菜单快捷方式和卸载程序；便携版 zip 无需安装。
+Debian/Ubuntu 上执行 `sudo apt install ./serialrun_0.4.6_amd64.deb` 会自动安装运行依赖。
 
 所有安装包均由 GitHub Actions 在每次发布时自动构建。macOS 版本为 ad-hoc 签名（未公证），
 首次打开请**右键 → 打开**。如果提示“应用已损坏”，执行一次

@@ -41,5 +41,35 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
     $true
 )
 
+# Build the Inno Setup installer (.exe) if the compiler is available.
+$iscc = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+if (-not $iscc) {
+    $candidates = @(
+        "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
+        "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+        "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+    )
+    foreach ($candidate in $candidates) {
+        if (Test-Path $candidate) { $iscc = $candidate; break }
+    }
+}
+
+$setupExe = Join-Path (Resolve-Path "dist") "serialrun-$Version-windows-x64-setup.exe"
+Remove-Item -Force $setupExe -ErrorAction SilentlyContinue
+
+if ($iscc) {
+    $repoRoot = (Resolve-Path ".").Path
+    $stagePath = (Resolve-Path $stage).Path
+    $distPath = (Resolve-Path "dist").Path
+    & $iscc "/DMyAppVersion=$Version" "/DStageDir=$stagePath" "/DOutputDir=$distPath" "/DRepoRoot=$repoRoot" "scripts\windows-installer.iss"
+    if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
+    if (-not (Test-Path $setupExe)) { throw "Expected installer not found: $setupExe" }
+    Write-Host "Created: $setupExe"
+} elseif ($env:CI) {
+    throw "ISCC.exe (Inno Setup) not found; cannot build the Windows installer in CI."
+} else {
+    Write-Warning "Inno Setup (ISCC.exe) not found - skipping installer. Install it from https://jrsoftware.org/isdl.php"
+}
+
 Remove-Item -Recurse -Force $stage -ErrorAction SilentlyContinue
 Write-Host "Created: $zip"

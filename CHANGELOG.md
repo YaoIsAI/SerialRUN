@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.4.6 - 2026-10-28
+
+### Installers, Official Website Refresh & Smoother Downloads
+
+#### Release Engineering
+- **Windows installer (.exe)**: Inno Setup build with Start Menu shortcuts, optional desktop icon and a proper uninstaller. The portable ZIP remains available
+- **Debian package (.deb)**: installs `serialrun`, `serialrun-cli` and `serialrun-mcp` under `/usr/bin`, with a desktop entry, hicolor icon and automatic dependency resolution via `apt install ./serialrun_*.deb`
+- **Release pipeline**: Android-style one-click releases now publish 7 assets (Windows setup + ZIP, macOS arm64/x64 DMG + ZIP, Linux DEB + tar.gz)
+
+#### Official Website
+- **Complete redesign** in a modern open-source project style: dark hero, clean feature grid, framed screenshot, quick start and a dedicated downloads page
+- **Automatic OS detection**: the primary download button adapts to the visitor — Windows gets the `.exe` installer, Apple Silicon gets the arm64 DMG, Intel Macs get the x64 DMG, Linux gets the `.deb`
+- **Direct installer downloads**: no more detours through ZIP archives; platform cards highlight the recommended package
+- **All 9 languages preserved** and updated with the new copy
+
+---
+
 ## v0.4.5 - 2026-10-28
 
 ### Multi-Platform Releases & User Feedback Fixes
