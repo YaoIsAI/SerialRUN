@@ -8,7 +8,7 @@
 - 版本号格式：`X.Y.Z`，发布时填入的版本不能低于当前 `crates/serialrun-gui/Cargo.toml` 中的版本。
   - 若填入的版本更高（如当前 0.4.6，填入 0.4.7），流水线会自动递增所有版本号并提交。
   - 若代码里已经手动改成目标版本（如当前已是 0.4.7，填入 0.4.7），流水线只创建标签并发布，不重复提交。
-- 当前版本：**0.4.7**（发布时以 `crates/serialrun-gui/Cargo.toml` 为准）。
+- 当前版本：**0.4.8**（发布时以 `crates/serialrun-gui/Cargo.toml` 为准）。
 - 发布标签：`vX.Y.Z`，例如 `v0.4.7`。
 - 历史版本只增不减；不要删除或复用已发布的标签。
 
@@ -69,7 +69,7 @@ grep '^version' crates/serialrun-gui/Cargo.toml
 
 ```bash
 # 版本号必须与 Cargo.toml 完全一致
-VERSION=0.4.7
+VERSION=0.4.8
 
 git add -A
 git commit -m "chore: release v$VERSION"
@@ -89,7 +89,7 @@ git push github "v$VERSION"
    - Linux DEB + tar.gz
    - `SHA256SUMS` 校验文件
 2. 下载 Windows 包，解压运行 `serialrun.exe`，确认状态栏显示新版本号。
-3. 应用内更新自检：保留上一版本安装，打开 **Settings → Software Update**，
+3. 应用内更新自检：保留上一版本安装，点击右下角状态栏的 **SerialRUN vX.Y.Z** 版本号，
    点击检查更新，应能发现新版本、显示更新说明并完成下载与安装。
 4. 在 macOS 上确认：
    - Apple Silicon 机器下载 `macos-arm64`，Intel 机器下载 `macos-x64`

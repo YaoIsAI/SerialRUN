@@ -22,7 +22,7 @@ What you expected to happen instead.
 
 ## Environment
 
-- SerialRUN version (status bar, e.g. v0.4.7):
+- SerialRUN version (status bar, e.g. v0.4.8):
 - OS and version (Windows 10/11, macOS 13/14/15, Linux distribution):
 - CPU architecture (x64, arm64):
 - Serial adapter / device (CH340, CP210x, FTDI, PL2303, built-in):

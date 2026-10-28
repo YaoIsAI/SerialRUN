@@ -45,14 +45,14 @@ firmware flashing — plus an MCP server that lets AI agents drive the port.**
 
 ## Download
 
-**Latest: v0.4.7** — [what's new](CHANGELOG.md) · [all releases](https://github.com/YaoIsAI/SerialRUN/releases)
+**Latest: v0.4.8** — [what's new](CHANGELOG.md) · [all releases](https://github.com/YaoIsAI/SerialRUN/releases)
 
 | Platform | Recommended | Also available |
 |----------|-------------|----------------|
-| Windows (x64) | [serialrun-0.4.7-windows-x64-setup.exe](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-windows-x64-setup.exe) | [portable zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-windows-x64.zip) |
-| macOS (Apple Silicon, M1–M4) | [serialrun-0.4.7-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-macos-arm64.dmg) | [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-macos-arm64.zip) |
-| macOS (Intel) | [serialrun-0.4.7-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-macos-x64.dmg) | [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-macos-x64.zip) |
-| Linux (x86_64) | [serialrun_0.4.7_amd64.deb](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun_0.4.7_amd64.deb) | [tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-linux-x64.tar.gz) |
+| Windows (x64) | [serialrun-0.4.8-windows-x64-setup.exe](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.8/serialrun-0.4.8-windows-x64-setup.exe) | [portable zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.8/serialrun-0.4.8-windows-x64.zip) |
+| macOS (Apple Silicon, M1–M4) | [serialrun-0.4.8-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.8/serialrun-0.4.8-macos-arm64.dmg) | [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.8/serialrun-0.4.8-macos-arm64.zip) |
+| macOS (Intel) | [serialrun-0.4.8-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.8/serialrun-0.4.8-macos-x64.dmg) | [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.8/serialrun-0.4.8-macos-x64.zip) |
+| Linux (x86_64) | [serialrun_0.4.8_amd64.deb](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.8/serialrun_0.4.8_amd64.deb) | [tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.8/serialrun-0.4.8-linux-x64.tar.gz) |
 
 The website detects your OS and points the main button at the right installer:
 [www.serialrun.com](https://www.serialrun.com/#download).
@@ -65,7 +65,7 @@ The builds are ad-hoc signed (not notarized), so on first launch use
 **right-click → Open**. If macOS reports the app as damaged, run
 `xattr -dr com.apple.quarantine /Applications/SerialRUN.app` once and open it again.
 
-**Linux** — `sudo apt install ./serialrun_0.4.7_amd64.deb` installs `serialrun`,
+**Linux** — `sudo apt install ./serialrun_0.4.8_amd64.deb` installs `serialrun`,
 `serialrun-cli` and `serialrun-mcp` into `/usr/bin` and resolves dependencies.
 For the tarball, extract and run `./serialrun`. Runtime dependencies (Ubuntu/Debian):
 `sudo apt install libudev1 libxkbcommon0 libx11-6 libxcursor1 libxrandr2 libxi6 libgl1 libwayland-client0`

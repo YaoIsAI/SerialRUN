@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.4.8 - 2026-10-28
+
+### Cleaner Update Entry Point
+
+- **Updates moved to the status bar**: the clickable version label in the bottom-right corner is now the single update entry point and shows update state inline — checking, new version in amber, download percentage, ready-to-restart and failure warning
+- **Decluttered left panel**: the Software Update section was removed from the settings sidebar; update settings now live in the update dialog
+- **"Check for updates on startup"** moved into the update dialog, next to the last-checked time
+- Docs and release SOP updated to point to the status-bar version label
+
+---
+
 ## v0.4.7 - 2026-10-28
 
 ### In-App Updates & Automatic Upgrade

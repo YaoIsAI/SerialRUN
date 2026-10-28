@@ -360,6 +360,15 @@ pub fn cancel_download(state: &mut AppState) {
     state.update.cancel.store(true, Ordering::Relaxed);
 }
 
+/// Entry point for the status-bar version label. Idle/up-to-date triggers a
+/// manual check; other phases just surface the dialog.
+pub fn open_dialog(state: &mut AppState) {
+    match &state.update.phase {
+        UpdatePhase::Idle | UpdatePhase::UpToDate => start_check(state, true),
+        _ => state.update.show_dialog = true,
+    }
+}
+
 pub fn dismiss_dialog(state: &mut AppState) {
     state.update.show_dialog = false;
     if let UpdatePhase::Available(candidate) = &state.update.phase {
