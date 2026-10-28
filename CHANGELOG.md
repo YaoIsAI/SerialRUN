@@ -7,7 +7,7 @@
 #### Release Engineering
 - **Windows installer (.exe)**: Inno Setup build with Start Menu shortcuts, optional desktop icon and a proper uninstaller. The portable ZIP remains available
 - **Debian package (.deb)**: installs `serialrun`, `serialrun-cli` and `serialrun-mcp` under `/usr/bin`, with a desktop entry, hicolor icon and automatic dependency resolution via `apt install ./serialrun_*.deb`
-- **Release pipeline**: Android-style one-click releases now publish 7 assets (Windows setup + ZIP, macOS arm64/x64 DMG + ZIP, Linux DEB + tar.gz)
+- **Release pipeline**: Android-style one-click releases now publish 8 assets (Windows setup + ZIP, macOS arm64/x64 DMG + ZIP, Linux DEB + tar.gz)
 
 #### Official Website
 - **Complete redesign** in a modern open-source project style: dark hero, clean feature grid, framed screenshot, quick start and a dedicated downloads page

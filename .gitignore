@@ -43,7 +43,7 @@ website/
 # WeChat articles and images
 wechat_article.html
 assets/wechat_pay_qr.jpg
-assets/screenshot_website*.png
+assets/screenshot_website.png
 
 # Internal scripts (contain private URLs)
 scripts/webhook_server.py
