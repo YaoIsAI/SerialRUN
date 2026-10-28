@@ -40,4 +40,6 @@ arboard = "3"
 png = "0.17"
 objc2 = "0.5"
 base64 = "0.22"
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "blocking"], default-features = false }
+semver = "1"
+sha2 = "0.10"

@@ -974,6 +974,10 @@ impl eframe::App for SerialRunApp {
         if has_rx_data {
             ctx.request_repaint();
         }
+
+        // App update: auto-check scheduling and background download progress
+        crate::update::poll(&mut state, ctx);
+
         if state.is_connected || state.replay_running || state.auto_send_enabled {
             ctx.request_repaint_after(std::time::Duration::from_millis(8));
         }
@@ -1311,6 +1315,8 @@ impl eframe::App for SerialRunApp {
             |ui: &mut egui::Ui, s: &mut AppState| ui::mcp_log::render_mcp_log_popup(ui, s),
             560.0, 420.0
         );
+
+        crate::ui::update::render_update_dialog(ctx, &mut state);
 
         flush_persistence(&mut state);
     }

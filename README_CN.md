@@ -45,14 +45,14 @@
 
 ## 下载
 
-**最新版本：v0.4.6** — [更新说明](CHANGELOG.md) · [全部版本](https://github.com/YaoIsAI/SerialRUN/releases)
+**最新版本：v0.4.7** — [更新说明](CHANGELOG.md) · [全部版本](https://github.com/YaoIsAI/SerialRUN/releases)
 
 | 平台 | 推荐安装包 | 其他格式 |
 |------|-----------|----------|
-| Windows (x64) | [serialrun-0.4.6-windows-x64-setup.exe](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-windows-x64-setup.exe) | [便携版 zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-windows-x64.zip) |
-| macOS（Apple 芯片，M1–M4） | [serialrun-0.4.6-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-arm64.dmg) | [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-arm64.zip) |
-| macOS（Intel 芯片） | [serialrun-0.4.6-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-x64.dmg) | [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-macos-x64.zip) |
-| Linux (x86_64) | [serialrun_0.4.6_amd64.deb](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun_0.4.6_amd64.deb) | [tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.6/serialrun-0.4.6-linux-x64.tar.gz) |
+| Windows (x64) | [serialrun-0.4.7-windows-x64-setup.exe](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-windows-x64-setup.exe) | [便携版 zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-windows-x64.zip) |
+| macOS（Apple 芯片，M1–M4） | [serialrun-0.4.7-macos-arm64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-macos-arm64.dmg) | [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-macos-arm64.zip) |
+| macOS（Intel 芯片） | [serialrun-0.4.7-macos-x64.dmg](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-macos-x64.dmg) | [zip](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-macos-x64.zip) |
+| Linux (x86_64) | [serialrun_0.4.7_amd64.deb](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun_0.4.7_amd64.deb) | [tar.gz](https://github.com/YaoIsAI/SerialRUN/releases/download/v0.4.7/serialrun-0.4.7-linux-x64.tar.gz) |
 
 官网会根据你的操作系统自动匹配正确安装包：
 [www.serialrun.com](https://www.serialrun.com/#download)。
@@ -64,7 +64,7 @@
 版本为 ad-hoc 签名（未公证），首次打开请**右键 → 打开**。如果提示“应用已损坏”，
 执行一次 `xattr -dr com.apple.quarantine /Applications/SerialRUN.app` 后重新打开即可。
 
-**Linux** — 执行 `sudo apt install ./serialrun_0.4.6_amd64.deb` 会把 `serialrun`、
+**Linux** — 执行 `sudo apt install ./serialrun_0.4.7_amd64.deb` 会把 `serialrun`、
 `serialrun-cli`、`serialrun-mcp` 安装到 `/usr/bin` 并自动解析依赖。使用 tar.gz 时解压后
 运行 `./serialrun`。运行依赖（Ubuntu/Debian）：
 `sudo apt install libudev1 libxkbcommon0 libx11-6 libxcursor1 libxrandr2 libxi6 libgl1 libwayland-client0`
@@ -173,6 +173,7 @@ serialrun-cli agent COM1 run-script test.txt  # 运行脚本
 ### 工作流与个性化
 - **多窗口界面** — 每个面板都是独立的置顶 OS 窗口
 - **双语界面**（中文/英文），深色/浅色主题
+- **内置升级** — 启动时检查 GitHub 新版本，展示更新说明，自动下载、SHA-256 校验、安装并重启
 - **插件系统** — 动态发现、安装、启用/禁用和 ZIP 导入
 - **数据持久化** — 配置、日志、终端历史、警告保存在 `~/.serialrun/`
 - **全局错误系统** — 状态栏统一提示，支持历史查看

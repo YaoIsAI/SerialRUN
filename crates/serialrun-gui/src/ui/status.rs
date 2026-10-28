@@ -112,7 +112,10 @@ pub fn render_status_bar(ui: &mut egui::Ui, state: &mut AppState) {
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             // Version
-            ui.label(egui::RichText::new("SerialRUN v0.4.6").color(c.text_muted));
+            ui.label(egui::RichText::new(format!("SerialRUN v{}", crate::update::current_version())).color(c.text_muted));
+
+            // Update availability / progress badge
+            crate::ui::update::render_status_indicator(ui, state);
 
             // Warning history: red dot + count
             let warning_count = state.warning_history.len();

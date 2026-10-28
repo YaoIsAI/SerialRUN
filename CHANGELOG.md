@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.4.7 - 2026-10-28
+
+### In-App Updates & Automatic Upgrade
+
+#### Updater
+- **Check for updates from GitHub**: Settings → Software Update queries the latest release and shows the new version, release notes, asset name and size
+- **Automatic startup check** with a 24-hour interval; a status-bar badge appears when a new version is available. Can be disabled in settings
+- **One-click upgrade**: downloads the correct package for the current OS/architecture, shows progress and download speed, verifies SHA-256 when available, then installs and restarts
+- **Native installation per platform**:
+  - Windows: runs the Inno Setup installer silently, then relaunches SerialRUN
+  - macOS: replaces the `.app` bundle atomically with a backup, clears the quarantine flag and reopens
+  - Linux: replaces the binary in place when writable, otherwise opens the `.deb` with the system package manager
+- **Dismissed versions** are remembered per release, while manual checks remain available at any time
+
+#### Release Engineering
+- Release workflow publishes `SHA256SUMS` next to the installers for download verification
+- The status-bar version is now taken from the Cargo package version at compile time, removing the manual sync step
+
+#### Documentation
+- README (EN/CN) documents the updater in the feature list
+
+---
+
 ## v0.4.6 - 2026-10-28
 
 ### Installers, Official Website Refresh & Smoother Downloads

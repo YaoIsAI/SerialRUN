@@ -13,10 +13,10 @@ All version numbers must match. Run:
 ```bash
 # Check all Cargo.toml versions
 grep -r 'version = "' crates/*/Cargo.toml plugins/*/Cargo.toml
-
-# Check status bar version
-grep 'SerialRUN v' crates/serialrun-gui/src/ui/status.rs
 ```
+
+The status-bar version is compiled from `CARGO_PKG_VERSION`, so keeping the
+manifests in sync is enough.
 
 Expected: All should show the same version (e.g. `0.3.0`).
 
@@ -181,7 +181,7 @@ Required environment variables:
 
 | Mistake | Symptom | Fix |
 |---------|---------|-----|
-| Version mismatch | Status bar shows wrong version | Update all Cargo.toml + status.rs |
+| Version mismatch | Status bar shows wrong version | Update all Cargo.toml versions |
 | Wrong build directory | `target/release/serialrun.exe` has old binary | Use `--target` flag |
 | Missing help files | App can't load help docs | Include help_en.md + help_zh.md in package |
 | Running instance | Build fails or overwrites locked file | Kill serialrun.exe first |

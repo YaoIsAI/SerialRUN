@@ -11,6 +11,7 @@ mod port_owner;
 mod state;
 pub mod theme;
 mod ui;
+mod update;
 pub mod util;
 
 use clap::Parser;

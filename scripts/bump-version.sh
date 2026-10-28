@@ -6,7 +6,6 @@
 # Updates:
 #   - crates/{core,cli,gui,mcp,plugin-api}/Cargo.toml
 #   - Cargo.lock (via cargo metadata)
-#   - status bar label in crates/serialrun-gui/src/ui/status.rs
 #   - macOS Info.plist (CFBundleVersion / CFBundleShortVersionString)
 #   - README.md / README_CN.md download tables
 
@@ -63,8 +62,6 @@ for manifest in \
     replace "$manifest" "s/^version = \"$OLD_VERSION\"/version = \"$VERSION\"/"
 done
 
-replace crates/serialrun-gui/src/ui/status.rs "s/SerialRUN v$OLD_VERSION/SerialRUN v$VERSION/"
-
 # Keep both bundle-version keys in sync so Finder / About show the right version.
 replace crates/serialrun-gui/Info.plist \
     "/<key>CFBundleVersion<\/key>/{n;s/<string>.*<\/string>/<string>$VERSION<\/string>/;}"
@@ -75,7 +72,7 @@ replace crates/serialrun-gui/Info.plist \
 for readme in README.md README_CN.md; do
     [[ -f "$readme" ]] || continue
     replace "$readme" \
-        "/^## Download\$/,/^### Build from Source\$/ s/v$OLD_VERSION/v$VERSION/g; /^## 下载\$/,/^### 从源码编译\$/ s/v$OLD_VERSION/v$VERSION/g; /^## Download\$/,/^### Build from Source\$/ s/serialrun-$OLD_VERSION-/serialrun-$VERSION-/g; /^## 下载\$/,/^### 从源码编译\$/ s/serialrun-$OLD_VERSION-/serialrun-$VERSION-/g"
+        "/^## Download\$/,/^### Build from Source\$/ s/v$OLD_VERSION/v$VERSION/g; /^## 下载\$/,/^### 从源码编译\$/ s/v$OLD_VERSION/v$VERSION/g; /^## Download\$/,/^### Build from Source\$/ s/serialrun-$OLD_VERSION-/serialrun-$VERSION-/g; /^## 下载\$/,/^### 从源码编译\$/ s/serialrun-$OLD_VERSION-/serialrun-$VERSION-/g; /^## Download\$/,/^### Build from Source\$/ s/serialrun_${OLD_VERSION}_/serialrun_${VERSION}_/g; /^## 下载\$/,/^### 从源码编译\$/ s/serialrun_${OLD_VERSION}_/serialrun_${VERSION}_/g; s/serialrun_${OLD_VERSION}_amd64/serialrun_${VERSION}_amd64/g"
 done
 
 # Refresh workspace package versions in Cargo.lock without upgrading dependencies.
@@ -85,7 +82,6 @@ fi
 
 echo "Updated:"
 echo "  - workspace manifests + Cargo.lock"
-echo "  - status bar label"
 echo "  - Info.plist ($VERSION)"
 echo "  - README download tables"
 echo ""

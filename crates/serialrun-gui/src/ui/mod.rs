@@ -25,3 +25,4 @@ pub mod settings;
 pub mod simulator;
 pub mod status;
 pub mod terminal;
+pub mod update;

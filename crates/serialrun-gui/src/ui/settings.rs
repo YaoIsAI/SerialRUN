@@ -165,6 +165,11 @@ pub fn render_settings_panel(ui: &mut egui::Ui, state: &mut AppState, _ctx: &egu
 
     ui.separator();
 
+    // Software update
+    crate::ui::update::render_settings_section(ui, state);
+
+    ui.separator();
+
     // Recording & Replay
     ui.label(egui::RichText::new(if lang == Language::Chinese { "录制 / 回放" } else { "Record / Replay" }).strong());
     ui.add_space(4.0);

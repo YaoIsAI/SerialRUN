@@ -56,6 +56,7 @@ Three system buttons on the right side of the toolbar:
 - **Port Config** — Data bits (5-8), stop bits (1/2), parity (None/Odd/Even), flow control (None/Software/Hardware)
 - **Auto Reply** — Set match pattern and reply content, auto-send reply when matching data is received
 - **MCP Server** — Enable/configure MCP server, one-click copy connection info, view access logs
+- **Software Update** — Check GitHub for a new version, download, verify and install in place
 - **Record/Replay** — Record serial operation scripts, save and replay later
 
 ### Bottom Status Bar
@@ -492,6 +493,18 @@ When LAN mode is enabled:
 - AI assistants on other LAN devices can connect
 - All operations are automatically logged with client IP (use `get_access_log` tool to view)
 - ⚠️ Use with caution — anyone on the network can control serial ports
+
+---
+
+## Software Update
+
+Open **Settings → Software Update** in the left panel:
+
+- **Check for Updates** queries the latest GitHub release and shows the version, release notes and package size
+- **Check on startup** (enabled by default) runs at most once every 24 hours; a yellow badge appears in the status bar when an update is available
+- **Download & Install** fetches the correct package for your OS and CPU, verifies it against `SHA256SUMS` when published, then installs and restarts SerialRUN
+  - Windows runs the installer silently, macOS replaces the `.app` bundle, Linux replaces the binary in place (or opens the `.deb`)
+- **Later** dismisses the current version until the next release; manual checks remain available
 
 ---
 

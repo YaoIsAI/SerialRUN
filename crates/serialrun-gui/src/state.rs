@@ -69,6 +69,13 @@ pub struct UserPrefs {
     pub mcp_port: u16,
     #[serde(default)]
     pub mcp_bind_lan: bool,
+    // Updates
+    #[serde(default = "default_true")]
+    pub auto_update_check: bool,
+    #[serde(default)]
+    pub last_update_check: i64,
+    #[serde(default)]
+    pub dismissed_update_version: String,
     // RX aggregation
     #[serde(default = "default_rx_aggregate_ms")]
     pub rx_aggregate_ms: u64,
@@ -131,6 +138,9 @@ impl Default for UserPrefs {
             mcp_enabled: true,
             mcp_port: 9527,
             mcp_bind_lan: false,
+            auto_update_check: true,
+            last_update_check: 0,
+            dismissed_update_version: String::new(),
             rx_aggregate_ms: 150,
             rx_auto_aggregate: true,
             can_port: String::new(),
@@ -200,6 +210,9 @@ impl UserPrefs {
             mcp_enabled: state.mcp_enabled,
             mcp_port: state.mcp_port,
             mcp_bind_lan: state.mcp_bind_lan,
+            auto_update_check: state.auto_update_check,
+            last_update_check: state.last_update_check,
+            dismissed_update_version: state.dismissed_update_version.clone(),
             rx_aggregate_ms: state.rx_aggregate_ms,
             rx_auto_aggregate: state.rx_auto_aggregate,
             can_port: state.can_port.clone(),
@@ -267,6 +280,9 @@ impl UserPrefs {
         state.mcp_enabled = self.mcp_enabled;
         state.mcp_port = self.mcp_port;
         state.mcp_bind_lan = self.mcp_bind_lan;
+        state.auto_update_check = self.auto_update_check;
+        state.last_update_check = self.last_update_check;
+        state.dismissed_update_version = self.dismissed_update_version.clone();
         state.rx_aggregate_ms = self.rx_aggregate_ms;
         state.rx_auto_aggregate = self.rx_auto_aggregate;
         state.can_port = self.can_port.clone();
@@ -1552,6 +1568,11 @@ pub struct AppState {
     pub mcp_port: u16,
     pub mcp_bind_lan: bool,
     pub mcp_running: bool,
+    // Updates (last_update_check / dismissed_update_version are persisted via UserPrefs)
+    pub auto_update_check: bool,
+    pub last_update_check: i64,
+    pub dismissed_update_version: String,
+    pub update: crate::update::UpdateState,
     pub mcp_status: String,
     pub mcp_cmd_tx: Option<mpsc::Sender<crate::mcp_server::McpCommand>>,
     // MCP access log (for GUI display)
@@ -1882,6 +1903,8 @@ impl AppState {
             bridge_stop: None, bridge_log_rx: None, bridge_err_rx: None,
             sim_stop: None, sim_log_rx: None, sim_err_rx: None, sim_registers: None,
             mcp_enabled: true, mcp_port: 9527, mcp_bind_lan: false, mcp_running: false, mcp_status: String::new(),
+            auto_update_check: true, last_update_check: 0, dismissed_update_version: String::new(),
+            update: crate::update::UpdateState::default(),
             mcp_cmd_tx: None,
             mcp_access_log: VecDeque::new(),
             show_mcp_log_popup: false,

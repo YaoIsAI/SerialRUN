@@ -9,6 +9,7 @@ pub mod plugin_registry;
 pub mod port;
 pub mod protocol;
 pub mod recorder;
+pub mod update;
 
 pub use config::SerialConfig;
 pub use port::{SerialPort, SerialPortInfo};

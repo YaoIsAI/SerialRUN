@@ -4038,7 +4038,9 @@ checksum = "eddd3ca559203180a307f12d114c268abf583f59b03cb906fd0b3ff8646c1147"
 dependencies = [
  "base64",
  "bytes",
+ "futures-channel",
  "futures-core",
+ "futures-util",
  "http",
  "http-body",
  "http-body-util",
@@ -4342,7 +4344,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-cli"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "chrono",
@@ -4356,20 +4358,23 @@ dependencies = [
 
 [[package]]
 name = "serialrun-core"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "base64",
  "chrono",
+ "hex",
  "libloading",
  "log",
  "pcap-file",
  "regex",
  "reqwest",
+ "semver",
  "serde",
  "serde_json",
  "serialport",
  "serialrun-plugin-api",
+ "sha2",
  "thiserror 2.0.18",
  "tokio",
  "tokio-serial",
@@ -4392,7 +4397,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-gui"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "arboard",
@@ -4419,7 +4424,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-mcp"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "serde",
@@ -4484,7 +4489,7 @@ dependencies = [
 
 [[package]]
 name = "serialrun-plugin-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -4517,6 +4522,17 @@ name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3bf829a2d51ab4a5ddf1352d8470c140cadc8301b2ae1789db023f01cedd6ba"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "digest",
+]
+
+[[package]]
+name = "sha2"
+version = "0.10.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
 dependencies = [
  "cfg-if",
  "cpufeatures",

@@ -6,10 +6,10 @@
 ## 版本规则
 
 - 版本号格式：`X.Y.Z`，发布时填入的版本不能低于当前 `crates/serialrun-gui/Cargo.toml` 中的版本。
-  - 若填入的版本更高（如当前 0.4.5，填入 0.4.6），流水线会自动递增所有版本号并提交。
-  - 若代码里已经手动改成目标版本（如当前已是 0.4.5，填入 0.4.5），流水线只创建标签并发布，不重复提交。
-- 当前版本：**0.4.6**（发布时以 `crates/serialrun-gui/Cargo.toml` 为准）。
-- 发布标签：`vX.Y.Z`，例如 `v0.4.6`。
+  - 若填入的版本更高（如当前 0.4.6，填入 0.4.7），流水线会自动递增所有版本号并提交。
+  - 若代码里已经手动改成目标版本（如当前已是 0.4.7，填入 0.4.7），流水线只创建标签并发布，不重复提交。
+- 当前版本：**0.4.7**（发布时以 `crates/serialrun-gui/Cargo.toml` 为准）。
+- 发布标签：`vX.Y.Z`，例如 `v0.4.7`。
 - 历史版本只增不减；不要删除或复用已发布的标签。
 
 ## 发布产物
@@ -20,6 +20,7 @@
 | macOS Apple Silicon (M1–M4) | `serialrun-X.Y.Z-macos-arm64.dmg` / `.zip` |
 | macOS Intel | `serialrun-X.Y.Z-macos-x64.dmg` / `.zip` |
 | Linux x86_64 | `serialrun_X.Y.Z_amd64.deb` / `serialrun-X.Y.Z-linux-x64.tar.gz` |
+| 校验 | `SHA256SUMS`（供应用内更新器校验下载完整性） |
 
 ## 发布前检查（本地）
 
@@ -44,7 +45,7 @@ grep '^version' crates/serialrun-gui/Cargo.toml
 ## 方式 A：GitHub Actions 一键发布（推荐）
 
 1. 打开仓库 **Actions → Release → Run workflow**。
-2. 选择分支（通常是 `master`），输入版本号（例如 `0.4.6`）。
+2. 选择分支（通常是 `master`），输入版本号（例如 `0.4.7`）。
 3. 点击 **Run workflow**。
 
 流水线会自动完成：
@@ -57,9 +58,10 @@ grep '^version' crates/serialrun-gui/Cargo.toml
 版本号同步范围：
 
 - 5 个 crate 的 `Cargo.toml` 与 `Cargo.lock`
-- 状态栏 `SerialRUN vX.Y.Z`
 - macOS `Info.plist`（`CFBundleVersion` / `CFBundleShortVersionString`）
 - `README.md` / `README_CN.md` 下载表格
+
+状态栏版本号在编译时取自 `CARGO_PKG_VERSION`，无需单独修改。
 
 ## 方式 B：本地打标签发布
 
@@ -67,7 +69,7 @@ grep '^version' crates/serialrun-gui/Cargo.toml
 
 ```bash
 # 版本号必须与 Cargo.toml 完全一致
-VERSION=0.4.6
+VERSION=0.4.7
 
 git add -A
 git commit -m "chore: release v$VERSION"
@@ -80,13 +82,16 @@ git push github "v$VERSION"
 
 ## 发布后验证
 
-1. 打开 **Releases**，确认 4 个平台、共 8 个文件全部上传：
+1. 打开 **Releases**，确认 4 个平台、共 9 个文件全部上传：
    - Windows setup.exe + ZIP
    - macOS arm64 DMG + ZIP
    - macOS x64 DMG + ZIP
    - Linux DEB + tar.gz
+   - `SHA256SUMS` 校验文件
 2. 下载 Windows 包，解压运行 `serialrun.exe`，确认状态栏显示新版本号。
-3. 在 macOS 上确认：
+3. 应用内更新自检：保留上一版本安装，打开 **Settings → Software Update**，
+   点击检查更新，应能发现新版本、显示更新说明并完成下载与安装。
+4. 在 macOS 上确认：
    - Apple Silicon 机器下载 `macos-arm64`，Intel 机器下载 `macos-x64`
    - 首次打开：右键 → 打开；若提示“已损坏”，执行
      `xattr -dr com.apple.quarantine /Applications/SerialRUN.app`

@@ -13,10 +13,9 @@
 ```bash
 # 检查所有 Cargo.toml 版本
 grep -r 'version = "' crates/*/Cargo.toml plugins/*/Cargo.toml
-
-# 检查状态栏版本号
-grep 'SerialRUN v' crates/serialrun-gui/src/ui/status.rs
 ```
+
+状态栏版本号在编译时取自 `CARGO_PKG_VERSION`，只需保证各 manifest 版本一致。
 
 期望结果：所有版本号一致（例如 `0.3.0`）。
 
@@ -181,7 +180,7 @@ open target/release/SerialRUN.app                                 # macOS
 
 | 错误 | 症状 | 解决方法 |
 |------|------|----------|
-| 版本号不一致 | 状态栏显示错误版本 | 更新所有 Cargo.toml + status.rs |
+| 版本号不一致 | 状态栏显示错误版本 | 更新所有 Cargo.toml 版本 |
 | 构建目录错误 | `target/release/serialrun.exe` 是旧文件 | 使用 `--target` 参数 |
 | 缺少帮助文件 | 应用无法加载帮助文档 | 打包时包含 help_en.md + help_zh.md |
 | 应用未关闭 | 构建失败或覆盖被锁定的文件 | 先关闭 serialrun.exe |

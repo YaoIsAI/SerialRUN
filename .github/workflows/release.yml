@@ -74,7 +74,6 @@ jobs:
               crates/serialrun-gui/Cargo.toml \
               crates/serialrun-mcp/Cargo.toml \
               crates/serialrun-plugin-api/Cargo.toml \
-              crates/serialrun-gui/src/ui/status.rs \
               crates/serialrun-gui/Info.plist \
               README.md README_CN.md
             if git diff --cached --quiet; then
@@ -231,6 +230,14 @@ jobs:
 
       - name: List assets
         run: ls -lh dist
+
+      # The in-app updater verifies downloads against this file when present.
+      - name: Generate checksums
+        working-directory: dist
+        run: |
+          rm -f SHA256SUMS
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
 
       - name: Create or update release
         env:
