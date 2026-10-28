@@ -7,7 +7,7 @@ firmware flashing — plus an MCP server that lets AI agents drive the port.**
 
 [![Release](https://img.shields.io/github/v/release/YaoIsAI/SerialRUN?label=release&color=brightgreen)](https://github.com/YaoIsAI/SerialRUN/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/YaoIsAI/SerialRUN/total?label=downloads&color=blue)](https://github.com/YaoIsAI/SerialRUN/releases)
-[![License](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](https://mariadb.com/bsl11/)
+[![License](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue.svg)]()
 [![Rust](https://img.shields.io/badge/Rust-stable-orange?logo=rust)](https://www.rust-lang.org/)
 [![CI](https://github.com/YaoIsAI/SerialRUN/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/YaoIsAI/SerialRUN/actions/workflows/ci.yml)
@@ -45,7 +45,7 @@ firmware flashing — plus an MCP server that lets AI agents drive the port.**
 
 ## Download
 
-**Latest: v0.4.6 (2026-10-28)** — [what's new](CHANGELOG.md) · [all releases](https://github.com/YaoIsAI/SerialRUN/releases)
+**Latest: v0.4.6** — [what's new](CHANGELOG.md) · [all releases](https://github.com/YaoIsAI/SerialRUN/releases)
 
 | Platform | Recommended | Also available |
 |----------|-------------|----------------|
@@ -426,11 +426,13 @@ Donations help cover build machines, code-signing and hosting.
 
 ## License
 
-SerialRUN is released under the [Business Source License 1.1](https://mariadb.com/bsl11/). The
-license converts to the [MIT License](LICENSE) on **2030-05-31**, or earlier if a
-`Change Date`/`Change License` notice is published in [LICENSE](LICENSE). Usage in
-production is permitted except for offering SerialRUN itself as a commercial
-serial-debugging product; see [LICENSE](LICENSE) for the exact terms.
+SerialRUN is source-available under the [Business Source License 1.1](LICENSE), which
+converts to the [MIT License](LICENSE) on **2030-05-31** or on the date the licensor
+announces the change, whichever is earlier. Non-commercial use is unrestricted, and
+businesses may use it for evaluation, internal testing and development. Commercial
+use requires a separate license, and modified versions may not be distributed
+without one; unmodified copies may be redistributed. See [LICENSE](LICENSE) for the
+exact terms.
 
 ---
 

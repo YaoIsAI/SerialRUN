@@ -7,7 +7,7 @@
 
 [![Release](https://img.shields.io/github/v/release/YaoIsAI/SerialRUN?label=release&color=brightgreen)](https://github.com/YaoIsAI/SerialRUN/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/YaoIsAI/SerialRUN/total?label=downloads&color=blue)](https://github.com/YaoIsAI/SerialRUN/releases)
-[![License](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](https://mariadb.com/bsl11/)
+[![License](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue.svg)]()
 [![Rust](https://img.shields.io/badge/Rust-stable-orange?logo=rust)](https://www.rust-lang.org/)
 [![CI](https://github.com/YaoIsAI/SerialRUN/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/YaoIsAI/SerialRUN/actions/workflows/ci.yml)
@@ -45,7 +45,7 @@
 
 ## 下载
 
-**最新版本：v0.4.6（2026-10-28）** — [更新说明](CHANGELOG.md) · [全部版本](https://github.com/YaoIsAI/SerialRUN/releases)
+**最新版本：v0.4.6** — [更新说明](CHANGELOG.md) · [全部版本](https://github.com/YaoIsAI/SerialRUN/releases)
 
 | 平台 | 推荐安装包 | 其他格式 |
 |------|-----------|----------|
@@ -418,10 +418,10 @@ make app
 
 ## 许可证
 
-SerialRUN 基于 [Business Source License 1.1](https://mariadb.com/bsl11/) 发布，并于
-**2030-05-31** 自动转为 [MIT 许可证](LICENSE)（若 [LICENSE](LICENSE) 中发布了更早的
-`Change Date`/`Change License` 公告则以公告为准）。除将 SerialRUN 本身作为商业串口调试
-产品对外提供外，生产环境使用不受限制，具体条款见 [LICENSE](LICENSE)。
+SerialRUN 基于 [Business Source License 1.1](LICENSE) 源码开放发布：非商业用途不受限制，
+企业可将其用于评估、内部测试和开发；商业用途需获得单独授权；未经授权不得分发修改版本，
+可分发未修改的副本。许可证将于 **2030-05-31** 或版权方公告的更早日期转为
+[MIT 许可证](LICENSE)。具体条款见 [LICENSE](LICENSE)。
 
 ---
 
