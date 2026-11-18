@@ -39,6 +39,8 @@ pub struct UserPrefs {
     pub show_timestamp: bool,
     #[serde(default = "default_true")]
     pub auto_scroll: bool,
+    #[serde(default = "default_true")]
+    pub ansi_colors: bool,
     #[serde(default)]
     pub keep_input: bool,
     #[serde(default)]
@@ -125,6 +127,7 @@ impl Default for UserPrefs {
             hex_mode: false,
             show_timestamp: true,
             auto_scroll: true,
+            ansi_colors: true,
             keep_input: false,
             line_ending: "None".into(),
             terminal_checksum_mode: "None".into(),
@@ -183,6 +186,7 @@ impl UserPrefs {
             hex_mode: state.hex_mode,
             show_timestamp: state.show_timestamp,
             auto_scroll: state.auto_scroll,
+            ansi_colors: state.ansi_colors,
             keep_input: state.keep_input,
             line_ending: match state.line_ending {
                 LineEnding::CR => "CR".into(),
@@ -253,6 +257,7 @@ impl UserPrefs {
         state.hex_mode = self.hex_mode;
         state.show_timestamp = self.show_timestamp;
         state.auto_scroll = self.auto_scroll;
+        state.ansi_colors = self.ansi_colors;
         state.keep_input = self.keep_input;
         state.line_ending = match self.line_ending.as_str() {
             "CR" => LineEnding::CR,
@@ -492,6 +497,13 @@ impl T {
         match lang {
             Language::English => "Auto Scroll",
             Language::Chinese => "自动滚动",
+        }
+    }
+
+    pub fn ansi_colors(lang: Language) -> &'static str {
+        match lang {
+            Language::English => "ANSI Colors",
+            Language::Chinese => "ANSI 颜色",
         }
     }
 
@@ -1333,6 +1345,7 @@ pub struct AppState {
     pub terminal_last_save: i64,
     pub logs_last_save: i64,
     pub show_timestamp: bool,
+    pub ansi_colors: bool,
     // SSCOM-like features
     pub line_ending: LineEnding,
     pub dtr: bool,
@@ -1751,6 +1764,7 @@ impl AppState {
             terminal_last_save: 0,
             logs_last_save: 0,
             show_timestamp: true,
+            ansi_colors: true,
             line_ending: LineEnding::None,
             dtr: true,
             rts: false,
