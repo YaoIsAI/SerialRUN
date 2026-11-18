@@ -1,3 +1,4 @@
+pub mod ansi;
 pub mod bridge;
 pub mod can_analyzer;
 pub mod spinner;

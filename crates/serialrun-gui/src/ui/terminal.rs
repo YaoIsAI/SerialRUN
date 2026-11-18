@@ -15,9 +15,53 @@ fn extract_line_tag(line: &crate::state::TerminalLine) -> String {
     String::new()
 }
 
+/// Normalize control characters for display: CRLF → LF, tab → 4 spaces,
+/// drop every other control character.
+fn sanitize_text(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars().peekable();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\r' => {
+                if chars.peek() == Some(&'\n') {
+                    chars.next();
+                    out.push('\n');
+                }
+            }
+            '\n' => out.push('\n'),
+            '\t' => out.push_str("    "),
+            c if c.is_control() => {}
+            c => out.push(c),
+        }
+    }
+    out
+}
+
+/// Send a raw 0x03 (Ctrl+C / SIGINT) byte without line ending or checksum.
+fn send_ctrl_c(state: &mut AppState) {
+    if state.port_owner.is_none() {
+        let msg = if state.language == Language::Chinese {
+            "未连接串口，请先连接设备"
+        } else {
+            "Not connected. Please connect to a serial port first."
+        };
+        state.show_error(msg);
+        return;
+    }
+    state.tx_count += 1;
+    state.add_chart_data(1.0);
+    state.add_terminal_line(Direction::Tx, "^C".into(), false);
+    if let Some(ref po) = state.port_owner {
+        po.send(PortCommand::Write(vec![0x03]));
+    }
+}
+
 pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
     let lang = state.language;
     let c = theme::get_colors(state.theme);
+    // Set when a user-initiated send happens (Enter, Send button, quick command)
+    // so the input box can take keyboard focus back afterwards.
+    let mut refocus_input = false;
 
     // Toolbar — auto-wrapping, clear/save at end
     ui.horizontal_wrapped(|ui| {
@@ -25,6 +69,7 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
         ui.separator();
         ui.checkbox(&mut state.show_timestamp, T::show_timestamp(lang));
         ui.checkbox(&mut state.auto_scroll, T::auto_scroll(lang));
+        ui.checkbox(&mut state.ansi_colors, T::ansi_colors(lang));
         ui.separator();
         ui.label(egui::RichText::new(T::crc_label(lang)).strong()).on_hover_text(crc_hover_text(lang));
         let checksum = state.terminal_checksum_mode;
@@ -173,27 +218,19 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
                 };
                 let seq_tag = format!("#{:04} ", seq);
 
+                let ansi_active = state.ansi_colors && !line.is_hex && line.content.contains('\u{1b}');
                 let content = if line.is_hex {
                     line.content.clone()
+                } else if ansi_active {
+                    // Keep raw escape sequences; expand tabs without counting them.
+                    ui::ansi::expand_tabs(&line.content, 8)
                 } else {
-                    let s = &line.content;
-                    let mut out = String::with_capacity(s.len());
-                    let mut chars = s.chars().peekable();
-                    while let Some(ch) = chars.next() {
-                        match ch {
-                            '\r' => {
-                                if chars.peek() == Some(&'\n') {
-                                    chars.next();
-                                    out.push('\n');
-                                }
-                            }
-                            '\n' => out.push('\n'),
-                            '\t' => out.push_str("    "),
-                            c if c.is_control() => {}
-                            c => out.push(c),
-                        }
-                    }
-                    out
+                    let plain = if line.content.contains('\u{1b}') {
+                        ui::ansi::strip_ansi(&line.content)
+                    } else {
+                        line.content.clone()
+                    };
+                    sanitize_text(&ui::ansi::expand_tabs(&plain, 8))
                 };
 
                 // Render row
@@ -230,7 +267,19 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
                         };
                         ui.label(egui::RichText::new(format_tag).color(fmt_color).size(11.0).strong());
                     }
-                    ui.add(egui::Label::new(egui::RichText::new(&content).color(content_color).size(14.0)).wrap());
+                    if ansi_active {
+                        let spans: Vec<ui::ansi::Span> = ui::ansi::parse_ansi(&content)
+                            .into_iter()
+                            .filter_map(|mut span| {
+                                span.text = sanitize_text(&span.text);
+                                if span.text.is_empty() { None } else { Some(span) }
+                            })
+                            .collect();
+                        let job = ui::ansi::layout_job(&spans, content_color, 14.0);
+                        ui.add(egui::Label::new(job).wrap());
+                    } else {
+                        ui.add(egui::Label::new(egui::RichText::new(&content).color(content_color).size(14.0).monospace()).wrap());
+                    }
                 });
                 // Add zero-height spacer to ensure cursor advances past the row
                 ui.allocate_ui_with_layout(egui::vec2(0.0, 0.0), egui::Layout::left_to_right(egui::Align::Min), |_| {});
@@ -373,6 +422,7 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
                 state.add_chart_data(bytes.len() as f64);
                 state.add_terminal_line(Direction::Tx, display, is_hex);
                 if let Some(ref po) = state.port_owner { po.send(PortCommand::Write(bytes)); }
+                refocus_input = true;
             }
         }
     }
@@ -408,17 +458,23 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
             let send_text_w = ui.fonts(|f| f.layout(T::send(lang).into(), egui::FontId::proportional(13.0), egui::Color32::WHITE, f32::INFINITY).rect.width());
             let send_w = send_text_w.max(50.0) + 16.0; // text + button padding
             let ft_w = 28.0 + 2.0;
+            let ctrl_c_w = 50.0 + 4.0;
             let spacing = 2.0 + 4.0 + 4.0 + 4.0 + 2.0; // gaps between widgets
-            let reserved = plus_w + le_label_w + le_combo_w + send_w + ft_w + spacing + 40.0;
+            let reserved = plus_w + le_label_w + le_combo_w + send_w + ctrl_c_w + ft_w + spacing + 40.0;
             let input_w = (ui.available_width() - reserved).max(60.0);
             let input_resp = ui.add_sized([input_w, row_height], egui::TextEdit::singleline(&mut state.input_buffer).frame(true).margin(egui::Margin::symmetric(8.0, 4.0)));
             // Enter → send, Shift+Enter → newline
-            if input_resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) && !state.input_buffer.is_empty() {
-                if ui.input(|i| i.modifiers.shift) {
-                    state.input_buffer.push('\n');
-                } else {
-                    do_send(state);
+            if input_resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                if !state.input_buffer.is_empty() {
+                    if ui.input(|i| i.modifiers.shift) {
+                        state.input_buffer.push('\n');
+                    } else {
+                        do_send(state);
+                    }
                 }
+                // Enter makes egui surrender focus; take it back so the user can
+                // keep typing without clicking the input box again.
+                refocus_input = true;
             }
             // "+" save as quick command
             ui.add_space(2.0);
@@ -450,7 +506,32 @@ pub fn render_terminal_panel(ui: &mut egui::Ui, state: &mut AppState) {
             ui.add_space(4.0);
             let btn_fill = if state.hex_mode { egui::Color32::from_rgb(255, 152, 0) } else { c.btn_send };
             let send_btn = ui.add(egui::Button::new(egui::RichText::new(T::send(lang)).color(egui::Color32::WHITE).strong().size(13.0)).fill(btn_fill).min_size(egui::vec2(50.0, row_height)));
-            if send_btn.clicked() && !state.input_buffer.is_empty() { do_send(state); }
+            if send_btn.clicked() && !state.input_buffer.is_empty() {
+                do_send(state);
+                refocus_input = true;
+            }
+
+            // Ctrl+C — send a raw 0x03 (SIGINT) to interrupt top and similar programs
+            ui.add_space(4.0);
+            let ctrl_c_btn = ui
+                .add(
+                    egui::Button::new(
+                        egui::RichText::new("Ctrl+C")
+                            .color(egui::Color32::WHITE)
+                            .size(12.0),
+                    )
+                    .fill(egui::Color32::from_rgb(198, 40, 40))
+                    .min_size(egui::vec2(50.0, row_height)),
+                )
+                .on_hover_text("发送 0x03 (SIGINT)，中断 top 等前台程序");
+            if ctrl_c_btn.clicked() {
+                send_ctrl_c(state);
+                refocus_input = true;
+            }
+
+            if refocus_input {
+                input_resp.request_focus();
+            }
 
             // File transfer button — up/down transfer arrows with click animation
             ui.add_space(2.0);

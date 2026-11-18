@@ -132,7 +132,9 @@ fn setup_custom_fonts(ctx: &egui::Context) {
             family.push("noto".to_owned());
         }
         if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
-            family.insert(0, "msyh".to_owned());
+            // Keep the built-in monospace font first so ASCII text stays truly
+            // monospaced; msyh is proportional and only a CJK fallback.
+            family.push("msyh".to_owned());
             family.push("noto".to_owned());
         }
     } else {
@@ -141,7 +143,7 @@ fn setup_custom_fonts(ctx: &egui::Context) {
             family.insert(0, "msyh".to_owned());
         }
         if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
-            family.insert(0, "msyh".to_owned());
+            family.push("msyh".to_owned());
         }
     }
 
